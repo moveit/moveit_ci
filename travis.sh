@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Software License Agreement (BSD License)
+# Software License Agreement - BSD License
 #
 # Inspired by MoveIt! travis https://github.com/ros-planning/moveit_core/blob/09bbc196dd4388ac8d81171620c239673b624cc4/.travis.yml
 # Inspired by JSK travis https://github.com/jsk-ros-pkg/jsk_travis
@@ -95,9 +95,6 @@ fi
 # link in the repo we are testing
 travis_run ln -s $CI_SOURCE_PATH .
 
-# source setup.bash
-#travis_run source /opt/ros/$ROS_DISTRO/setup.bash
-
 # Run before script
 if [ "${BEFORE_SCRIPT// }" != "" ]; then sh -c "${BEFORE_SCRIPT}"; fi
 
@@ -107,11 +104,7 @@ travis_run sudo rosdep install -r -y -q -n --from-paths . --ignore-src --rosdist
 # Change to base of workspace
 travis_run cd ~/ros/ws_$REPOSITORY_NAME/
 
-# re-source setup.bash for setting environmet vairable for package installed via rosdep
-#travis_run source /opt/ros/$ROS_DISTRO/setup.bash
-
-# Configure catkin to use install configuration
-#travis_run catkin config --install
+# Configure catkin
 travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Console output fix for: "WARNING: Could not encode unicode characters"
