@@ -112,7 +112,7 @@ PYTHONIOENCODING=UTF-8
 
 # For a command that doesn’t produce output for more than 10 minutes, prefix it with my_travis_wait
 echo "Running catkin build..."
-my_travis_wait 60 catkin build --no-status --summarize
+my_travis_wait 60 catkin build --no-status --summarize || exit 1
 
 # Source the new built workspace
 travis_run source install/setup.bash;

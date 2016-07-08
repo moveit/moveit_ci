@@ -66,7 +66,7 @@ function my_travis_wait() {
   echo "$@"
   echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
 
-  my_travis_wait_impl $timeout "$@"
+  return my_travis_wait_impl $timeout "$@"
 }
 
 #######################################
