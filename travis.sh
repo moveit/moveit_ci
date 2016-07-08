@@ -45,36 +45,30 @@ export DOWNSTREAM_REPO_NAME=${PWD##*/}
 # Helper functions
 source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 
-if [[ "$ROS_DISTRO" != "kinetic" ]]; then
-    echo "This script only supports kinetic currently. TODO add docker containers for previous ROS versions";
-    exit 1;
-fi
-
 # The Dockerfile in this repository defines a Ubuntu 16.04 container with ROS pre-installed
 if ! [ "$IN_DOCKER" ]; then
+    # Pull first to allow us to hide console output
+    #docker pull davetcoleman/moveit_ci:moveit-$ROS_DISTRO-ci > /dev/null
+    docker pull davetcoleman/moveit_ci:moveit-$ROS_DISTRO-ci
 
-  # Pull first to allow us to hide console output
-  docker pull davetcoleman/industrial_ci > /dev/null
+    # Start Docker container
+    docker run -v $(pwd):/root/$DOWNSTREAM_REPO_NAME davetcoleman/moveit_ci:moveit-$ROS_DISTRO-ci \
+        -e ROS_REPOSITORY_PATH \
+        -e ROS_DISTRO \
+        -e ADDITIONAL_DEBS \
+        -e BEFORE_SCRIPT \
+        -e CI_PARENT_DIR \
+        -e UPSTREAM_WORKSPACE \
+        /bin/bash -c "cd /root/$DOWNSTREAM_REPO_NAME; source .ci_config/travis.sh;"
+    return_value=$?
 
-  # Start Docker container
-  docker run \
-      -e ROS_REPOSITORY_PATH \
-      -e ROS_DISTRO \
-      -e ADDITIONAL_DEBS \
-      -e BEFORE_SCRIPT \
-      -e CI_PARENT_DIR \
-      -e UPSTREAM_WORKSPACE \
-      -v $(pwd):/root/$DOWNSTREAM_REPO_NAME davetcoleman/industrial_ci \
-      /bin/bash -c "cd /root/$DOWNSTREAM_REPO_NAME; source .ci_config/travis.sh;"
-  retval=$?
-
-  if [ $retval -eq 0 ]; then
-      echo "ROS $ROS_DISTRO Docker container finished successfully"
-      HIT_ENDOFSCRIPT=true;
-      exit 0
-  fi
-  echo "ROS $ROS_DISTRO Docker container finished with errors"
-  exit -1 # error
+    if [ $return_value -eq 0 ]; then
+        echo "ROS $ROS_DISTRO Docker container finished successfully"
+        HIT_ENDOFSCRIPT=true;
+        exit 0
+    fi
+    echo "ROS $ROS_DISTRO Docker container finished with errors"
+    exit -1 # error
 fi
 
 # Set apt repo - this was already defined in OSRF image but we probably want shadow-fixed
