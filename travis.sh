@@ -23,13 +23,14 @@ if ! [ "$IN_DOCKER" ]; then
     docker pull moveit/moveit_docker:moveit-$ROS_DISTRO-ci
 
     # Start Docker container
-    docker run -v $(pwd):/root/$REPOSITORY_NAME moveit/moveit_docker:moveit-$ROS_DISTRO-ci \
+    docker run \
         -e ROS_REPOSITORY_PATH \
         -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
         -e CI_PARENT_DIR \
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
+        -v $(pwd):/root/$REPOSITORY_NAME moveit/moveit_docker:moveit-$ROS_DISTRO-ci \
         /bin/bash -c "cd /root/$REPOSITORY_NAME; source .ci_config/travis.sh;"
     return_value=$?
 
