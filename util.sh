@@ -89,7 +89,7 @@ function my_travis_wait_impl() {
   } || return 1
 
   echo -e "\nThe command \"$cmd\" exited with $result."
-  echo -e "\n\033[32;1mLog:\033[0m\n"
+  #echo -e "\n\033[32;1mLog:\033[0m\n"
   cat $log_file
 
   return $result

@@ -120,7 +120,6 @@ travis_run source install/setup.bash;
 TEST_PKGS=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
 if [ -n "$TEST_PKGS" ]; then TEST_PKGS="--no-deps $TEST_PKGS"; fi
 if [ "$ALLOW_TEST_FAILURE" != "true" ]; then ALLOW_TEST_FAILURE=false; fi
-echo "Running tests for packages: '$TEST_PKGS'"
 
 # Re-build workspace with tests
 travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
