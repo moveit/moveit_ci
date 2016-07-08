@@ -62,9 +62,7 @@ function my_travis_wait() {
   fi
 
   # Show command in console before running
-  echo -e "\e[0Ktravis_fold:start:command$TRAVIS_FOLD_COUNTER \e[34m$ $command\e[0m"
-  echo "$@"
-  echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
+  echo -e "\e[34m$ $@\e[0m"
 
   my_travis_wait_impl $timeout "$@"
 }
