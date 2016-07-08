@@ -32,11 +32,8 @@
 # Greatly inspired by JSK travis https://github.com/jsk-ros-pkg/jsk_travis
 # Greatly inspired by ROS Industrial: https://github.com/ros-industrial/industrial_ci
 #
-# Author: Isaac I. Y. Saito, Dave Coleman
-#
-# Variables that are not meant to be exposed externally from this script may be lead by underscore.
+# Author: Dave Coleman, Isaac I. Y. Saito
 
-# Define some env vars that need to come earlier than util.sh
 export CI_SOURCE_PATH=$(pwd)
 export CI_PARENT_DIR=.ci_config  # This is the folder name that is used in downstream repositories in order to point to this repo.
 export HIT_ENDOFSCRIPT=false
@@ -45,7 +42,7 @@ export DOWNSTREAM_REPO_NAME=${PWD##*/}
 # Helper functions
 source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 
-# The Dockerfile in this repository defines a Ubuntu 16.04 container with ROS pre-installed
+# Run all CI in a Docker container
 if ! [ "$IN_DOCKER" ]; then
     # Pull first to allow us to hide console output
     #docker pull davetcoleman/moveit_ci:moveit-$ROS_DISTRO-ci > /dev/null
@@ -55,7 +52,6 @@ if ! [ "$IN_DOCKER" ]; then
     docker run -v $(pwd):/root/$DOWNSTREAM_REPO_NAME davetcoleman/moveit_ci:moveit-$ROS_DISTRO-ci \
         -e ROS_REPOSITORY_PATH \
         -e ROS_DISTRO \
-        -e ADDITIONAL_DEBS \
         -e BEFORE_SCRIPT \
         -e CI_PARENT_DIR \
         -e UPSTREAM_WORKSPACE \
@@ -70,23 +66,19 @@ if ! [ "$IN_DOCKER" ]; then
     echo "ROS $ROS_DISTRO Docker container finished with errors"
     exit -1 # error
 fi
+# If we are here, we can assume we are inside a Docker container
 
 # Set apt repo - this was already defined in OSRF image but we probably want shadow-fixed
 if [ ! "$ROS_REPOSITORY_PATH" ]; then # If not specified, use ROS Shadow repository http://wiki.ros.org/ShadowRepository
     export ROS_REPOSITORY_PATH="http://packages.ros.org/ros-shadow-fixed/ubuntu";
 fi
+# Note: cannot use "travis_run" with this command because of the various quote symbols
 sudo -E sh -c 'echo "deb $ROS_REPOSITORY_PATH `lsb_release -cs` main" > /etc/apt/sources.list.d/ros-latest.list'
 
 # Update the sources
 travis_run sudo apt-get -qq update
 
-# If more DEBs needed during preparation, define ADDITIONAL_DEBS variable where you list the name of DEB(S, delimitted by whitespace)
-if [ "$ADDITIONAL_DEBS" ]; then
-    travis_run sudo apt-get -qq install -q -y $ADDITIONAL_DEBS;
-fi
-
-# Setup rosdep
-# Note: "rosdep init" is already setup in base ROS Docker image
+# Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
 travis_run rosdep update
 
 # Create workspace
