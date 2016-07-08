@@ -9,7 +9,7 @@
 # Author:  Dave Coleman, Jonathan Bohren, Robert Haschke, Isaac I. Y. Saito
 
 export CI_SOURCE_PATH=$(pwd)
-export CI_PARENT_DIR=.ci_config  # This is the folder name that is used in downstream repositories in order to point to this repo.
+export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.
 export HIT_ENDOFSCRIPT=false
 export REPOSITORY_NAME=${PWD##*/}
 
@@ -31,7 +31,7 @@ if ! [ "$IN_DOCKER" ]; then
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
         -v $(pwd):/root/$REPOSITORY_NAME moveit/moveit_docker:moveit-$ROS_DISTRO-ci \
-        /bin/bash -c "cd /root/$REPOSITORY_NAME; source .ci_config/travis.sh;"
+        /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
     return_value=$?
 
     if [ $return_value -eq 0 ]; then
@@ -111,7 +111,6 @@ travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -D
 PYTHONIOENCODING=UTF-8
 
 # For a command that doesn’t produce output for more than 10 minutes, prefix it with my_travis_wait
-echo "Running catkin build..."
 my_travis_wait 60 catkin build --no-status --summarize || exit 1
 
 # Source the new built workspace
