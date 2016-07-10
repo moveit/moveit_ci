@@ -6,12 +6,14 @@
 # Inspired by JSK travis https://github.com/jsk-ros-pkg/jsk_travis
 # Inspired by ROS Industrial https://github.com/ros-industrial/industrial_ci
 #
-# Author:  Dave Coleman, Isaac I. Y. Saito, Jonathan Bohren, Robert Haschke
+# Author:  Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 
 export CI_SOURCE_PATH=$(pwd)
 export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.
 export HIT_ENDOFSCRIPT=false
 export REPOSITORY_NAME=${PWD##*/}
+
+echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME on $ROS_DISTRO"
 
 # Helper functions
 source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
@@ -44,7 +46,7 @@ if ! [ "$IN_DOCKER" ]; then
 fi
 
 # If we are here, we can assume we are inside a Docker container
-echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME on $ROS_DISTRO"
+echo "Inside Docker container"
 
 # Set apt repo - this was already defined in OSRF image but we probably want shadow-fixed
 if [ ! "$ROS_REPOSITORY_PATH" ]; then # If not specified, use ROS Shadow repository http://wiki.ros.org/ShadowRepository
