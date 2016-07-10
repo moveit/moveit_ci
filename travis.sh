@@ -6,7 +6,7 @@
 # Inspired by JSK travis https://github.com/jsk-ros-pkg/jsk_travis
 # Inspired by ROS Industrial https://github.com/ros-industrial/industrial_ci
 #
-# Author:  Dave Coleman, Jonathan Bohren, Robert Haschke, Isaac I. Y. Saito
+# Author:  Dave Coleman, Isaac I. Y. Saito, Jonathan Bohren, Robert Haschke
 
 export CI_SOURCE_PATH=$(pwd)
 export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.

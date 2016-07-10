@@ -1,6 +1,8 @@
 # MoveIt Continous Integration
 Common Travis CI configuration for MoveIt! project
 
+Authors: Dave Coleman, Isaac I. Y. Saito, Robert Haschke
+
 - Uses Docker for all Distros
   - Travis does not currently support Ubuntu 16.04
   - Based on OSRF's pre-build ROS Docker container to save setup time
@@ -16,7 +18,7 @@ Common Travis CI configuration for MoveIt! project
 Create a ``.travis.yml`` file in the base of you repo similar to:
 
 ```
-# This config file for Travis CI utilizes https://github.com/davetcoleman/moveit_ci/ package.
+# This config file for Travis CI utilizes https://github.com/ros-planning/moveit_ci/ package.
 sudo: required
 dist: trusty
 services:
@@ -27,7 +29,7 @@ compiler:
 notifications:
   email:
     recipients:
-      - dave@dav.ee
+      # - user@email.com
 env:
   matrix:
     - ROS_DISTRO="kinetic"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit_docs/kinetic-devel/moveit.rosinstall
@@ -36,7 +38,16 @@ matrix:
   allow_failures:
     - env: ROS_DISTRO="kinetic" ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit_docs/kinetic-devel/moveit.rosinstall
 before_script:
-  - git clone -q https://github.com/davetcoleman/moveit_ci.git .moveit_ci
+  - git clone -q https://github.com/moveit_ci/moveit_ci.git .moveit_ci
 script:
   - source .moveit_ci/travis.sh
 ```
+
+## Configurations
+
+- ROS_DISTRO: (required) which version of ROS i.e. kinetic
+- ROS_REPOSITORY_PATH: (required) install ROS debians from either regular release or from shadow-fixed, i.e. http://packages.ros.org/ros-shadow-fixed/ubuntu
+- BEFORE_SCRIPT: (default: not set): Used to specify shell commands that run before building packages.
+- UPSTREAM_WORKSPACE (default: debian): When set as "file", the dependended packages that need to be built from source are downloaded based on a .rosinstall file in your repository. When set to a "http" URL, this downloads the rosinstall configuration from an http location
+
+More configurations as seen in [industrial_ci](https://github.com/ros-industrial/industrial_ci) can be added, in the future.
