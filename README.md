@@ -23,6 +23,10 @@ Create a ``.travis.yml`` file in the base of you repo similar to:
 # This config file for Travis CI utilizes https://github.com/ros-planning/moveit_ci/ package.
 sudo: required
 dist: trusty
+addons:
+  apt:
+    packages:
+        - xvfb
 services:
   - docker
 language: generic
@@ -39,6 +43,9 @@ env:
 matrix:
   allow_failures:
     - env: ROS_DISTRO="kinetic"  ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit_docs/kinetic-devel/moveit.rosinstall
+install:
+  - export DISPLAY=':99.0'
+  - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 before_script:
   - git clone -q https://github.com/ros-planning/moveit_ci.git .moveit_ci
 script:
