@@ -13,6 +13,8 @@ Authors: Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 - Builds into install space
 - Prevents Travis from timing out and from running out of log space, even for huge builds (all of MoveIt!)
 
+[![Build Status](https://travis-ci.org/ros-planning/moveit_ci.svg?branch=master)](https://travis-ci.org/ros-planning/moveit_ci)
+
 ## Usage
 
 Create a ``.travis.yml`` file in the base of you repo similar to:
