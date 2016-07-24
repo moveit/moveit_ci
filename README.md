@@ -40,7 +40,7 @@ matrix:
   allow_failures:
     - env: ROS_DISTRO="kinetic" ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit_docs/kinetic-devel/moveit.rosinstall
 before_script:
-  - git clone -q https://github.com/moveit_ci/moveit_ci.git .moveit_ci
+  - git clone -q https://github.com/ros-planning/moveit_ci.git .moveit_ci
 script:
   - source .moveit_ci/travis.sh
 ```
