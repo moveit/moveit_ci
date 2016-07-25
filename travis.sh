@@ -42,7 +42,7 @@ if ! [ "$IN_DOCKER" ]; then
         exit 0
     fi
     echo "ROS $ROS_DISTRO Docker container finished with errors"
-    exit -1 # error
+    exit 1 # error
 fi
 
 # If we are here, we can assume we are inside a Docker container
@@ -82,6 +82,8 @@ case "$UPSTREAM_WORKSPACE" in
         if [ -e $CI_SOURCE_PATH/$UPSTREAM_WORKSPACE ]; then
             # install (maybe unreleased version) dependencies from source
             travis_run wstool merge file://$CI_SOURCE_PATH/$UPSTREAM_WORKSPACE
+        else
+            echo "No rosinstall file found, aborting" && exit 1
         fi
         ;;
 esac
