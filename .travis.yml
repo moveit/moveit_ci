@@ -1,6 +1,5 @@
 # This config file for Travis CI utilizes https://github.com/ros-planning/moveit_ci/ package.
-# THS IS THE EXAMPLE .travis.yml FILE TO PLACE IN YOUR REPO, WITH A LITTLE CUSTOMIZATION
-# This file is also being used to CI-test the CI script itself
+# THIS FILE IS BEING USED TO CI-TEST THE CI SCRIPT ITSELF - do not use this for your moveit repo but instead use the version in README.md
 sudo: required
 dist: trusty
 services:
@@ -17,6 +16,7 @@ env:
     - ROS_DISTRO="jade"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit_docs/jade-devel/moveit.rosinstall
     - ROS_DISTRO="jade"  ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit_docs/jade-devel/moveit.rosinstall
 before_script:
-  - git clone -q https://github.com/ros-planning/moveit_ci.git .moveit_ci
+  - mkdir .moveit_ci
+  - mv * .moveit_ci # pretend this was cloned
 script:
-  - source .moveit_ci/travis.sh
+  - source .moveit_ci/travis.sh # this is intended only for the repo moveit_ci, other repos should use the .travis.yml script in the README.md
