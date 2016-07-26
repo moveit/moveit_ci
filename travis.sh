@@ -143,14 +143,13 @@ travis_run source install/setup.bash;
 # Only run tests on the current repo's packages
 TEST_PKGS=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
 if [ -n "$TEST_PKGS" ]; then TEST_PKGS="--no-deps $TEST_PKGS"; fi
-if [ "$ALLOW_TEST_FAILURE" != "true" ]; then ALLOW_TEST_FAILURE=false; fi
 
 # Re-build workspace with tests
-travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
+travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS || exit 1
 
 # Run tests
-travis_run catkin run_tests --no-status --summarize $TEST_PKGS
-catkin_test_results || $ALLOW_TEST_FAILURE
+travis_run catkin run_tests --no-status --summarize $TEST_PKGS || exit 1
+catkin_test_results || exit 1
 
 echo "Travis script has finished successfully"
 HIT_ENDOFSCRIPT=true
