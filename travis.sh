@@ -26,7 +26,7 @@ if ! [ "$IN_DOCKER" ]; then
 
     # Start Docker container
     docker run \
-        -e ROS_REPOSITORY_PATH \ # Deprecated
+        -e ROS_REPOSITORY_PATH \
         -e ROS_REPO \
         -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
