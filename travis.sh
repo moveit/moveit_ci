@@ -100,7 +100,10 @@ fi
 travis_run ln -s $CI_SOURCE_PATH .
 
 # Run before script
-if [ "${BEFORE_SCRIPT// }" != "" ]; then sh -c "${BEFORE_SCRIPT}"; fi
+if [ "${BEFORE_SCRIPT// }" != "" ]; then
+    travis_run sh -c "${BEFORE_SCRIPT}";
+    #sh -c "${BEFORE_SCRIPT}";
+fi
 
 # Install source-based package dependencies
 travis_run sudo rosdep install -r -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
@@ -112,7 +115,7 @@ travis_run cd ~/ros/ws_$REPOSITORY_NAME/
 travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 # Console output fix for: "WARNING: Could not encode unicode characters"
-PYTHONIOENCODING=UTF-8
+export PYTHONIOENCODING=UTF-8
 
 # For a command that doesn’t produce output for more than 10 minutes, prefix it with my_travis_wait
 my_travis_wait 60 catkin build --no-status --summarize || exit 1
