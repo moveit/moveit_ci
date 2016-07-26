@@ -99,10 +99,12 @@ fi
 # link in the repo we are testing
 travis_run ln -s $CI_SOURCE_PATH .
 
+# Debug: see the files in current folder
+travis_run ls -a
+
 # Run before script
 if [ "${BEFORE_SCRIPT// }" != "" ]; then
     travis_run sh -c "${BEFORE_SCRIPT}";
-    #sh -c "${BEFORE_SCRIPT}";
 fi
 
 # Install source-based package dependencies
