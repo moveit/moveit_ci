@@ -49,7 +49,7 @@ script:
 
 - ROS_DISTRO: (required) which version of ROS i.e. kinetic
 - ROS_REPOSITORY_PATH: (required) install ROS debians from either regular release or from shadow-fixed, i.e. http://packages.ros.org/ros-shadow-fixed/ubuntu
-- BEFORE_SCRIPT: (default: not set): Used to specify shell commands that run before building packages.
+- BEFORE_SCRIPT: (default: not set): Used to specify shell commands or scripts that run before building packages.
 - UPSTREAM_WORKSPACE (default: debian): When set as "file", the dependended packages that need to be built from source are downloaded based on a .rosinstall file in your repository. When set to a "http" URL, this downloads the rosinstall configuration from an http location
 
 More configurations as seen in [industrial_ci](https://github.com/ros-industrial/industrial_ci) can be added, in the future.
