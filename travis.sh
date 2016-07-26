@@ -26,7 +26,8 @@ if ! [ "$IN_DOCKER" ]; then
 
     # Start Docker container
     docker run \
-        -e ROS_REPOSITORY_PATH \
+        -e ROS_REPOSITORY_PATH \ # Deprecated
+        -e ROS_REPO \
         -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
         -e CI_PARENT_DIR \
@@ -47,6 +48,17 @@ fi
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
+
+# This is the new more compact way to specify what ros repository to use
+case "$ROS_REPO" in
+    ros-shadow-fixed)
+        export ROS_REPOSITORY_PATH="http://packages.ros.org/ros-shadow-fixed/ubuntu";
+        ;;
+    ros)
+        export ROS_REPOSITORY_PATH="http://packages.ros.org/ros/ubuntu";
+        ;;
+    # else: default to specified ROS_REPOSITORY_PATH or default one below
+esac
 
 # Set apt repo - this was already defined in OSRF image but we probably want shadow-fixed
 if [ ! "$ROS_REPOSITORY_PATH" ]; then # If not specified, use ROS Shadow repository http://wiki.ros.org/ShadowRepository
