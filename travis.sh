@@ -64,6 +64,7 @@ esac
 if [ ! "$ROS_REPOSITORY_PATH" ]; then # If not specified, use ROS Shadow repository http://wiki.ros.org/ShadowRepository
     export ROS_REPOSITORY_PATH="http://packages.ros.org/ros-shadow-fixed/ubuntu";
 fi
+travis_run echo "$ROS_REPOSITORY_PATH"
 # Note: cannot use "travis_run" with this command because of the various quote symbols
 sudo -E sh -c 'echo "deb $ROS_REPOSITORY_PATH `lsb_release -cs` main" > /etc/apt/sources.list.d/ros-latest.list'
 
