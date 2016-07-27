@@ -106,7 +106,8 @@ esac
 # download upstream packages into workspace
 if [ -e .rosinstall ]; then
     # ensure that the downstream is not in .rosinstall
-    travis_run wstool rm $REPOSITORY_NAME || true
+    # the exclamation mark means to ignore errors
+    travis_run ! wstool rm $REPOSITORY_NAME
     travis_run cat .rosinstall
     travis_run wstool update
 fi
