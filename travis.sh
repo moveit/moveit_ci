@@ -52,18 +52,21 @@ echo "Inside Docker container"
 # This is the new more compact way to specify what ros repository to use
 case "$ROS_REPO" in
     ros-shadow-fixed)
-        export ROS_REPOSITORY_PATH="http://packages.ros.org/ros-shadow-fixed/ubuntu";
+        travis_run export ROS_REPOSITORY_PATH="http://packages.ros.org/ros-shadow-fixed/ubuntu";
         ;;
     ros)
-        export ROS_REPOSITORY_PATH="http://packages.ros.org/ros/ubuntu";
+        travis_run export ROS_REPOSITORY_PATH="http://packages.ros.org/ros/ubuntu";
         ;;
     # else: default to specified ROS_REPOSITORY_PATH or default one below
 esac
 
 # Set apt repo - this was already defined in OSRF image but we probably want shadow-fixed
 if [ ! "$ROS_REPOSITORY_PATH" ]; then # If not specified, use ROS Shadow repository http://wiki.ros.org/ShadowRepository
-    export ROS_REPOSITORY_PATH="http://packages.ros.org/ros-shadow-fixed/ubuntu";
+    travis_run export ROS_REPOSITORY_PATH="http://packages.ros.org/ros-shadow-fixed/ubuntu";
+else
+    travis_run echo "$ROS_REPOSITORY_PATH"
 fi
+
 # Note: cannot use "travis_run" with this command because of the various quote symbols
 sudo -E sh -c 'echo "deb $ROS_REPOSITORY_PATH `lsb_release -cs` main" > /etc/apt/sources.list.d/ros-latest.list'
 
