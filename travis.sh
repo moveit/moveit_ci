@@ -145,10 +145,10 @@ TEST_PKGS=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
 if [ -n "$TEST_PKGS" ]; then TEST_PKGS="--no-deps $TEST_PKGS"; fi
 
 # Re-build workspace with tests
-travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS || exit 1
+travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
 
 # Run tests
-travis_run catkin run_tests --no-status --summarize $TEST_PKGS || exit 1
+travis_run catkin run_tests --no-status --summarize $TEST_PKGS
 catkin_test_results || exit 1
 
 echo "Travis script has finished successfully"
