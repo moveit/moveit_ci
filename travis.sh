@@ -8,7 +8,7 @@
 #
 # Author:  Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 
-export CI_SOURCE_PATH=$(pwd)
+export CI_SOURCE_PATH=$(pwd) # The repository code in this pull request that we are testing
 export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.
 export HIT_ENDOFSCRIPT=false
 export REPOSITORY_NAME=${PWD##*/}
@@ -33,6 +33,7 @@ if ! [ "$IN_DOCKER" ]; then
         -e CI_PARENT_DIR \
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
+        -e TEST_BLACKLIST \
         -v $(pwd):/root/$REPOSITORY_NAME moveit/moveit_docker:moveit-$ROS_DISTRO-ci \
         /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
     return_value=$?
@@ -141,8 +142,10 @@ my_travis_wait 60 catkin build --no-status --summarize || exit 1
 # Source the new built workspace
 travis_run source install/setup.bash;
 
-# Only run tests on the current repo's packages
-TEST_PKGS=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
+# Choose which packages to run tests on
+echo "Test blacklist: $TEST_BLACKLIST"
+TEST_PKGS=$(catkin_topological_order "$CI_SOURCE_PATH" --only-names | grep -Fvxf <(echo "$TEST_BLACKLIST" | tr ' ;,' '\n'))
+#TEST_PKGS=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
 if [ -n "$TEST_PKGS" ]; then
     TEST_PKGS="--no-deps $TEST_PKGS";
 fi
