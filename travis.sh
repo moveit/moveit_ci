@@ -150,7 +150,7 @@ travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
 
 # Run tests
 travis_run catkin run_tests --no-status --summarize $TEST_PKGS
-catkin_test_results || exit 1
+travis_run catkin_test_results
 
 echo "Travis script has finished successfully"
 HIT_ENDOFSCRIPT=true
