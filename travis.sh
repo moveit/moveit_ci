@@ -107,7 +107,7 @@ esac
 if [ -e .rosinstall ]; then
     # ensure that the downstream is not in .rosinstall
     # the exclamation mark means to ignore errors
-    travis_run ! wstool rm $REPOSITORY_NAME
+    travis_run_true wstool rm $REPOSITORY_NAME
     travis_run cat .rosinstall
     travis_run wstool update
 fi
@@ -143,7 +143,9 @@ travis_run source install/setup.bash;
 
 # Only run tests on the current repo's packages
 TEST_PKGS=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
-if [ -n "$TEST_PKGS" ]; then TEST_PKGS="--no-deps $TEST_PKGS"; fi
+if [ -n "$TEST_PKGS" ]; then
+    TEST_PKGS="--no-deps $TEST_PKGS";
+fi
 
 # Re-build workspace with tests
 travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
