@@ -38,11 +38,27 @@
 
 #######################################
 export TRAVIS_FOLD_COUNTER=1
+
+# Display command in Travis console and fold output in dropdown section
 function travis_run() {
   local command=$@
 
   echo -e "\e[0Ktravis_fold:start:command$TRAVIS_FOLD_COUNTER \e[34m$ $command\e[0m"
-  $command # actually run command
+  # actually run command
+  $command || exit 1 # kill build if error
+  echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
+
+  let "TRAVIS_FOLD_COUNTER += 1"
+}
+
+#######################################
+# Same as travis_run except ignores errors and does not break build
+function travis_run_true() {
+  local command=$@
+
+  echo -e "\e[0Ktravis_fold:start:command$TRAVIS_FOLD_COUNTER \e[34m$ $command\e[0m"
+  # actually run command
+  $command # ignore errors
   echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
 
   let "TRAVIS_FOLD_COUNTER += 1"
