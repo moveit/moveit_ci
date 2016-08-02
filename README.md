@@ -52,7 +52,7 @@ install:
   # Set Xvfb to listen for connections on frame buffer 99 ("Xvfb :99"), and dump STDOUT and STDERR 
   # output ("> /dev/null 2>&1"). This means that data printed from tests to std::cout or std::cerr 
   # will not show in CI output. 
-  - Xvfb :99 > /dev/null 2>&1
+  - Xvfb :99 > /dev/null 2>&1 &
 before_script:
   - git clone -q https://github.com/ros-planning/moveit_ci.git .moveit_ci
 script:
