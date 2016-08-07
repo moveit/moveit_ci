@@ -34,6 +34,8 @@ if ! [ "$IN_DOCKER" ]; then
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
         -e TEST_BLACKLIST \
+        -e "DISPLAY" \
+        -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" \
         -v $(pwd):/root/$REPOSITORY_NAME moveit/moveit_docker:moveit-$ROS_DISTRO-ci \
         /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
     return_value=$?

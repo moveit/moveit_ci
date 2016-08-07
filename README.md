@@ -23,6 +23,12 @@ Create a ``.travis.yml`` file in the base of you repo similar to:
 # This config file for Travis CI utilizes https://github.com/ros-planning/moveit_ci/ package.
 sudo: required
 dist: trusty
+# apt-get install xvfb. Xvfb is an X server that can be run on machines without display hardware or 
+# physical input devices.
+addons:
+  apt:
+    packages:
+        - xvfb
 services:
   - docker
 language: generic
@@ -39,6 +45,14 @@ env:
 matrix:
   allow_failures:
     - env: ROS_DISTRO="kinetic"  ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit_docs/kinetic-devel/moveit.rosinstall
+install:
+  # Set the display to virtual frame buffer 99. 99 is used because it is not likely to be in use for 
+  # something else 
+  - export DISPLAY=':99.0'
+  # Set Xvfb to listen for connections on frame buffer 99 ("Xvfb :99"), and dump STDOUT and STDERR 
+  # output ("> /dev/null 2>&1"). This means that data printed from tests to std::cout or std::cerr 
+  # will not show in CI output. 
+  - Xvfb :99 > /dev/null 2>&1 &
 before_script:
   - git clone -q https://github.com/ros-planning/moveit_ci.git .moveit_ci
 script:
