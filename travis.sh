@@ -33,6 +33,7 @@ if ! [ "$IN_DOCKER" ]; then
         -e CI_PARENT_DIR \
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
+        -e TEST_BLACKLIST
         -e "DISPLAY" \
         -e "QT_X11_NO_MITSHM=1" \
         -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" \
