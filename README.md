@@ -38,7 +38,7 @@ env:
     - ROS_DISTRO="kinetic"  ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
 matrix:
   allow_failures:
-    - env: ROS_DISTRO="kinetic"  ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit_docs/kinetic-devel/moveit.rosinstall
+    - env: ROS_DISTRO="kinetic"  ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
 before_script:
   - git clone -q https://github.com/ros-planning/moveit_ci.git .moveit_ci
 script:
