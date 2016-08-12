@@ -69,10 +69,10 @@ else
 fi
 
 # Note: cannot use "travis_run" with this command because of the various quote symbols
-sudo -E sh -c 'echo "deb $ROS_REPOSITORY_PATH `lsb_release -cs` main" > /etc/apt/sources.list.d/ros-latest.list'
+sh -c 'echo "deb $ROS_REPOSITORY_PATH `lsb_release -cs` main" > /etc/apt/sources.list.d/ros-latest.list'
 
 # Update the sources
-travis_run sudo apt-get -qq update
+travis_run apt-get -qq update
 
 # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
 travis_run rosdep update
@@ -125,7 +125,7 @@ if [ "${BEFORE_SCRIPT// }" != "" ]; then
 fi
 
 # Install source-based package dependencies
-travis_run sudo rosdep install -r -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
+travis_run rosdep install -r -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
 # Change to base of workspace
 travis_run cd ~/ros/ws_$REPOSITORY_NAME/
