@@ -22,7 +22,7 @@ source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 if ! [ "$IN_DOCKER" ]; then
     # Pull first to allow us to hide console output
     #docker pull moveit/moveit_docker:moveit-$ROS_DISTRO-ci > /dev/null
-    docker pull moveit/moveit_docker:moveit-$ROS_DISTRO-ci
+    docker pull moveit/moveit:$ROS_DISTRO-ci
 
     # Start Docker container
     docker run \
@@ -34,7 +34,7 @@ if ! [ "$IN_DOCKER" ]; then
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
         -e TEST_BLACKLIST \
-        -v $(pwd):/root/$REPOSITORY_NAME moveit/moveit_docker:moveit-$ROS_DISTRO-ci \
+        -v $(pwd):/root/$REPOSITORY_NAME moveit/moveit:$ROS_DISTRO-ci \
         /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
     return_value=$?
 
