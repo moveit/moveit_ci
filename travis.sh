@@ -12,7 +12,7 @@ export CI_SOURCE_PATH=$(pwd) # The repository code in this pull request that we 
 export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.
 export HIT_ENDOFSCRIPT=false
 export REPOSITORY_NAME=${PWD##*/}
-
+export CATKIN_WS=/root/ws_moveit
 echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME on $ROS_DISTRO"
 
 # Helper functions
@@ -78,8 +78,8 @@ travis_run apt-get -qq update
 travis_run rosdep update
 
 # Create workspace
-travis_run mkdir -p ~/ros/ws_$REPOSITORY_NAME/src
-travis_run cd ~/ros/ws_$REPOSITORY_NAME/src
+travis_run mkdir -p $CATKIN_WS/src
+travis_run cd $CATKIN_WS/src
 
 # Install dependencies necessary to run build using .rosinstall files
 if [ ! "$UPSTREAM_WORKSPACE" ]; then
@@ -128,7 +128,7 @@ fi
 travis_run rosdep install -r -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
 # Change to base of workspace
-travis_run cd ~/ros/ws_$REPOSITORY_NAME/
+travis_run cd $CATKIN_WS
 
 # Configure catkin
 travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release
