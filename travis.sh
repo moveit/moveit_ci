@@ -151,7 +151,7 @@ if [ -n "$TEST_PKGS" ]; then
 fi
 
 # Re-build workspace with tests
-travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
+travis_run catkin build --no-status --summarize --make-args tests -DMOVEIT_COVERALLS=ON -- $TEST_PKGS
 
 # Run tests
 travis_run catkin run_tests --no-status --summarize $TEST_PKGS
