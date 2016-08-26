@@ -155,6 +155,7 @@ travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
 
 # Run tests
 travis_run catkin run_tests --no-status --summarize $TEST_PKGS
+travis_run make -C $CATKIN_WS/build/$REPOSITORY_NAME coveralls #Generate and upload the coverage data.
 travis_run catkin_test_results
 
 echo "Travis script has finished successfully"
