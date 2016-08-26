@@ -22,7 +22,7 @@ source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 if ! [ "$IN_DOCKER" ]; then
     # Pull first to allow us to hide console output
     #docker pull moveit/moveit_docker:moveit-$ROS_DISTRO-ci > /dev/null
-    docker pull moveit/moveit:$ROS_DISTRO-ci
+    docker pull davetcoleman/moveit:$ROS_DISTRO-ci
 
     # Start Docker container
     docker run \
@@ -34,7 +34,7 @@ if ! [ "$IN_DOCKER" ]; then
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
         -e TEST_BLACKLIST \
-        -v $(pwd):/root/$REPOSITORY_NAME moveit/moveit:$ROS_DISTRO-ci \
+        -v $(pwd):/root/$REPOSITORY_NAME davetcoleman/moveit:$ROS_DISTRO-ci \
         /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
     return_value=$?
 
@@ -81,6 +81,10 @@ travis_run rosdep update
 travis_run mkdir -p $CATKIN_WS/src
 travis_run cd $CATKIN_WS/src
 
+# Remove any previous source code already in folder from Docker container
+travis_run ls -a
+travis_run rm -rf * .rosinstall
+
 # Install dependencies necessary to run build using .rosinstall files
 if [ ! "$UPSTREAM_WORKSPACE" ]; then
     export UPSTREAM_WORKSPACE="debian";
@@ -90,11 +94,11 @@ case "$UPSTREAM_WORKSPACE" in
         echo "Obtain deb binary for upstream packages."
         ;;
     http://* | https://*) # When UPSTREAM_WORKSPACE is an http url, use it directly
-        travis_run wstool init .
+        travis_run wstool init --continue-on-error .
         travis_run wstool merge $UPSTREAM_WORKSPACE
         ;;
     *) # Otherwise assume UPSTREAM_WORKSPACE is a local file path
-        travis_run wstool init .
+        travis_run wstool init --continue-on-error .
         if [ -e $CI_SOURCE_PATH/$UPSTREAM_WORKSPACE ]; then
             # install (maybe unreleased version) dependencies from source
             travis_run wstool merge file://$CI_SOURCE_PATH/$UPSTREAM_WORKSPACE
