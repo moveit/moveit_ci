@@ -8,6 +8,8 @@
 #
 # Author:  Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 
+# Note: ROS_REPOSITORY_PATH is no longer a valid option, use ROS_REPO. See README.md
+
 export CI_SOURCE_PATH=$(pwd) # The repository code in this pull request that we are testing
 export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.
 export HIT_ENDOFSCRIPT=false
@@ -20,13 +22,23 @@ source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 
 # Run all CI in a Docker container
 if ! [ "$IN_DOCKER" ]; then
+
+    # Choose the correct CI container to use
+    case "$ROS_REPO" in
+        ros-shadow-fixed)
+            export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed
+            ;;
+        *)
+            export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci
+            ;;
+    esac
+    echo "$DOCKER_IMAGE"
+
     # Pull first to allow us to hide console output
-    #docker pull moveit/moveit_docker:moveit-$ROS_DISTRO-ci > /dev/null
-    docker pull moveit/moveit:$ROS_DISTRO-ci
+    docker pull $DOCKER_IMAGE > /dev/null
 
     # Start Docker container
     docker run \
-        -e ROS_REPOSITORY_PATH \
         -e ROS_REPO \
         -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
@@ -34,42 +46,21 @@ if ! [ "$IN_DOCKER" ]; then
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
         -e TEST_BLACKLIST \
-        -v $(pwd):/root/$REPOSITORY_NAME moveit/moveit:$ROS_DISTRO-ci \
+        -v $(pwd):/root/$REPOSITORY_NAME $DOCKER_IMAGE \
         /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
     return_value=$?
 
     if [ $return_value -eq 0 ]; then
-        echo "ROS $ROS_DISTRO Docker container finished successfully"
+        echo "$DOCKER_IMAGE container finished successfully"
         HIT_ENDOFSCRIPT=true;
         exit 0
     fi
-    echo "ROS $ROS_DISTRO Docker container finished with errors"
+    echo "$DOCKER_IMAGE container finished with errors"
     exit 1 # error
 fi
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
-
-# This is the new more compact way to specify what ros repository to use
-case "$ROS_REPO" in
-    ros-shadow-fixed)
-        travis_run export ROS_REPOSITORY_PATH="http://packages.ros.org/ros-shadow-fixed/ubuntu";
-        ;;
-    ros)
-        travis_run export ROS_REPOSITORY_PATH="http://packages.ros.org/ros/ubuntu";
-        ;;
-    # else: default to specified ROS_REPOSITORY_PATH or default one below
-esac
-
-# Set apt repo - this was already defined in OSRF image but we probably want shadow-fixed
-if [ ! "$ROS_REPOSITORY_PATH" ]; then # If not specified, use ROS Shadow repository http://wiki.ros.org/ShadowRepository
-    travis_run export ROS_REPOSITORY_PATH="http://packages.ros.org/ros-shadow-fixed/ubuntu";
-else
-    travis_run echo "$ROS_REPOSITORY_PATH"
-fi
-
-# Note: cannot use "travis_run" with this command because of the various quote symbols
-sh -c 'echo "deb $ROS_REPOSITORY_PATH `lsb_release -cs` main" > /etc/apt/sources.list.d/ros-latest.list'
 
 # Update the sources
 travis_run apt-get -qq update
