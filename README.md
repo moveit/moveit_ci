@@ -58,3 +58,27 @@ More configurations as seen in [industrial_ci](https://github.com/ros-industrial
 ## Removed Configuration
 
 - ROS_REPOSITORY\_PATH: (UNSUPPORTED) replaced by ROS\_REPO
+
+## Running Locally For Testing
+
+To manually run the moveit_ci script without Travis (presumably for testing):
+
+First clone the repo you want to test:
+
+    cd ~/
+    git clone https://github.com/davetcoleman/moveit_kinetic_cpp11
+    cd moveit_kinetic_cpp11
+
+Next clone the CI script:
+
+    git clone https://github.com/ros-planning/moveit_ci .moveit_ci
+
+Define the necessary environmental variables:
+
+    export ROS_DISTRO=kinetic
+    export ROS_REPO=ros-shadow-fixed
+    export UPSTREAM_WORKSPACE=moveit.rosinstall
+
+Start the script
+
+    .moveit_ci/travis.sh
