@@ -116,7 +116,7 @@ if [ "${BEFORE_SCRIPT// }" != "" ]; then
 fi
 
 # Install source-based package dependencies
-travis_run rosdep install -r -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
+travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
 # Change to base of workspace
 travis_run cd $CATKIN_WS
