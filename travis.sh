@@ -15,6 +15,7 @@ export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downs
 export HIT_ENDOFSCRIPT=false
 export REPOSITORY_NAME=${PWD##*/}
 export CATKIN_WS=/root/ws_moveit
+echo "---"
 echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME on $ROS_DISTRO"
 
 # Helper functions
@@ -32,7 +33,7 @@ if ! [ "$IN_DOCKER" ]; then
             export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci
             ;;
     esac
-    echo "$DOCKER_IMAGE"
+    echo "Starting Docker image: $DOCKER_IMAGE"
 
     # Pull first to allow us to hide console output
     docker pull $DOCKER_IMAGE > /dev/null
@@ -136,7 +137,6 @@ travis_run source install/setup.bash;
 # Choose which packages to run tests on
 echo "Test blacklist: $TEST_BLACKLIST"
 TEST_PKGS=$(catkin_topological_order "$CI_SOURCE_PATH" --only-names | grep -Fvxf <(echo "$TEST_BLACKLIST" | tr ' ;,' '\n'))
-#TEST_PKGS=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
 if [ -n "$TEST_PKGS" ]; then
     TEST_PKGS="--no-deps $TEST_PKGS";
 fi
@@ -145,7 +145,9 @@ fi
 travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
 
 # Run tests
-travis_run catkin run_tests --no-status --summarize $TEST_PKGS
+travis_run catkin build --catkin-make-args run_tests -- --no-status --summarize $TEST_PKGS
+
+# Show test results and throw error if necessary
 travis_run catkin_test_results
 
 echo "Travis script has finished successfully"
