@@ -36,6 +36,7 @@ env:
   matrix:
     - ROS_DISTRO=kinetic  ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
     - ROS_DISTRO=kinetic  ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
+    - TEST=clang-format
 matrix:
   allow_failures:
     - env: ROS_DISTRO=kinetic  ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
@@ -52,12 +53,17 @@ script:
 - BEFORE_SCRIPT: (default: not set): Used to specify shell commands or scripts that run before building packages.
 - UPSTREAM_WORKSPACE (default: debian): When set as "file", the dependended packages that need to be built from source are downloaded based on a .rosinstall file in your repository. When set to a "http" URL, this downloads the rosinstall configuration from an http location
 - TEST_BLACKLIST: Allow certain tests to be skipped if necessary (not recommended)
+- TEST: allow other tests to be run, such as code format checking using clang-format
 
-More configurations as seen in [industrial_ci](https://github.com/ros-industrial/industrial_ci) can be added, in the future.
+More configurations as seen in [industrial_ci](https://github.com/ros-industrial/industrial_ci) can be added in the future.
 
 ## Removed Configuration
 
 - ROS_REPOSITORY\_PATH: (UNSUPPORTED) replaced by ROS\_REPO
+
+## Clang-Format
+
+A new test is available that checks if the code is properly formatted as specified in the clang-format file found in ``.clang-format``. Use ``TEST=clang-format`` to enable this test.
 
 ## Running Locally For Testing
 
