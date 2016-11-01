@@ -39,11 +39,14 @@ if ! [ "$IN_DOCKER" ]; then
         ros-shadow-fixed)
             export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed
             ;;
+        ros-wily)
+            export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-wily
+            ;;
         *)
             export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci
             ;;
     esac
-    echo "Starting Docker image: $DOCKER_IMAGE"
+    echo "Downloading and starting Docker image: $DOCKER_IMAGE"
 
     # Pull first to allow us to hide console output
     docker pull $DOCKER_IMAGE > /dev/null
