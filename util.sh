@@ -39,14 +39,63 @@
 #######################################
 export TRAVIS_FOLD_COUNTER=1
 
+
+#######################################
+# Start a Travis fold with timer
+#
+# Arguments:
+#   travis_fold_name: name of line
+#   command: action to run
+#######################################
+function travis_time_start {
+    TRAVIS_START_TIME=$(date +%s%N)
+    TRAVIS_TIME_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+    TRAVIS_FOLD_NAME=$1
+    COMMAND=${@:2} # all arguments except the first
+
+    # Start fold
+    echo -e "\e[0Ktravis_fold:start:$TRAVIS_FOLD_NAME"
+    # Output command being executed
+    echo -e "\e[0Ktravis_time:start:$TRAVIS_TIME_ID\e[34m$COMMAND\e[0m"
+}
+
+#######################################
+# Wraps up the timer section on Travis CI (that's started mostly by travis_time_start function).
+#
+# Arguments:
+#   travis_fold_name: name of line
+#######################################
+function travis_time_end {
+    if [ -z $TRAVIS_START_TIME ]; then
+        echo '[travis_time_end] var TRAVIS_START_TIME is not set. You need to call `travis_time_start` in advance. Rerunning.';
+        return;
+    fi
+    TRAVIS_END_TIME=$(date +%s%N)
+    TIME_ELAPSED_SECONDS=$(( ($TRAVIS_END_TIME - $TRAVIS_START_TIME)/1000000000 ))
+
+    # Output Time
+    echo -e "travis_time:end:$TRAVIS_TIME_ID:start=$TRAVIS_START_TIME,finish=$TRAVIS_END_TIME,duration=$(($TRAVIS_END_TIME - $TRAVIS_START_TIME))\e[0K"
+    # End fold
+    echo -e -n "travis_fold:end:$TRAVIS_FOLD_NAME\e[0m"
+
+    unset $TRAVIS_FOLD_NAME
+}
+
+#######################################
 # Display command in Travis console and fold output in dropdown section
+#
+# Arguments:
+#   command: action to run
+#######################################
 function travis_run() {
   local command=$@
 
-  echo -e "\e[0Ktravis_fold:start:command$TRAVIS_FOLD_COUNTER \e[34m$ $command\e[0m"
+  #echo -e "\e[0Ktravis_fold:start:command$TRAVIS_FOLD_COUNTER \e[34m$ $command\e[0m"
+  travis_time_start moveit_ci$TRAVIS_FOLD_COUNTER $command
   # actually run command
   $command || exit 1 # kill build if error
-  echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
+  travis_time_end moveit_ci$TRAVIS_FOLD_COUNTER
+  #echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
 
   let "TRAVIS_FOLD_COUNTER += 1"
 }
@@ -56,10 +105,10 @@ function travis_run() {
 function travis_run_true() {
   local command=$@
 
-  echo -e "\e[0Ktravis_fold:start:command$TRAVIS_FOLD_COUNTER \e[34m$ $command\e[0m"
+  travis_time_start moveit_ci$TRAVIS_FOLD_COUNTER $command
   # actually run command
   $command # ignore errors
-  echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
+  travis_time_end moveit_ci$TRAVIS_FOLD_COUNTER
 
   let "TRAVIS_FOLD_COUNTER += 1"
 }
