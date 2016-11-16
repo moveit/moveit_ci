@@ -16,7 +16,7 @@ export HIT_ENDOFSCRIPT=false
 export REPOSITORY_NAME=${PWD##*/}
 export CATKIN_WS=/root/ws_moveit
 echo "---"
-echo "Testing branch $TRAVIS_BRANCH of $REPOSITORY_NAME on $ROS_DISTRO"
+echo "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'"
 
 # Helper functions
 source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh

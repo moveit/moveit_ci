@@ -67,23 +67,24 @@ A new test is available that checks if the code is properly formatted as specifi
 
 ## Running Locally For Testing
 
-To manually run the moveit_ci script without Travis (presumably for testing):
+To manually run the moveit_ci script without Travis (presumably for testing), we will demonstrate with an example using the full moveit repo.
 
 First clone the repo you want to test:
 
     cd ~/
-    git clone https://github.com/davetcoleman/moveit_kinetic_cpp11
-    cd moveit_kinetic_cpp11
+    git clone https://github.com/ros-planning/moveit
+    cd moveit
 
 Next clone the CI script:
 
     git clone https://github.com/ros-planning/moveit_ci .moveit_ci
 
-Define the necessary environmental variables:
+Manually define the necessary environmental variables:
 
+    export TRAVIS_BRANCH=kinetic-devel
     export ROS_DISTRO=kinetic
-    export ROS_REPO=ros-shadow-fixed
     export UPSTREAM_WORKSPACE=moveit.rosinstall
+    export ROS_REPO=ros-shadow-fixed
 
 Start the script
 
