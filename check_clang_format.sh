@@ -9,8 +9,8 @@ travis_run ls -la
 echo "Running clang-format"
 find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format-3.6 -i -style=file
 
-echo "Showing results"
-travis_run git --no-pager diff
+echo "Showing changes in code style:"
+git --no-pager diff
 
 # Make sure no changes have occured in repo
 if ! git diff-index --quiet HEAD --; then
