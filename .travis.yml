@@ -14,8 +14,8 @@ notifications:
 env:
   matrix:
     - ROS_DISTRO=kinetic ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall BEFORE_SCRIPT="echo 'testing'" TEST_BLACKLIST="moveit_core"
-    - ROS_DISTRO=kinetic ROS_REPO=ros-wily         UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall BEFORE_SCRIPT="echo 'testing'"
     - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
+    - ROS_DISTRO=kinetic ROS_REPO=ros-wily         UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall TEST_BLACKLIST="moveit_commander moveit_controller_manager_example moveit_core moveit_experimental moveit_fake_controller_manager moveit_kinematics moveit_msgs moveit_planners_chomp moveit_resources moveit_ros_benchmarks moveit_ros_control_interface moveit_ros_manipulation moveit_ros_move_group moveit_ros_perception moveit_ros_planning moveit_ros_planning_interface moveit_ros_visualization moveit_ros_warehouse moveit_setup_assistant moveit_simple_controller_manager"
 before_script:
   - mkdir .moveit_ci
   - mv * .moveit_ci # pretend this was cloned
