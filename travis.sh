@@ -133,7 +133,7 @@ travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_
 travis_run cd $CATKIN_WS
 
 # Configure catkin
-travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release
+travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Debug
 
 # Console output fix for: "WARNING: Could not encode unicode characters"
 export PYTHONIOENCODING=UTF-8
