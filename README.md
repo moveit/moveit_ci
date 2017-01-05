@@ -59,7 +59,7 @@ More configurations as seen in [industrial_ci](https://github.com/ros-industrial
 
 ## Removed Configuration
 
-- ROS_REPOSITORY\_PATH: (UNSUPPORTED) replaced by ROS\_REPO
+- ROS\_REPOSITORY\_PATH replaced by ROS\_REPO
 
 ## Clang-Format
 
@@ -85,6 +85,8 @@ Manually define the necessary environmental variables:
     export ROS_DISTRO=kinetic
     export UPSTREAM_WORKSPACE=moveit.rosinstall
     export ROS_REPO=ros-shadow-fixed
+    # optional that will not test build but only formatting:
+    export TEST=clang-format
 
 Start the script
 

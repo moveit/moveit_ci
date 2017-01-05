@@ -21,16 +21,6 @@ echo "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'
 # Helper functions
 source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 
-# Split for different tests
-for t in $TEST; do
-    case "$t" in
-        "clang-format")
-            source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/check_clang_format.sh || exit 1
-            exit 0 # This runs as an independent job, separate from the Docker build
-        ;;
-    esac
-done
-
 # Run all CI in a Docker container
 if ! [ "$IN_DOCKER" ]; then
 
@@ -54,8 +44,10 @@ if ! [ "$IN_DOCKER" ]; then
         -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
         -e CI_PARENT_DIR \
+        -e CI_SOURCE_PATH \
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
+        -e TEST \
         -e TEST_BLACKLIST \
         -v $(pwd):/root/$REPOSITORY_NAME $DOCKER_IMAGE \
         /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
@@ -75,6 +67,16 @@ echo "Inside Docker container"
 
 # Update the sources
 travis_run apt-get -qq update
+
+# Split for different tests
+for t in $TEST; do
+    case "$t" in
+        "clang-format")
+            source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/check_clang_format.sh || exit 1
+            exit 0 # This runs as an independent job, do not run regular travis test
+        ;;
+    esac
+done
 
 # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
 travis_run rosdep update
