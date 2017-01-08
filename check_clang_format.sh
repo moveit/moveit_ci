@@ -1,5 +1,5 @@
 # Install Dependencies
-travis_run apt-get install clang-format-3.8
+travis_run apt-get -qq install -y clang-format-3.8
 
 # Change to source directory. This directory should have its own .clang-format config file
 travis_run cd $CI_SOURCE_PATH
