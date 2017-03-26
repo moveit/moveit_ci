@@ -83,9 +83,14 @@ Manually define the necessary environmental variables:
 
     export TRAVIS_BRANCH=kinetic-devel
     export ROS_DISTRO=kinetic
-    export UPSTREAM_WORKSPACE=moveit.rosinstall
     export ROS_REPO=ros-shadow-fixed
-    # optional that will not test build but only formatting:
+
+Note: the following depends on where your rosinstall file is located:
+
+    export UPSTREAM_WORKSPACE=moveit.rosinstall
+
+Optional: will not run test builds but rather only check formatting:
+
     export TEST=clang-format
 
 Start the script
