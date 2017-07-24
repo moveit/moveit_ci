@@ -1,9 +1,14 @@
 # Install Dependencies
 travis_run apt-get -qq install -y clang-format-3.8
 
-# Change to source directory. This directory should have its own .clang-format config file
+# Change to source directory.
 travis_run cd $CI_SOURCE_PATH
 travis_run ls -la
+
+# This directory can have its own .clang-format config file but if not, MoveIt's will be provided
+if [ ! -f .clang_format ]; then
+    wget "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO/.clang-format"
+fi
 
 # Run clang-format
 echo "Running clang-format"
