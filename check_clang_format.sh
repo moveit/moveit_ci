@@ -1,3 +1,6 @@
+# Helper functions
+. $(dirname $0)/util.sh
+
 # Install Dependencies
 travis_run apt-get -qq install -y clang-format-3.8
 
