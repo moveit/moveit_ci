@@ -49,7 +49,9 @@ if ! [ "$IN_DOCKER" ]; then
         -e TRAVIS_BRANCH \
         -e TEST \
         -e TEST_BLACKLIST \
-        -v $(pwd):/root/$REPOSITORY_NAME $DOCKER_IMAGE \
+        -v $(pwd):/root/$REPOSITORY_NAME \
+        -v $(HOME)/.ccache:/root/.ccache \
+        $DOCKER_IMAGE \
         /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
     return_value=$?
 
@@ -67,6 +69,10 @@ echo "Inside Docker container"
 
 # Update the sources
 travis_run apt-get -qq update
+
+# Enable ccache
+travis_run apt-get -qq install ccache
+export PATH=/usr/lib/ccache:$PATH
 
 # Split for different tests
 for t in $TEST; do
@@ -146,6 +152,8 @@ export PYTHONIOENCODING=UTF-8
 
 # For a command that doesn’t produce output for more than 10 minutes, prefix it with my_travis_wait
 my_travis_wait 60 catkin build --no-status --summarize || exit 1
+
+travis_run ccache -s
 
 # Source the new built workspace
 travis_run source install/setup.bash;
