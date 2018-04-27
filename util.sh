@@ -39,6 +39,10 @@
 #######################################
 export TRAVIS_FOLD_COUNTER=1
 
+ANSI_RED="\033[31;1m"
+ANSI_GREEN="\033[32;1m"
+ANSI_RESET="\033[0m"
+ANSI_CLEAR="\033[0K"
 
 #######################################
 # Start a Travis fold with timer
@@ -90,12 +94,10 @@ function travis_time_end {
 function travis_run() {
   local command=$@
 
-  #echo -e "\e[0Ktravis_fold:start:command$TRAVIS_FOLD_COUNTER \e[34m$ $command\e[0m"
   travis_time_start moveit_ci$TRAVIS_FOLD_COUNTER $command
   # actually run command
   $command || exit 1 # kill build if error
   travis_time_end moveit_ci$TRAVIS_FOLD_COUNTER
-  #echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
 
   let "TRAVIS_FOLD_COUNTER += 1"
 }
@@ -115,32 +117,19 @@ function travis_run_true() {
 
 #######################################
 # Orginal version from: https://github.com/travis-ci/travis-build/blob/d63c9e95d6a2dc51ef44d2a1d96d4d15f8640f22/lib/travis/build/script/templates/header.sh
+
 function my_travis_wait() {
-  local timeout=$1
-
-  if [[ $timeout =~ ^[0-9]+$ ]]; then
-    # looks like an integer, so we assume it's a timeout
-    shift
-  else
-    # default value
-    timeout=20
-  fi
-
-  # Show command in console before running
-  echo -e "\e[34m$ $@\e[0m"
-
-  my_travis_wait_impl $timeout "$@"
-}
-
-#######################################
-function my_travis_wait_impl() {
+  # First parameter is timeout, the rest is the command to run
   local timeout=$1
   shift
 
   local cmd="$@"
   local log_file=my_travis_wait_$$.log
 
-  $cmd 2>&1 >$log_file &
+  # Show command in console before running
+  echo -e "{ANSI_GREEN}$cmd{ANSI_RESET}"
+
+  $cmd &>$log_file &
   local cmd_pid=$!
 
   my_travis_jigger $! $timeout $cmd &
@@ -150,11 +139,16 @@ function my_travis_wait_impl() {
   {
     wait $cmd_pid 2>/dev/null
     result=$?
-    ps -p$jigger_pid 2>&1>/dev/null && kill $jigger_pid
-  } || return 1
+    ps -p$jigger_pid &>/dev/null && kill $jigger_pid
+  }
 
-  echo -e "\nThe command \"$cmd\" exited with $result."
-  #echo -e "\n\033[32;1mLog:\033[0m\n"
+  if [ $result -eq 0 ]; then
+      echo -e "\n${ANSI_GREEN}The command $cmd exited with $result.${ANSI_RESET}"
+  else
+      echo -e "\n${ANSI_RED}The command $cmd exited with $result.${ANSI_RESET}"
+  fi
+
+  echo -e "\n${ANSI_GREEN}Log:${ANSI_RESET}\n"
   cat $log_file
 
   return $result
@@ -162,7 +156,7 @@ function my_travis_wait_impl() {
 
 #######################################
 function my_travis_jigger() {
-  # helper method for travis_wait()
+  # helper method for my_travis_wait()
   local cmd_pid=$1
   shift
   local timeout=$1 # in minutes
@@ -179,6 +173,6 @@ function my_travis_jigger() {
     sleep 60
   done
 
-  echo -e "\n\033[31;1mTimeout (${timeout} minutes) reached. Terminating \"$@\"\033[0m\n"
+  echo -e "\n${ANSI_RED}Timeout (${timeout} minutes) reached. Terminating \"$@\"${ANSI_RESET}\n"
   kill -9 $cmd_pid
 }
