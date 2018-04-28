@@ -114,9 +114,10 @@ function travis_run_true() {
 }
 
 #######################################
-# Orginal version from: https://github.com/travis-ci/travis-build/blob/d63c9e95d6a2dc51ef44d2a1d96d4d15f8640f22/lib/travis/build/script/templates/header.sh
+# Same as travis_run, but issue some output regularly to indicate that the process is still alive
+# from: https://github.com/travis-ci/travis-build/blob/d63c9e95d6a2dc51ef44d2a1d96d4d15f8640f22/lib/travis/build/script/templates/header.sh
 function my_travis_wait() {
-  local timeout=$1
+  local timeout=$1 # in minutes
 
   if [[ $timeout =~ ^[0-9]+$ ]]; then
     # looks like an integer, so we assume it's a timeout
@@ -127,56 +128,41 @@ function my_travis_wait() {
   fi
 
   # Show command in console before running
-  echo -e "\e[34m$ $@\e[0m"
-
-  my_travis_wait_impl $timeout "$@"
-}
-
-#######################################
-function my_travis_wait_impl() {
-  local timeout=$1
-  shift
-
   local cmd="$@"
-  local log_file=my_travis_wait_$$.log
+  echo -e "\e[34m$ $cmd\e[0m"
 
-  $cmd 2>&1 >$log_file &
+  # Run actual command in background
+  $cmd &
   local cmd_pid=$!
 
-  my_travis_jigger $! $timeout $cmd &
+  my_travis_jigger $cmd_pid $timeout $cmd &
   local jigger_pid=$!
   local result
 
   {
     wait $cmd_pid 2>/dev/null
     result=$?
+    # if process finished before jigger, stop the jigger too
     ps -p$jigger_pid 2>&1>/dev/null && kill $jigger_pid
   } || return 1
 
   echo -e "\nThe command \"$cmd\" exited with $result."
-  #echo -e "\n\033[32;1mLog:\033[0m\n"
-  cat $log_file
-
   return $result
 }
 
 #######################################
 function my_travis_jigger() {
-  # helper method for travis_wait()
   local cmd_pid=$1
   shift
-  local timeout=$1 # in minutes
+  local timeout=$1
   shift
   local count=0
 
-
-  # clear the line
-  echo -e "\n"
-
+  echo -n "Waiting for process to finish "
   while [ $count -lt $timeout ]; do
     count=$(($count + 1))
-    echo -ne "Still running ($count of $timeout min): $@\r"
-    sleep 60
+    echo -ne "."
+    sleep 60 # wait 60s
   done
 
   echo -e "\n\033[31;1mTimeout (${timeout} minutes) reached. Terminating \"$@\"\033[0m\n"
