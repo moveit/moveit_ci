@@ -33,11 +33,11 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #********************************************************************/
 
-# Author: Dave Coleman <dave@dav.ee>
+# Author: Dave Coleman <dave@dav.ee>, Robert Haschke
 # Desc: Utility functions used to make CI work better in Travis
 
 #######################################
-export TRAVIS_FOLD_COUNTER=1
+export TRAVIS_FOLD_COUNTER=0
 
 
 #######################################
@@ -51,7 +51,7 @@ function travis_time_start {
     TRAVIS_START_TIME=$(date +%s%N)
     TRAVIS_TIME_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
     TRAVIS_FOLD_NAME=$1
-    COMMAND=${@:2} # all arguments except the first
+    local COMMAND=${@:2} # all arguments except the first
 
     # Start fold
     echo -e "\e[0Ktravis_fold:start:$TRAVIS_FOLD_NAME"
@@ -67,18 +67,20 @@ function travis_time_start {
 #######################################
 function travis_time_end {
     if [ -z $TRAVIS_START_TIME ]; then
-        echo '[travis_time_end] var TRAVIS_START_TIME is not set. You need to call `travis_time_start` in advance. Rerunning.';
+        echo '[travis_time_end] var TRAVIS_START_TIME is not set. You need to call `travis_time_start` in advance.';
         return;
     fi
-    TRAVIS_END_TIME=$(date +%s%N)
-    TIME_ELAPSED_SECONDS=$(( ($TRAVIS_END_TIME - $TRAVIS_START_TIME)/1000000000 ))
+    local TRAVIS_END_TIME=$(date +%s%N)
+    local TIME_ELAPSED_SECONDS=$(( ($TRAVIS_END_TIME - $TRAVIS_START_TIME)/1000000000 ))
 
     # Output Time
     echo -e "travis_time:end:$TRAVIS_TIME_ID:start=$TRAVIS_START_TIME,finish=$TRAVIS_END_TIME,duration=$(($TRAVIS_END_TIME - $TRAVIS_START_TIME))\e[0K"
     # End fold
     echo -e -n "travis_fold:end:$TRAVIS_FOLD_NAME\e[0m"
 
-    unset $TRAVIS_FOLD_NAME
+    unset TRAVIS_START_TIME
+    unset TRAVIS_TIME_ID
+    unset TRAVIS_FOLD_NAME
 }
 
 #######################################
@@ -90,33 +92,27 @@ function travis_time_end {
 function travis_run() {
   local command=$@
 
-  #echo -e "\e[0Ktravis_fold:start:command$TRAVIS_FOLD_COUNTER \e[34m$ $command\e[0m"
-  travis_time_start moveit_ci$TRAVIS_FOLD_COUNTER $command
-  # actually run command
-  $command || exit 1 # kill build if error
-  travis_time_end moveit_ci$TRAVIS_FOLD_COUNTER
-  #echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
-
   let "TRAVIS_FOLD_COUNTER += 1"
+  travis_time_start moveit_ci.$TRAVIS_FOLD_COUNTER $command
+  # actually run command
+  $command
+  result=$?
+  travis_time_end
+  return $result
 }
 
 #######################################
 # Same as travis_run except ignores errors and does not break build
 function travis_run_true() {
-  local command=$@
-
-  travis_time_start moveit_ci$TRAVIS_FOLD_COUNTER $command
-  # actually run command
-  $command # ignore errors
-  travis_time_end moveit_ci$TRAVIS_FOLD_COUNTER
-
-  let "TRAVIS_FOLD_COUNTER += 1"
+  travis_run $@
+  return 0
 }
 
 #######################################
-# Orginal version from: https://github.com/travis-ci/travis-build/blob/d63c9e95d6a2dc51ef44d2a1d96d4d15f8640f22/lib/travis/build/script/templates/header.sh
+# Same as travis_run, but issue some output regularly to indicate that the process is still alive
+# from: https://github.com/travis-ci/travis-build/blob/d63c9e95d6a2dc51ef44d2a1d96d4d15f8640f22/lib/travis/build/script/templates/header.sh
 function my_travis_wait() {
-  local timeout=$1
+  local timeout=$1 # in minutes
 
   if [[ $timeout =~ ^[0-9]+$ ]]; then
     # looks like an integer, so we assume it's a timeout
@@ -126,57 +122,46 @@ function my_travis_wait() {
     timeout=20
   fi
 
-  # Show command in console before running
-  echo -e "\e[34m$ $@\e[0m"
+  local cmd=$@
+  let "TRAVIS_FOLD_COUNTER += 1"
+  travis_time_start moveit_ci.$TRAVIS_FOLD_COUNTER $command
 
-  my_travis_wait_impl $timeout "$@"
-}
-
-#######################################
-function my_travis_wait_impl() {
-  local timeout=$1
-  shift
-
-  local cmd="$@"
-  local log_file=my_travis_wait_$$.log
-
-  $cmd 2>&1 >$log_file &
+  # Disable bash's job control messages
+  set +m
+  # Run actual command in background
+  { $cmd & } 2> /dev/null
   local cmd_pid=$!
 
-  my_travis_jigger $! $timeout $cmd &
+  { my_travis_jigger $cmd_pid $timeout $cmd & } 2> /dev/null
   local jigger_pid=$!
   local result
 
   {
     wait $cmd_pid 2>/dev/null
     result=$?
+    # if process finished before jigger, stop the jigger too
     ps -p$jigger_pid 2>&1>/dev/null && kill $jigger_pid
-  } || return 1
+  }
 
-  echo -e "\nThe command \"$cmd\" exited with $result."
-  #echo -e "\n\033[32;1mLog:\033[0m\n"
-  cat $log_file
+  echo
+  travis_time_end
 
   return $result
 }
 
 #######################################
 function my_travis_jigger() {
-  # helper method for travis_wait()
   local cmd_pid=$1
   shift
-  local timeout=$1 # in minutes
+  local timeout=$1
   shift
   local count=0
 
-
-  # clear the line
-  echo -e "\n"
-
+  echo -n "Waiting for process to finish "
   while [ $count -lt $timeout ]; do
     count=$(($count + 1))
-    echo -ne "Still running ($count of $timeout min): $@\r"
-    sleep 60
+    echo -ne "."
+    sleep 60 # wait 60s
   done
 
   echo -e "\n\033[31;1mTimeout (${timeout} minutes) reached. Terminating \"$@\"\033[0m\n"
