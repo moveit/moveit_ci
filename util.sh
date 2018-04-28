@@ -131,11 +131,13 @@ function my_travis_wait() {
   local cmd="$@"
   echo -e "\e[34m$ $cmd\e[0m"
 
+  # Disable bash's job control messages
+  set +m
   # Run actual command in background
-  $cmd &
+  { $cmd & } 2> /dev/null
   local cmd_pid=$!
 
-  my_travis_jigger $cmd_pid $timeout $cmd &
+  { my_travis_jigger $cmd_pid $timeout $cmd & } 2> /dev/null
   local jigger_pid=$!
   local result
 
