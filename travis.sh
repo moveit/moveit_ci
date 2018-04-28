@@ -150,8 +150,8 @@ travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -D
 # Console output fix for: "WARNING: Could not encode unicode characters"
 export PYTHONIOENCODING=UTF-8
 
-# For a command that doesn’t produce output for more than 10 minutes, prefix it with my_travis_wait
-my_travis_wait 60 catkin build --no-status --summarize || exit 1
+# For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
+travis_run_wait 60 catkin build --no-status --summarize || exit 1
 
 travis_run ccache -s
 

@@ -117,7 +117,7 @@ function travis_run_true() {
 #######################################
 # Same as travis_run, but issue some output regularly to indicate that the process is still alive
 # from: https://github.com/travis-ci/travis-build/blob/d63c9e95d6a2dc51ef44d2a1d96d4d15f8640f22/lib/travis/build/script/templates/header.sh
-function my_travis_wait() {
+function travis_run_wait() {
   local timeout=$1 # in minutes
 
   if [[ $timeout =~ ^[0-9]+$ ]]; then
@@ -136,7 +136,7 @@ function my_travis_wait() {
   $cmd &
   local cmd_pid=$!
 
-  my_travis_jigger $cmd_pid $timeout $cmd &
+  travis_jigger $cmd_pid $timeout $cmd &
   local jigger_pid=$!
   local result
 
@@ -154,7 +154,7 @@ function my_travis_wait() {
 }
 
 #######################################
-function my_travis_jigger() {
+function travis_jigger() {
   local cmd_pid=$1
   shift
   local timeout=$1
