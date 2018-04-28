@@ -128,9 +128,9 @@ function my_travis_wait() {
     timeout=20
   fi
 
-  # Show command in console before running
-  local cmd="$@"
-  echo -e "\e[34m$ $cmd\e[0m"
+  local cmd=$@
+  let "TRAVIS_FOLD_COUNTER += 1"
+  travis_time_start moveit_ci.$TRAVIS_FOLD_COUNTER $cmd
 
   # Run actual command in background
   $cmd &
@@ -145,9 +145,11 @@ function my_travis_wait() {
     result=$?
     # if process finished before jigger, stop the jigger too
     ps -p$jigger_pid 2>&1>/dev/null && kill $jigger_pid
-  } || return 1
+  }
 
-  echo -e "\nThe command \"$cmd\" exited with $result."
+  echo
+  travis_time_end
+
   return $result
 }
 
