@@ -74,6 +74,12 @@ travis_run apt-get -qq update
 travis_run apt-get -qq install ccache
 export PATH=/usr/lib/ccache:$PATH
 
+# Install and run xvfb to allow for X11-based unittests on DISPLAY :99
+travis_run apt-get -qq install xvfb mesa-utils
+Xvfb -screen 0 640x480x24 :99 &
+export DISPLAY=:99.0
+travis_run_true glxinfo
+
 # Split for different tests
 for t in $TEST; do
     case "$t" in
