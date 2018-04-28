@@ -132,6 +132,8 @@ function travis_run_wait() {
   let "TRAVIS_FOLD_COUNTER += 1"
   travis_time_start moveit_ci.$TRAVIS_FOLD_COUNTER $cmd
 
+  # Disable bash's job control messages
+  set +m
   # Run actual command in background
   $cmd &
   local cmd_pid=$!
