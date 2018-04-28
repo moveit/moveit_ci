@@ -16,9 +16,9 @@ env:
     - ROS_DISTRO=kinetic ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall BEFORE_SCRIPT="echo 'testing'" TEST_BLACKLIST="moveit_core"
     - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall BEFORE_SCRIPT="echo 'testing'"
     - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall,https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall  # Duplicated tests over the same .rosinstall file for testing purpose only.
-matrix:
+
 before_script:
-  - mkdir .moveit_ci
-  - mv * .moveit_ci # pretend this was cloned
+  - ln -s . .moveit_ci # pretend to have the usual location
+
 script:
-  - source .moveit_ci/travis.sh # this is intended only for the repo moveit_ci, other repos should use the .travis.yml script in the README.md
+  - .moveit_ci/travis.sh
