@@ -33,11 +33,11 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #********************************************************************/
 
-# Author: Dave Coleman <dave@dav.ee>
+# Author: Dave Coleman <dave@dav.ee>, Robert Haschke
 # Desc: Utility functions used to make CI work better in Travis
 
 #######################################
-export TRAVIS_FOLD_COUNTER=1
+export TRAVIS_FOLD_COUNTER=0
 
 
 #######################################
@@ -51,7 +51,7 @@ function travis_time_start {
     TRAVIS_START_TIME=$(date +%s%N)
     TRAVIS_TIME_ID=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
     TRAVIS_FOLD_NAME=$1
-    COMMAND=${@:2} # all arguments except the first
+    local COMMAND=${@:2} # all arguments except the first
 
     # Start fold
     echo -e "\e[0Ktravis_fold:start:$TRAVIS_FOLD_NAME"
@@ -67,18 +67,20 @@ function travis_time_start {
 #######################################
 function travis_time_end {
     if [ -z $TRAVIS_START_TIME ]; then
-        echo '[travis_time_end] var TRAVIS_START_TIME is not set. You need to call `travis_time_start` in advance. Rerunning.';
+        echo '[travis_time_end] var TRAVIS_START_TIME is not set. You need to call `travis_time_start` in advance.';
         return;
     fi
-    TRAVIS_END_TIME=$(date +%s%N)
-    TIME_ELAPSED_SECONDS=$(( ($TRAVIS_END_TIME - $TRAVIS_START_TIME)/1000000000 ))
+    local TRAVIS_END_TIME=$(date +%s%N)
+    local TIME_ELAPSED_SECONDS=$(( ($TRAVIS_END_TIME - $TRAVIS_START_TIME)/1000000000 ))
 
     # Output Time
     echo -e "travis_time:end:$TRAVIS_TIME_ID:start=$TRAVIS_START_TIME,finish=$TRAVIS_END_TIME,duration=$(($TRAVIS_END_TIME - $TRAVIS_START_TIME))\e[0K"
     # End fold
     echo -e -n "travis_fold:end:$TRAVIS_FOLD_NAME\e[0m"
 
-    unset $TRAVIS_FOLD_NAME
+    unset TRAVIS_START_TIME
+    unset TRAVIS_TIME_ID
+    unset TRAVIS_FOLD_NAME
 }
 
 #######################################
@@ -87,30 +89,29 @@ function travis_time_end {
 # Arguments:
 #   command: action to run
 #######################################
-function travis_run() {
+function travis_run_impl() {
   local command=$@
 
-  #echo -e "\e[0Ktravis_fold:start:command$TRAVIS_FOLD_COUNTER \e[34m$ $command\e[0m"
-  travis_time_start moveit_ci$TRAVIS_FOLD_COUNTER $command
-  # actually run command
-  $command || exit 1 # kill build if error
-  travis_time_end moveit_ci$TRAVIS_FOLD_COUNTER
-  #echo -e -n "\e[0Ktravis_fold:end:command$TRAVIS_FOLD_COUNTER\e[0m"
-
   let "TRAVIS_FOLD_COUNTER += 1"
+  travis_time_start moveit_ci.$TRAVIS_FOLD_COUNTER $command
+  # actually run command
+  $command
+  result=$?
+  travis_time_end
+  return $result
 }
 
 #######################################
-# Same as travis_run except ignores errors and does not break build
+# Run a command and do folding and timing for it
+#   Return the exit status of the command
+function travis_run() {
+  travis_run_impl $@ || exit $?
+}
+
+#######################################
+# Same as travis_run but return 0 exit status, thus ignoring any error
 function travis_run_true() {
-  local command=$@
-
-  travis_time_start moveit_ci$TRAVIS_FOLD_COUNTER $command
-  # actually run command
-  $command # ignore errors
-  travis_time_end moveit_ci$TRAVIS_FOLD_COUNTER
-
-  let "TRAVIS_FOLD_COUNTER += 1"
+  travis_run_impl $@ || return 0
 }
 
 #######################################
