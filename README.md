@@ -25,25 +25,28 @@ sudo: required
 dist: trusty
 services:
   - docker
-language: generic
-compiler:
-  - gcc
+language: cpp
+compiler: gcc
+cache: ccache
+
 notifications:
   email:
     recipients:
       # - user@email.com
 env:
   matrix:
+    - ROS_DISTRO=kinetic  ROS_REPO=ros  TEST=clang-format
     - ROS_DISTRO=kinetic  ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
     - ROS_DISTRO=kinetic  ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
-    - TEST=clang-format
+
 matrix:
   allow_failures:
     - env: ROS_DISTRO=kinetic  ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
+
 before_script:
   - git clone -q https://github.com/ros-planning/moveit_ci.git .moveit_ci
 script:
-  - source .moveit_ci/travis.sh
+  - .moveit_ci/travis.sh
 ```
 
 ## Configurations
