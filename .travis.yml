@@ -13,9 +13,9 @@ notifications:
        - dave@dav.ee
 env:
   matrix:
-    - ROS_DISTRO=kinetic ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall BEFORE_SCRIPT="echo 'testing'" TEST_BLACKLIST="moveit_core"
-    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall BEFORE_SCRIPT="echo 'testing'"
-    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall,https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall  # Duplicated tests over the same .rosinstall file for testing purpose only.
+    - ROS_DISTRO=kinetic ROS_REPO=ros              UPSTREAM_WORKSPACE=travis.rosinstall BEFORE_SCRIPT="echo 'testing'" TEST_BLACKLIST="moveit_core"
+    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=travis.rosinstall BEFORE_SCRIPT="echo 'testing'"
+    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=travis.rosinstall,travis.rosinstall  # Duplicated .rosinstall file for testing purposes
 
 before_script:
   - ln -s . .moveit_ci
