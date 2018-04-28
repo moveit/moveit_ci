@@ -18,7 +18,6 @@ env:
     - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall,https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall  # Duplicated tests over the same .rosinstall file for testing purpose only.
 
 before_script:
-  - mkdir .moveit_ci
-  - mv * .moveit_ci # pretend this was cloned
+  - ln -s . .moveit_ci
 script:
-  - source .moveit_ci/travis.sh # this is intended only for the repo moveit_ci, other repos should use the .travis.yml script in the README.md
+  - ./travis.sh # this is intended only for the repo moveit_ci, other repos should use the .travis.yml script in the README.md
