@@ -70,10 +70,6 @@ echo "Inside Docker container"
 # Update the sources
 travis_run apt-get -qq update
 
-# Enable ccache
-travis_run apt-get -qq install ccache
-export PATH=/usr/lib/ccache:$PATH
-
 # Split for different tests
 for t in $TEST; do
     case "$t" in
@@ -83,6 +79,16 @@ for t in $TEST; do
         ;;
     esac
 done
+
+# Enable ccache
+travis_run apt-get -qq install ccache
+export PATH=/usr/lib/ccache:$PATH
+
+# Install and run xvfb to allow for X11-based unittests on DISPLAY :99
+travis_run apt-get -qq install xvfb mesa-utils
+Xvfb -screen 0 640x480x24 :99 &
+export DISPLAY=:99.0
+travis_run_true glxinfo
 
 # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
 travis_run rosdep update
@@ -150,8 +156,8 @@ travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -D
 # Console output fix for: "WARNING: Could not encode unicode characters"
 export PYTHONIOENCODING=UTF-8
 
-# For a command that doesn’t produce output for more than 10 minutes, prefix it with my_travis_wait
-my_travis_wait 60 catkin build --no-status --summarize || exit 1
+# For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
+travis_run_wait 60 catkin build --no-status --summarize || exit 1
 
 travis_run ccache -s
 
