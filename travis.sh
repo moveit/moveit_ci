@@ -21,16 +21,6 @@ echo "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'
 # Helper functions
 source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 
-# Split for different tests
-for t in $TEST; do
-    case "$t" in
-        "clang-format")
-            sudo bash ${CI_SOURCE_PATH}/$CI_PARENT_DIR/check_clang_format.sh || exit 1
-            exit 0 # This runs as an independent job, do not run regular travis test
-        ;;
-    esac
-done
-
 # Run all CI in a Docker container
 if ! [ "$IN_DOCKER" ]; then
 
@@ -79,6 +69,16 @@ echo "Inside Docker container"
 
 # Update the sources
 travis_run apt-get -qq update
+
+# Split for different tests
+for t in $TEST; do
+    case "$t" in
+        "clang-format")
+            source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/check_clang_format.sh || exit 1
+            exit 0 # This runs as an independent job, do not run regular travis test
+        ;;
+    esac
+done
 
 # Enable ccache
 travis_run apt-get -qq install ccache
