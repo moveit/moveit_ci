@@ -70,6 +70,9 @@ echo "Inside Docker container"
 # Update the sources
 travis_run apt-get -qq update
 
+# Make sure the packages are up-to-date
+travis_run apt-get -qq dist-upgrade
+
 # Split for different tests
 for t in $TEST; do
     case "$t" in
