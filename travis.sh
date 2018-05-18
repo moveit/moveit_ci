@@ -185,7 +185,12 @@ travis_run catkin build --no-status --summarize --make-args tests -- ${TEST_PKGS
 # Run non-catkin package tests
 travis_run catkin build --catkin-make-args run_tests -- --no-status --summarize ${TEST_PKGS[@]}
 
-# Show test results and throw error if necessary
+# Show failed tests
+for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
+    travis_run cat $file
+done
+
+# Show test results summary and throw error if necessary
 travis_run catkin_test_results
 
 echo "Travis script has finished successfully"
