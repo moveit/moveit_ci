@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eu
 
 # Software License Agreement - BSD License
 #
@@ -14,54 +14,109 @@ export CI_SOURCE_PATH=$(pwd) # The repository code in this pull request that we 
 export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.
 export HIT_ENDOFSCRIPT=false
 export REPOSITORY_NAME=${PWD##*/}
-export CATKIN_WS=/root/ws_moveit
+cd ..
+export CATKIN_WS=${PWD}/ws_moveit
 echo "---"
 echo "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'"
 
 # Helper functions
 source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 
+# Assign value if variable is unset or null to prevent strict mode error
+: "${IN_DOCKER:=0}"
+
 # Run all CI in a Docker container
-if ! [ "$IN_DOCKER" ]; then
+if [ "$IN_DOCKER" -eq 0 ]; then
 
-    # Choose the correct CI container to use
-    case "$ROS_REPO" in
-        ros-shadow-fixed)
-            export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed
-            ;;
-        *)
-            export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci
-            ;;
-    esac
-    echo "Starting Docker image: $DOCKER_IMAGE"
+  # Install wstool. Pipe to null to avoid a lot of noise and problems with pip
+  sudo -H pip install --upgrade pip  > /dev/null
+  sudo pip install -U wstool  > /dev/null
 
-    # Pull first to allow us to hide console output
-    docker pull $DOCKER_IMAGE > /dev/null
+  # Create workspace in root Travis environment where the SSH keys are easily accessible
+  travis_run mkdir -p $CATKIN_WS/src
+  travis_run cd $CATKIN_WS/src
 
-    # Start Docker container
-    docker run \
-        -e ROS_REPO \
-        -e ROS_DISTRO \
-        -e BEFORE_SCRIPT \
-        -e CI_PARENT_DIR \
-        -e CI_SOURCE_PATH \
-        -e UPSTREAM_WORKSPACE \
-        -e TRAVIS_BRANCH \
-        -e TEST \
-        -e TEST_BLACKLIST \
-        -v $(pwd):/root/$REPOSITORY_NAME \
-        -v $HOME/.ccache:/root/.ccache \
-        $DOCKER_IMAGE \
-        /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
-    return_value=$?
+  # Move repo we are testing into catkin ws
+  sudo mv $CI_SOURCE_PATH $CATKIN_WS/src
+  export CI_SOURCE_PATH="$CATKIN_WS/src/$REPOSITORY_NAME"
 
-    if [ $return_value -eq 0 ]; then
-        echo "$DOCKER_IMAGE container finished successfully"
-        HIT_ENDOFSCRIPT=true;
-        exit 0
-    fi
-    echo "$DOCKER_IMAGE container finished with errors"
-    exit 1 # error
+  # Install dependencies necessary to run build using .rosinstall files
+  if [ ! "$UPSTREAM_WORKSPACE" ]; then
+    export UPSTREAM_WORKSPACE="debian";
+  fi
+  case "$UPSTREAM_WORKSPACE" in
+    debian)
+      echo "Obtain deb binary for upstream packages."
+      ;;
+    http://* | https://*) # When UPSTREAM_WORKSPACE is an http url, use it directly
+      travis_run wstool init .
+      # Handle multiple rosintall entries.
+      IFS=','  # Multiple URLs can be given separated by comma.
+      for rosinstall in $UPSTREAM_WORKSPACE; do
+        travis_run wstool merge -k $rosinstall
+      done
+      ;;
+    *) # Otherwise assume UPSTREAM_WORKSPACE is a local file path
+      travis_run wstool init .
+
+      if [ -e $CI_SOURCE_PATH/$UPSTREAM_WORKSPACE ]; then
+        # install (maybe unreleased version) dependencies from source
+        travis_run wstool merge file://$CI_SOURCE_PATH/$UPSTREAM_WORKSPACE
+      else
+        echo "No rosinstall file found, aborting" && exit 1
+      fi
+      ;;
+  esac
+
+  # Download upstream packages into workspace
+  if [ -e .rosinstall ]; then
+    # ensure that the downstream is not in .rosinstall
+    # the exclamation mark means to ignore errors
+    travis_run_true wstool rm $REPOSITORY_NAME
+    cat .rosinstall
+    travis_run wstool update
+  fi
+
+  # Debug: see the files in current folder
+  travis_run ls -a
+
+  # Choose the correct CI container to use
+  case "$ROS_REPO" in
+    ros-shadow-fixed)
+      export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed
+      ;;
+    *)
+      export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci
+      ;;
+  esac
+  echo "Starting Docker image: $DOCKER_IMAGE"
+
+  # Pull first to allow us to hide console output
+  docker pull $DOCKER_IMAGE > /dev/null
+
+  # Start Docker container
+  docker run \
+         -e ROS_REPO \
+         -e ROS_DISTRO \
+         -e BEFORE_SCRIPT \
+         -e CI_PARENT_DIR \
+         -e CI_SOURCE_PATH \
+         -e TRAVIS_BRANCH \
+         -e TEST \
+         -e TEST_BLACKLIST \
+         -v $HOME/.ccache:/root/.ccache \
+         -v $CATKIN_WS:/root/ws_moveit \
+         $DOCKER_IMAGE \
+         /bin/bash -c "cd /root/ws_moveit/src/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
+  return_value=$?
+
+  if [ $return_value -eq 0 ]; then
+    echo "$DOCKER_IMAGE container finished successfully"
+    HIT_ENDOFSCRIPT=true;
+    exit 0
+  fi
+  echo "$DOCKER_IMAGE container finished with errors"
+  exit 1 # error
 fi
 
 # If we are here, we can assume we are inside a Docker container
@@ -83,7 +138,7 @@ for t in $TEST; do
     esac
 done
 
-# Enable ccache
+# Enable ccache for faster builds
 travis_run apt-get -qq install ccache
 export PATH=/usr/lib/ccache:$PATH
 
@@ -96,52 +151,6 @@ travis_run_true glxinfo
 # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
 travis_run rosdep update
 
-# Create workspace
-travis_run mkdir -p $CATKIN_WS/src
-travis_run cd $CATKIN_WS/src
-
-# Install dependencies necessary to run build using .rosinstall files
-if [ ! "$UPSTREAM_WORKSPACE" ]; then
-    export UPSTREAM_WORKSPACE="debian";
-fi
-case "$UPSTREAM_WORKSPACE" in
-    debian)
-        echo "Obtain deb binary for upstream packages."
-        ;;
-    http://* | https://*) # When UPSTREAM_WORKSPACE is an http url, use it directly
-        travis_run wstool init .
-        # Handle multiple rosintall entries.
-        IFS=','  # Multiple URLs can be given separated by comma.
-        for rosinstall in $UPSTREAM_WORKSPACE; do
-            travis_run wstool merge -k $rosinstall
-        done
-        ;;
-    *) # Otherwise assume UPSTREAM_WORKSPACE is a local file path
-        travis_run wstool init .
-        if [ -e $CI_SOURCE_PATH/$UPSTREAM_WORKSPACE ]; then
-            # install (maybe unreleased version) dependencies from source
-            travis_run wstool merge file://$CI_SOURCE_PATH/$UPSTREAM_WORKSPACE
-        else
-            echo "No rosinstall file found, aborting" && exit 1
-        fi
-        ;;
-esac
-
-# download upstream packages into workspace
-if [ -e .rosinstall ]; then
-    # ensure that the downstream is not in .rosinstall
-    # the exclamation mark means to ignore errors
-    travis_run_true wstool rm $REPOSITORY_NAME
-    travis_run cat .rosinstall
-    travis_run wstool update
-fi
-
-# link in the repo we are testing
-travis_run ln -s $CI_SOURCE_PATH .
-
-# Debug: see the files in current folder
-travis_run ls -a
-
 # Run before script
 if [ "${BEFORE_SCRIPT// }" != "" ]; then
     travis_run sh -c "${BEFORE_SCRIPT}";
@@ -151,7 +160,7 @@ fi
 travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
 # Change to base of workspace
-travis_run cd $CATKIN_WS
+travis_run cd ..
 
 # Configure catkin
 travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3"
