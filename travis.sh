@@ -160,7 +160,7 @@ travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -D
 export PYTHONIOENCODING=UTF-8
 
 # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-travis_run_wait 60 catkin build --no-status --summarize || exit 1
+travis_run_wait 60 catkin build --verbose --no-status --summarize || exit 1
 
 travis_run ccache -s
 
@@ -180,10 +180,10 @@ fi
 echo -e "Test packages: ${TEST_PKGS}"
 
 # Run catkin package tests
-travis_run catkin build --no-status --summarize --make-args tests -- ${TEST_PKGS[@]}
+travis_run catkin build --verbose --no-status --summarize --make-args tests -- ${TEST_PKGS[@]}
 
 # Run non-catkin package tests
-travis_run catkin build --catkin-make-args run_tests -- --no-status --summarize ${TEST_PKGS[@]}
+travis_run catkin build --verbose --catkin-make-args run_tests -- --no-status --summarize ${TEST_PKGS[@]}
 
 # Show test results and throw error if necessary
 travis_run catkin_test_results
