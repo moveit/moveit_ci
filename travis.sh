@@ -112,10 +112,12 @@ case "$UPSTREAM_WORKSPACE" in
     http://* | https://*) # When UPSTREAM_WORKSPACE is an http url, use it directly
         travis_run wstool init .
         # Handle multiple rosintall entries.
-        IFS=','  # Multiple URLs can be given separated by comma.
-        for rosinstall in $UPSTREAM_WORKSPACE; do
-            travis_run wstool merge -k $rosinstall
-        done
+        (  # parentheses ensure that IFS is automatically reset
+            IFS=','  # Multiple URLs can be given separated by comma.
+            for rosinstall in $UPSTREAM_WORKSPACE; do
+                travis_run wstool merge -k $rosinstall
+            done
+        )
         ;;
     *) # Otherwise assume UPSTREAM_WORKSPACE is a local file path
         travis_run wstool init .
