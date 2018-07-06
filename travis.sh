@@ -51,6 +51,7 @@ if ! [ "$IN_DOCKER" ]; then
         -e TEST_BLACKLIST \
         -v $(pwd):/root/$REPOSITORY_NAME \
         -v $HOME/.ccache:/root/.ccache \
+        -t \ # use pseudo-tty
         $DOCKER_IMAGE \
         /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
     return_value=$?
