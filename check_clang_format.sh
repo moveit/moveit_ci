@@ -1,5 +1,5 @@
 # Install Dependencies
-travis_run apt-get -qq install -y clang-format-3.8
+travis_run apt-get -qq install -y clang-format-3.9
 
 # Change to source directory.
 travis_run cd $CI_SOURCE_PATH
@@ -12,7 +12,7 @@ fi
 
 # Run clang-format
 echo "Running clang-format"
-find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format-3.8 -i -style=file
+find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format-3.9 -i -style=file
 
 echo "Showing changes in code style:"
 git --no-pager diff
