@@ -49,6 +49,8 @@ if ! [ "$IN_DOCKER" ]; then
         -e TRAVIS_BRANCH \
         -e TEST \
         -e TEST_BLACKLIST \
+        -e CC \
+        -e CXX \
         -v $(pwd):/root/$REPOSITORY_NAME \
         -v $HOME/.ccache:/root/.ccache \
         -t \
@@ -67,6 +69,11 @@ fi
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
+
+# Define CC/CXX defaults and print compiler version info
+export CC=${CC:-cc}
+export CXX=${CXX:-c++}
+$CXX --version
 
 # Update the sources
 travis_run apt-get -qq update
