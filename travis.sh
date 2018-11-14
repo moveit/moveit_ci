@@ -51,6 +51,8 @@ if ! [ "$IN_DOCKER" ]; then
         -e TEST_BLACKLIST \
         -e CC \
         -e CXX \
+        -e CFLAGS \
+        -e CXXFLAGS \
         -v $(pwd):/root/$REPOSITORY_NAME \
         -v $HOME/.ccache:/root/.ccache \
         -t \
