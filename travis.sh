@@ -40,6 +40,7 @@ if ! [ "$IN_DOCKER" ]; then
 
     # Start Docker container
     docker run \
+        -e TRAVIS \
         -e ROS_REPO \
         -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
