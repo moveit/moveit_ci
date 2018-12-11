@@ -4,18 +4,24 @@ sudo: required
 dist: trusty
 services:
   - docker
-language: generic
-compiler:
-  - gcc
+language: cpp
+cache: ccache
+compiler: gcc
+
 notifications:
   email:
     recipients:
        - dave@dav.ee
 env:
   matrix:
+    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-format
     - ROS_DISTRO=kinetic ROS_REPO=ros              UPSTREAM_WORKSPACE=travis.rosinstall BEFORE_SCRIPT="echo 'testing'" TEST_BLACKLIST="moveit_core"
     - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=travis.rosinstall BEFORE_SCRIPT="echo 'testing'"
-    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall,https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall # Duplicated .rosinstall file for testing purposes
+    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed
+      TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
+      UPSTREAM_WORKSPACE="https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall,
+                          https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall"
+                          # Duplicated rosinstall file for testing purposes
 
 before_script:
   - ln -s . .moveit_ci # pretend to have the usual location
