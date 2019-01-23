@@ -23,6 +23,10 @@ source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 
 # Run all CI in a Docker container
 if ! [ "$IN_DOCKER" ]; then
+    # Run BEFORE_DOCKER_SCRIPT
+    if [ "${BEFORE_DOCKER_SCRIPT// }" != "" ]; then
+        travis_run sh -c "${BEFORE_DOCKER_SCRIPT}"
+    fi
 
     # Choose the correct CI container to use
     case "$ROS_REPO" in
@@ -156,7 +160,7 @@ travis_run ln -s $CI_SOURCE_PATH .
 # Debug: see the files in current folder
 travis_run ls -a
 
-# Run before script
+# Run BEFORE_SCRIPT
 if [ "${BEFORE_SCRIPT// }" != "" ]; then
     travis_run sh -c "${BEFORE_SCRIPT}";
 fi
