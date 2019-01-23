@@ -87,10 +87,26 @@ travis_run apt-get -qq dist-upgrade
 # Split for different tests
 for t in $TEST; do
     case "$t" in
-        "clang-format")
+        clang-format)
             source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/check_clang_format.sh || exit 1
             exit 0 # This runs as an independent job, do not run regular travis test
-        ;;
+            ;;
+        clang-tidy-check)  # run clang-tidy along with compiler and report warning
+            # Install clang-tidy
+            travis_run apt-get -qq install -y clang-tidy
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy"
+            ;;
+        clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
+            # Install clang-tidy
+            travis_run apt-get -qq install -y clang-tidy
+            # run-clang-tidy is part of clang-tools in Bionic
+            travis_run_true apt-get -qq install -y clang-tools
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ;;
+        *)
+            echo "Unknown TEST: $t"
+            exit 1
+            ;;
     esac
 done
 
@@ -168,7 +184,7 @@ travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_
 travis_run cd $CATKIN_WS
 
 # Configure catkin
-travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3"
+travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3" $CMAKE_ARGS --
 
 # Console output fix for: "WARNING: Could not encode unicode characters"
 export PYTHONIOENCODING=UTF-8
@@ -206,6 +222,13 @@ done
 
 # Show test results summary and throw error if necessary
 travis_run catkin_test_results
+
+# Run clang-tidy-fix check
+case "$TEST" in
+    *clang-tidy-fix*)
+        source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/check_clang_tidy.sh || exit 1
+        ;;
+esac
 
 echo "Travis script has finished successfully"
 HIT_ENDOFSCRIPT=true

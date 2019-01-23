@@ -66,7 +66,14 @@ More configurations as seen in [industrial_ci](https://github.com/ros-industrial
 
 ## Clang-Format
 
-A new test is available that checks if the code is properly formatted as specified in the clang-format file found in ``.clang-format``. Use ``TEST=clang-format`` to enable this test.
+Clang-format allows to validate that the source code is properly formatted according to a specification provided in ``.clang-format`` files in the folder hierarchy.
+Use ``TEST=clang-format`` to enable this test.
+
+## Clang-Tidy
+
+Clang-tidy allows for static code analysis and validation of naming rules.
+Use ``TEST=clang-tidy-check`` to enable clang-tidy analysis, but only issuing warnings.
+Use ``TEST=clang-tidy-fix`` to reject code that doesn't comply to the rules.
 
 ## Running Locally For Testing
 
