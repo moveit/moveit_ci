@@ -163,11 +163,10 @@ function travis_jigger() {
   shift
   local count=0
 
-  echo -n "Waiting for process to finish "
   while [ $count -lt $timeout ]; do
     count=$(($count + 1))
-    echo -ne "."
     sleep 60 # wait 60s
+    echo -ne "."
   done
 
   echo -e "\n\033[31;1mTimeout (${timeout} minutes) reached. Terminating \"$@\"\033[0m\n"
