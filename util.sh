@@ -138,16 +138,16 @@ function travis_run_wait() {
   eval $commands &
   local cmd_pid=$!
 
+  # Start jigger process, taking care of the timeout and '.' outputs
   travis_jigger $cmd_pid $timeout $commands &
   local jigger_pid=$!
-  local result
 
-  {
-    wait $cmd_pid 2>/dev/null
-    result=$?
-    # if process finished before jigger, stop the jigger too
-    ps -p$jigger_pid 2>&1>/dev/null && kill $jigger_pid
-  }
+  # Wait for main command to finish
+  wait $cmd_pid 2>/dev/null
+  local result=$?
+  # If main process finished before jigger, stop the jigger too
+  # https://stackoverflow.com/questions/81520/how-to-suppress-terminated-message-after-killing-in-bash
+  kill $jigger_pid 2> /dev/null && wait $! 2> /dev/null
 
   echo
   travis_time_end
