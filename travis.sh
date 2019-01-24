@@ -25,7 +25,7 @@ source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
 if ! [ "$IN_DOCKER" ]; then
     # Run BEFORE_DOCKER_SCRIPT
     if [ "${BEFORE_DOCKER_SCRIPT// }" != "" ]; then
-        travis_run sh -c "${BEFORE_DOCKER_SCRIPT}"
+        travis_run $BEFORE_DOCKER_SCRIPT
     fi
 
     # Choose the correct CI container to use
@@ -178,7 +178,7 @@ travis_run ls -a
 
 # Run BEFORE_SCRIPT
 if [ "${BEFORE_SCRIPT// }" != "" ]; then
-    travis_run sh -c "${BEFORE_SCRIPT}";
+    travis_run $BEFORE_SCRIPT
 fi
 
 # Install source-based package dependencies

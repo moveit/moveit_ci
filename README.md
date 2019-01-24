@@ -53,8 +53,8 @@ script:
 
 - ROS_DISTRO: (required) which version of ROS i.e. kinetic
 - ROS_REPO: (default: ros-shadow-fixed) install ROS debians from either regular release or from shadow-fixed, i.e. http://packages.ros.org/ros-shadow-fixed/ubuntu
-- BEFORE_DOCKER_SCRIPT: (default: not set): Used to specify a shell command or script that runs before starting the docker container. This is similar to Travis' before_script section, but having a variable allows to selectively switch scripts within the testing matrix.
-- BEFORE_SCRIPT: (default: not set): Used to specify a shell command or script that runs in docker before building packages. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
+- BEFORE_DOCKER_SCRIPT: (default: not set): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' before_script section, but having a variable allows to selectively switch scripts within the testing matrix.
+- BEFORE_SCRIPT: (default: not set): Used to specify shell commands or scripts that run in docker before building packages. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
 - UPSTREAM_WORKSPACE (default: debian): When set as "file", the dependended packages that need to be built from source are downloaded based on a .rosinstall file in your repository. When set to a "http" URL, this downloads the rosinstall configuration from an http location. Multiple http entries can be given by separating each by comma, but the order of the entries matters -- if there's same resource defined in multiple entries, the one that appears the first is used.
 - TEST_BLACKLIST: Allow certain tests to be skipped if necessary (not recommended)
 - TEST: allow other tests to be run, such as code format checking using clang-format

@@ -90,12 +90,12 @@ function travis_time_end {
 #   command: action to run
 #######################################
 function travis_run_impl() {
-  local command=$@
+  local commands=$@
 
   let "TRAVIS_FOLD_COUNTER += 1"
-  travis_time_start moveit_ci.$TRAVIS_FOLD_COUNTER $command
-  # actually run command
-  $command
+  travis_time_start moveit_ci.$TRAVIS_FOLD_COUNTER $commands
+  # actually run commands, eval needed to handle multiple commands!
+  eval $commands
   result=$?
   travis_time_end
   return $result
@@ -128,17 +128,17 @@ function travis_run_wait() {
     timeout=20
   fi
 
-  local cmd=$@
+  local commands=$@
   let "TRAVIS_FOLD_COUNTER += 1"
-  travis_time_start moveit_ci.$TRAVIS_FOLD_COUNTER $cmd
+  travis_time_start moveit_ci.$TRAVIS_FOLD_COUNTER $commands
 
   # Disable bash's job control messages
   set +m
-  # Run actual command in background
-  $cmd &
+  # actually run commands, eval needed to handle multiple commands!
+  eval $commands &
   local cmd_pid=$!
 
-  travis_jigger $cmd_pid $timeout $cmd &
+  travis_jigger $cmd_pid $timeout $commands &
   local jigger_pid=$!
   local result
 

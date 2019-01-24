@@ -22,9 +22,10 @@ env:
     - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-tidy-check                UPSTREAM_WORKSPACE=clang-tidy.rosinstall
     - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-tidy-fix                  UPSTREAM_WORKSPACE=clang-tidy.rosinstall
 
-    - ROS_DISTRO=kinetic ROS_REPO=ros              UPSTREAM_WORKSPACE=travis.rosinstall BEFORE_SCRIPT="echo 'testing'" TEST_BLACKLIST="moveit_core"
-    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed UPSTREAM_WORKSPACE=travis.rosinstall BEFORE_SCRIPT="echo 'testing'"
-    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed
+    # Test BEFORE_SCRIPT and ros vs. ros-shadow-fixed
+    - ROS_DISTRO=kinetic ROS_REPO=ros              BEFORE_SCRIPT="echo first && false; echo second > /dev/null; echo Testing on $ROS_DISTRO"
+    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed BEFORE_SCRIPT="wget -nv www.google.com"
+
       TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
       UPSTREAM_WORKSPACE="https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall,
                           https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall"
