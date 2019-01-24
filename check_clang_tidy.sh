@@ -3,7 +3,7 @@ pushd $CI_SOURCE_PATH
 
 # This directory can have its own .clang-tidy config file but if not, MoveIt's will be provided
 if [ ! -f .clang-tidy ]; then
-    wget "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy"
+    travis_run wget -nv "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy"
 fi
 
 # Find run-clang-tidy script: Xenial and Bionic install them with different names

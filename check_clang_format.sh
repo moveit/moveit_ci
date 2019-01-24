@@ -7,7 +7,7 @@ travis_run ls -la
 
 # This directory can have its own .clang-format config file but if not, MoveIt's will be provided
 if [ ! -f .clang-format ]; then
-    wget "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-format"
+    travis_run wget -nv "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-format"
 fi
 
 # Run clang-format
