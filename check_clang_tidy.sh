@@ -5,22 +5,27 @@ pushd $CI_SOURCE_PATH > /dev/null
 export RUN_CLANG_TIDY=$(ls -1 /usr/bin/run-clang-tidy* | head -1)
 
 
-# Run clang-tidy in all build folders containing a compile_commands.json file
-# Pipe the very verbose output of clang-tidy to /dev/null
-# Use travis_jigger to generate some '.' outputs to convince Travis, we are not stuck.
+# Run clang-tidy for all packages in CI_SOURCE_PATH
+SOURCE_PKGS=" $(catkin_topological_order $CI_SOURCE_PATH --only-names) "
+
 echo -e "\033[33;1mRunning clang-tidy check\033[0m"
 COUNTER=0
 (
-	for file in $(find $CATKIN_WS/build -name compile_commands.json) ; do
-		let "COUNTER += 1"
-		travis_time_start clang-tidy.$COUNTER "Processing $(basename $(dirname $file))"
-		$RUN_CLANG_TIDY -fix -p $(dirname $file) > /dev/null 2>&1
-		travis_time_end
-	done
+    for file in $(find $CATKIN_WS/build -name compile_commands.json) ; do
+        # skip an external package
+        PKG=$(basename $(dirname $file))
+        [[ "$SOURCE_PKGS" =~ (^|[[:space:]])$PKG($|[[:space:]]) ]] && continue
+
+        let "COUNTER += 1"
+        travis_time_start clang-tidy.$COUNTER "Processing $PKG"
+        # Pipe the very verbose output of clang-tidy to /dev/null
+        $RUN_CLANG_TIDY -fix -p $(dirname $file) > /dev/null 2>&1
+        travis_time_end
+    done
 ) &
 cmd_pid=$!  # main cmd PID
 
-# Start jigger process, taking care of the timeout and '.' outputs
+# Use travis_jigger to generate some '.' outputs to convince Travis, we are not stuck.
 travis_jigger $cmd_pid 10 "clang-tidy" &
 jigger_pid=$!
 

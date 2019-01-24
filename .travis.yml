@@ -14,20 +14,18 @@ notifications:
        - dave@dav.ee
 env:
   matrix:
-    - ROS_DISTRO=melodic ROS_REPO=ros              TEST=clang-format                    UPSTREAM_WORKSPACE=travis.rosinstall
-    - ROS_DISTRO=melodic ROS_REPO=ros              TEST=clang-tidy-check                UPSTREAM_WORKSPACE=travis.rosinstall
-    - ROS_DISTRO=melodic ROS_REPO=ros              TEST=clang-tidy-fix                  UPSTREAM_WORKSPACE=travis.rosinstall
+    - ROS_DISTRO=melodic ROS_REPO=ros   TEST=clang-format                        UPSTREAM_WORKSPACE=travis.rosinstall
+    - ROS_DISTRO=melodic ROS_REPO=ros   TEST="clang-tidy-check clang-tidy-fix"   UPSTREAM_WORKSPACE=travis.rosinstall
 
-    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-format                    UPSTREAM_WORKSPACE=travis.rosinstall
-    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-tidy-check                UPSTREAM_WORKSPACE=travis.rosinstall
-    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-tidy-fix                  UPSTREAM_WORKSPACE=travis.rosinstall
+    - ROS_DISTRO=kinetic ROS_REPO=ros   TEST=clang-format                        UPSTREAM_WORKSPACE=travis.rosinstall
+    - ROS_DISTRO=kinetic ROS_REPO=ros   TEST="clang-tidy-check clang-tidy-fix"   UPSTREAM_WORKSPACE=travis.rosinstall
 
     # Test BEFORE_SCRIPT and ros vs. ros-shadow-fixed
     - ROS_DISTRO=kinetic ROS_REPO=ros              BEFORE_SCRIPT="echo first && false; echo second > /dev/null; echo Testing on $ROS_DISTRO"
-    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed BEFORE_SCRIPT="wget -nv www.google.com"
+    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed BEFORE_DOCKER_SCRIPT="wget -nv www.google.com; exit 0"
 
     # Build MoveIt repo
-    - ROS_DISTRO=melodic ROS_REPO=ros-shadow-fixed TEST="clang-tidy-check clang-tidy-fix"
+    - ROS_DISTRO=melodic ROS_REPO=ros-shadow-fixed TEST=clang-tidy-fix
       TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
       UPSTREAM_WORKSPACE="https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall,
                           https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall"
