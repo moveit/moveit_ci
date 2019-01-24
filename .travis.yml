@@ -26,9 +26,11 @@ env:
     - ROS_DISTRO=kinetic ROS_REPO=ros              BEFORE_SCRIPT="echo first && false; echo second > /dev/null; echo Testing on $ROS_DISTRO"
     - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed BEFORE_SCRIPT="wget -nv www.google.com"
 
+    # Build MoveIt repo
+    - ROS_DISTRO=melodic ROS_REPO=ros-shadow-fixed TEST="clang-tidy-check clang-tidy-fix"
       TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
-      UPSTREAM_WORKSPACE="https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall,
-                          https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall"
+      UPSTREAM_WORKSPACE="https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall,
+                          https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall"
                           # Duplicated rosinstall file for testing purposes
 
 before_script:

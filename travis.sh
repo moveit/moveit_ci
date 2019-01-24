@@ -113,6 +113,12 @@ for t in $TEST; do
             ;;
     esac
 done
+if [[ "$TEST" == *clang-tidy* ]] ; then
+    # Provide a default .clang-tidy config file from MoveIt as a fallback for the whole workspace
+    # Files within specific package repositories take precedence of this.
+    travis_run wget -nv https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy -O $CATKIN_WS/.clang-tidy
+    travis_run cat $CATKIN_WS/.clang-tidy
+fi
 
 # Enable ccache
 travis_run apt-get -qq install ccache
