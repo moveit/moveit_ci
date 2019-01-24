@@ -13,6 +13,8 @@ export RUN_CLANG_TIDY=$(ls -1 /usr/bin/run-clang-tidy* | head -1)
 # Pipe the very verbose output of clang-tidy to /dev/null
 echo "Running clang-tidy"
 
+ls $CATKIN_WS/build
+find $CATKIN_WS/build -name compile_commands.json
 travis_run_wait 60 find $CATKIN_WS/build -name compile_commands.json -exec \
     sh -c 'echo "Processing $(basename $(dirname {}))"; $RUN_CLANG_TIDY -fix -format -p $(dirname {}) > /dev/null 2>&1' \;
 
