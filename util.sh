@@ -86,8 +86,8 @@ function travis_time_end {
 #######################################
 # Display command in Travis console and fold output in dropdown section
 #
-# Arguments:
-#   command: action to run
+# Arguments: commands to run
+# Return: exit status of the command
 #######################################
 function travis_run_impl() {
   local commands=$@
@@ -102,16 +102,15 @@ function travis_run_impl() {
 }
 
 #######################################
-# Run a command and do folding and timing for it
-#   Return the exit status of the command
+# Run passed commands and exit if the last one fails
 function travis_run() {
   travis_run_impl $@ || exit $?
 }
 
 #######################################
-# Same as travis_run but return 0 exit status, thus ignoring any error
+# Same as travis_run but ignore any error
 function travis_run_true() {
-  travis_run_impl $@ || return 0
+  travis_run_impl $@ || true
 }
 
 #######################################
@@ -152,7 +151,7 @@ function travis_run_wait() {
   echo
   travis_time_end
 
-  return $result
+  test $result -eq 0 || exit $result
 }
 
 #######################################
