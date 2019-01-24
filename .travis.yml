@@ -14,13 +14,13 @@ notifications:
        - dave@dav.ee
 env:
   matrix:
-    - ROS_DISTRO=melodic ROS_REPO=ros              TEST=clang-format
-    - ROS_DISTRO=melodic ROS_REPO=ros              TEST=clang-tidy-check                UPSTREAM_WORKSPACE=clang-tidy.rosinstall
-    - ROS_DISTRO=melodic ROS_REPO=ros              TEST=clang-tidy-fix                  UPSTREAM_WORKSPACE=clang-tidy.rosinstall
+    - ROS_DISTRO=melodic ROS_REPO=ros              TEST=clang-format                    UPSTREAM_WORKSPACE=travis.rosinstall
+    - ROS_DISTRO=melodic ROS_REPO=ros              TEST=clang-tidy-check                UPSTREAM_WORKSPACE=travis.rosinstall
+    - ROS_DISTRO=melodic ROS_REPO=ros              TEST=clang-tidy-fix                  UPSTREAM_WORKSPACE=travis.rosinstall
 
-    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-format
-    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-tidy-check                UPSTREAM_WORKSPACE=clang-tidy.rosinstall
-    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-tidy-fix                  UPSTREAM_WORKSPACE=clang-tidy.rosinstall
+    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-format                    UPSTREAM_WORKSPACE=travis.rosinstall
+    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-tidy-check                UPSTREAM_WORKSPACE=travis.rosinstall
+    - ROS_DISTRO=kinetic ROS_REPO=ros              TEST=clang-tidy-fix                  UPSTREAM_WORKSPACE=travis.rosinstall
 
     # Test BEFORE_SCRIPT and ros vs. ros-shadow-fixed
     - ROS_DISTRO=kinetic ROS_REPO=ros              BEFORE_SCRIPT="echo first && false; echo second > /dev/null; echo Testing on $ROS_DISTRO"
