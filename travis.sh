@@ -12,11 +12,10 @@
 
 export CI_SOURCE_PATH=$(pwd) # The repository code in this pull request that we are testing
 export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.
-export HIT_ENDOFSCRIPT=false
 export REPOSITORY_NAME=${PWD##*/}
 export CATKIN_WS=/root/ws_moveit
 echo "---"
-echo "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'"
+echo "\033[33;1mTesting branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'\033[0m"
 
 # Helper functions
 source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
@@ -66,12 +65,11 @@ if ! [ "$IN_DOCKER" ]; then
     return_value=$?
 
     if [ $return_value -eq 0 ]; then
-        echo "$DOCKER_IMAGE container finished successfully"
-        HIT_ENDOFSCRIPT=true;
-        exit 0
+        echo -e "\033[32;1mTravis script finished successfully\033[0m"
+    else
+        echo -e "\033[31;1mTravis script finished with errors\033[0m"
     fi
-    echo "$DOCKER_IMAGE container finished with errors"
-    exit 1 # error
+    exit $return_value
 fi
 
 # If we are here, we can assume we are inside a Docker container
@@ -143,7 +141,7 @@ if [ ! "$UPSTREAM_WORKSPACE" ]; then
 fi
 case "$UPSTREAM_WORKSPACE" in
     debian)
-        echo "Obtain deb binary for upstream packages."
+        echo "Obtaining debian packages for all upstream dependencies."
         ;;
     http://* | https://*) # When UPSTREAM_WORKSPACE is an http url, use it directly
         travis_run wstool init .
@@ -161,7 +159,8 @@ case "$UPSTREAM_WORKSPACE" in
             # install (maybe unreleased version) dependencies from source
             travis_run wstool merge file://$CI_SOURCE_PATH/$UPSTREAM_WORKSPACE
         else
-            echo "No rosinstall file found, aborting" && exit 1
+            echo "Didn't find rosinstall file: $CI_SOURCE_PATH/$UPSTREAM_WORKSPACE. Aborting"
+            exit 1
         fi
         ;;
 esac
@@ -193,6 +192,7 @@ travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_
 # Change to base of workspace
 travis_run cd $CATKIN_WS
 
+echo -e "\033[33;1mBuilding Workspace\033[0m"
 # Configure catkin
 travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3" $CMAKE_ARGS --
 
@@ -208,30 +208,32 @@ travis_run ccache -s
 travis_run source install/setup.bash;
 
 # Choose which packages to run tests on
+echo -e "\033[33;1mTesting Workspace\033[0m"
 echo "Test blacklist: $TEST_BLACKLIST"
-echo "--------------"
-TEST_PKGS=$(catkin_topological_order $CATKIN_WS/src --only-names | grep -Fvxf <(echo "$TEST_BLACKLIST" | tr ' ;,' '\n') | tr '\n' ' ')
+TEST_PKGS=$(catkin_topological_order $CATKIN_WS/src --only-names 2> /dev/null | grep -Fvxf <(echo "$TEST_BLACKLIST" | tr ' ;,' '\n') | tr '\n' ' ')
 
 if [ -n "$TEST_PKGS" ]; then
-    TEST_PKGS="--no-deps $TEST_PKGS";
     # Fix formatting of list of packages to work correctly with Travis
     IFS=' ' read -r -a TEST_PKGS <<< "$TEST_PKGS"
+    echo "Test packages: ${TEST_PKGS[@]}"
+    TEST_PKGS="--no-deps ${TEST_PKGS[@]}"
+
+    # Run catkin package tests
+    travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
+
+    # Run non-catkin package tests
+    travis_run catkin build --catkin-make-args run_tests -- --no-status --summarize $TEST_PKGS
+
+    # Show failed tests
+    for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
+        travis_run cat $file
+    done
+
+    # Show test results summary and throw error if necessary
+    travis_run catkin_test_results
+else
+    echo "No packages to test."
 fi
-echo -e "Test packages: ${TEST_PKGS}"
-
-# Run catkin package tests
-travis_run catkin build --no-status --summarize --make-args tests -- ${TEST_PKGS[@]}
-
-# Run non-catkin package tests
-travis_run catkin build --catkin-make-args run_tests -- --no-status --summarize ${TEST_PKGS[@]}
-
-# Show failed tests
-for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
-    travis_run cat $file
-done
-
-# Show test results summary and throw error if necessary
-travis_run catkin_test_results
 
 # Run clang-tidy-fix check
 case "$TEST" in
@@ -239,7 +241,3 @@ case "$TEST" in
         source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/check_clang_tidy.sh || exit 1
         ;;
 esac
-
-echo "Travis script has finished successfully"
-HIT_ENDOFSCRIPT=true
-exit 0
