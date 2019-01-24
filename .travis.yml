@@ -34,7 +34,8 @@ env:
                           # Duplicated rosinstall file for testing purposes
 
 before_script:
-  - ln -s . .moveit_ci # pretend to have the usual location
+  - ln -s . .moveit_ci  # pretend to have the usual location
+  - ./unittest.sh  # unittests for travis' utility functions
 
 script:
   - .moveit_ci/travis.sh
