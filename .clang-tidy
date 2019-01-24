@@ -1,0 +1,17 @@
+---
+Checks:          '-*,
+                  clang-analyzer-*,
+                  performance-*,
+                  modernize-redundant-void-arg,
+                  modernize-use-nullptr,
+                  modernize-use-default,
+                  modernize-use-override,
+                  readability-named-parameter,
+                  readability-redundant-smartptr-get,
+                  readability-redundant-string-cstr,
+                  readability-simplify-boolean-expr,
+                  readability-container-size-empty,
+                  '
+HeaderFilterRegex: ''
+AnalyzeTemporaryDtors: false
+...

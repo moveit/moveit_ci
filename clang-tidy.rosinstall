@@ -1,0 +1,5 @@
+# This file is intended for testing clang-tidy in moveit_ci on travis
+- git:
+    local-name: geometric_shapes
+    uri: https://github.com/ros-planning/geometric_shapes.git
+    version: melodic-devel
