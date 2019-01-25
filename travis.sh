@@ -219,10 +219,10 @@ if [ -n "$TEST_PKGS" ]; then
     TEST_PKGS="--no-deps ${TEST_PKGS[@]}"
 
     # Run catkin package tests
-    travis_run catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
+    travis_run_wait catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
 
     # Run non-catkin package tests
-    travis_run catkin build --catkin-make-args run_tests -- --no-status --summarize $TEST_PKGS
+    travis_run_wait catkin build --catkin-make-args run_tests -- --no-status --summarize $TEST_PKGS
 
     # Show failed tests
     for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
