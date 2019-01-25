@@ -25,8 +25,9 @@ COUNTER=0
 ) &
 cmd_pid=$!  # main cmd PID
 
+timeout=$(( $TRAVIS_GLOBAL_TIMEOUT - ($(date +%s) - $TRAVIS_GLOBAL_START_TIME) / 60 ))
 # Use travis_jigger to generate some '.' outputs to convince Travis, we are not stuck.
-travis_jigger $cmd_pid 10 "clang-tidy" &
+travis_jigger $cmd_pid $timeout "clang-tidy" &
 jigger_pid=$!
 
 # Wait for main command to finish

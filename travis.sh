@@ -14,6 +14,8 @@ export CI_SOURCE_PATH=$(pwd) # The repository code in this pull request that we 
 export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.
 export REPOSITORY_NAME=${PWD##*/}
 export CATKIN_WS=/root/ws_moveit
+export TRAVIS_GLOBAL_TIMEOUT=45  # 50min minus slack
+export TRAVIS_GLOBAL_START_TIME=$(date +%s)
 echo "---"
 echo "\033[33;1mTesting branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'\033[0m"
 

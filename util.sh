@@ -38,6 +38,8 @@
 
 #######################################
 export TRAVIS_FOLD_COUNTER=0
+TRAVIS_GLOBAL_TIMEOUT=${TRAVIS_GLOBAL_TIMEOUT:-49}  # 50min minus slack
+TRAVIS_GLOBAL_START_TIME=${TRAVIS_GLOBAL_START_TIME:-$(date +%s)}
 
 
 #######################################
@@ -71,7 +73,6 @@ function travis_time_end {
         return;
     fi
     local TRAVIS_END_TIME=$(date +%s%N)
-    local TIME_ELAPSED_SECONDS=$(( ($TRAVIS_END_TIME - $TRAVIS_START_TIME)/1000000000 ))
 
     # Output Time
     echo -e "travis_time:end:$TRAVIS_TIME_ID:start=$TRAVIS_START_TIME,finish=$TRAVIS_END_TIME,duration=$(($TRAVIS_END_TIME - $TRAVIS_START_TIME))\e[0K"
@@ -126,6 +127,9 @@ function travis_run_wait() {
     # default value
     timeout=20
   fi
+  # limit to remaining time
+  local remaining=$(( $TRAVIS_GLOBAL_TIMEOUT - ($(date +%s) - $TRAVIS_GLOBAL_START_TIME) / 60 ))
+  if [ $remaining -le $timeout ] ; then timeout=$remaining; fi
 
   local commands=$@
   let "TRAVIS_FOLD_COUNTER += 1"
@@ -169,5 +173,6 @@ function travis_jigger() {
   done
 
   echo -e "\n\033[31;1mTimeout (${timeout} minutes) reached. Terminating \"$@\"\033[0m\n"
+  echo -e "\033[33;1mTry again. Having saved cache results, Travis will probably succeed next time.\033[0m\n"
   kill -9 $cmd_pid
 }
