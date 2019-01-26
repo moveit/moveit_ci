@@ -9,12 +9,10 @@
 #
 # Author:  Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 
-# Note: ROS_REPOSITORY_PATH is no longer a valid option, use ROS_REPO. See README.md
-
-export CI_SOURCE_PATH=$(pwd) # The repository code in this pull request that we are testing
 export MOVEIT_CI_DIR=$(dirname $0)  # path to the directory running the current script
-export REPOSITORY_NAME=${PWD##*/}
-export CATKIN_WS=/root/ws_moveit
+export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
+export CATKIN_WS=${CATKIN_WS:-/root/ws_moveit} # location of catkin workspace
+
 # Travis' default timeout for open source projects is 50 mins
 # If your project has a larger timeout, specify this variable in your .travis.yml file!
 MOVEIT_CI_TRAVIS_TIMEOUT=${MOVEIT_CI_TRAVIS_TIMEOUT:-47}  # 50min minus safety margin
@@ -52,7 +50,7 @@ if ! [ "$IN_DOCKER" ]; then
         -e ROS_REPO \
         -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
-        -e CI_SOURCE_PATH \
+        -e CI_SOURCE_PATH=${CI_SOURCE_PATH:-/root/$REPOSITORY_NAME} \
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
         -e TEST \
@@ -64,8 +62,8 @@ if ! [ "$IN_DOCKER" ]; then
         -v $(pwd):/root/$REPOSITORY_NAME \
         -v $HOME/.ccache:/root/.ccache \
         -t \
-        $DOCKER_IMAGE \
-        /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
+        -w /root/$REPOSITORY_NAME \
+        $DOCKER_IMAGE /root/$REPOSITORY_NAME/.moveit_ci/travis.sh
     return_value=$?
 
     echo
@@ -165,9 +163,9 @@ for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
    test $? -ne 0 && echo -e "${ANSI_RED}Failed to find rosinstall file. Aborting.${ANSI_RESET}" && exit 2
 done
 
-# download upstream packages into workspace
+# Download upstream packages into workspace
 if [ -e .rosinstall ]; then
-    # ensure that the downstream is not in .rosinstall
+    # ensure that the to-be-tested package is not in .rosinstall
     travis_run_true wstool rm $REPOSITORY_NAME
     # perform shallow checkout: only possible with wstool init
     travis_run_simple mv .rosinstall rosinstall
@@ -175,9 +173,14 @@ if [ -e .rosinstall ]; then
     travis_run wstool init --shallow . rosinstall
 fi
 
-# link in the repo we are testing
-travis_run_simple --title "${ANSI_RESET}Symlinking to-be-tested repo $CI_SOURCE_PATH into catkin workspace" \
+# Link in the repo we are testing
+# Use travis_run_impl to accept failure
+travis_run_impl --timing --title "${ANSI_RESET}Symlinking to-be-tested repo $CI_SOURCE_PATH into catkin workspace" \
     ln -s $CI_SOURCE_PATH .
+# Allow failure if (and only if) CI_SOURCE_PATH != REPOSITORY_NAME
+if [ $? -ne 0 -a "$(basename $CI_SOURCE_PATH)" == $REPOSITORY_NAME ] ; then
+   echo -e "${ANSI_RED}Aborting.${ANSI_RESET}" && exit 2
+fi
 
 # Debug: see the files in current folder
 travis_run --title "${ANSI_RESET}List files catkin workspace's source folder" ls -a

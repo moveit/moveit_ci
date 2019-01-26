@@ -98,7 +98,7 @@ It's also possible to run the moveit\_ci script locally, without Travis. We demo
 
 First clone the repo you want to test:
 
-    cd /tmp/travis
+    cd /tmp/travis   # any working directory will do
     git clone https://github.com/ros-planning/moveit
     cd moveit
 
@@ -119,4 +119,12 @@ The rest is optional:
 
 Start the script
 
+    .moveit_ci/travis.sh
+
+It's also possible to run the script without using docker. To this end, issue the following additional commands:
+
+    export IN_DOCKER=1               # pretend running docker
+    export CI_SOURCE_PATH=$PWD       # repository location in, i.e. /tmp/travis/moveit
+    export CATKIN_WS=/tmp/catkin_ws  # define a new catkin workspace location
+    mkdir $CATKIN_WS                 # and create it
     .moveit_ci/travis.sh
