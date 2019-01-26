@@ -116,12 +116,7 @@ for t in $(unify_list " ,;" "$TEST") ; do
             ;;
     esac
 done
-if [[ "$TEST" == *clang-tidy* ]] ; then
-    # Provide a default .clang-tidy config file from MoveIt as a fallback for the whole workspace
-    # Files within specific package repositories take precedence of this.
-    travis_run wget -nv https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy -O $CATKIN_WS/.clang-tidy
-    travis_run cat $CATKIN_WS/.clang-tidy
-fi
+[[ "$TEST" == *clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy # Install clang-tidy (once for all clang-tidy-* checks)
 
 # Enable ccache
 travis_run apt-get -qq install ccache
@@ -144,6 +139,20 @@ travis_fold end xvfb
 travis_fold start catkin.ws "Setting up catkin workspace"
 travis_run_simple mkdir -p $CATKIN_WS/src
 travis_run_simple cd $CATKIN_WS/src
+
+if [ "$TEST" == clang-tidy-check ] ; then
+    # clang-tidy-check essentially runs during the build process for *all* packages.
+    # However, we only want to check one repository ($CI_SOURCE_PATH).
+    # Thus, we provide a dummy .clang-tidy config file as a fallback for the whole workspace
+    travis_run_simple --no-assert cp $MOVEIT_CI_DIR/.dummy-clang-tidy $CATKIN_WS/src/.clang-tidy
+fi
+if [[ "$TEST" == clang-tidy-* ]] ; then
+    # Ensure a useful .clang-tidy config file is present in the to-be-tested repo ($CI_SOURCE_PATH)
+    [ -f $CI_SOURCE_PATH/.clang-tidy ] || \
+        travis_run --title "Fetching default clang-tidy config from MoveIt" \
+            wget -nv https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy -O $CI_SOURCE_PATH/.clang-tidy
+    travis_run --display "Applying the following clang-tidy checks:" cat $CI_SOURCE_PATH/.clang-tidy
+fi
 
 # Pull additional packages into the catkin workspace
 travis_run wstool init .

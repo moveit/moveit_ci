@@ -32,6 +32,14 @@ env:
                           https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall"
                           # Duplicated rosinstall file for testing purposes
 
+  matrix:
+    include: # Build MoveIt! repository with clang + clang-tidy
+      - env: ROS_DISTRO=melodic ROS_REPO=ros-shadow-fixed TEST=clang-tidy-check
+             CI_SOURCE_PATH=/root/ws_moveit/src/moveit
+             TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
+             UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
+        compiler: clang
+
 before_script:
   - ln -s . .moveit_ci  # pretend to have the usual location .moveit_ci
   - ./unittest.sh  # unittests for travis' utility functions

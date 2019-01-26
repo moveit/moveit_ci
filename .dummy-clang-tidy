@@ -1,0 +1,4 @@
+# This is a dummy clang-tidy config, basically disabling all checks. Unfortunately, it's not possible to disable all.
+# This serves as a fallback for all external packages, when we are building with clang-tidy-check.
+# A concrete config file should be provided explicitly by the to-be-tested repository or will be fetched from MoveIt.
+Checks:          '-*, performance-unnecessary-value-param' # only keep a single check
