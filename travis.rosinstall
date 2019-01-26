@@ -1,6 +1,2 @@
-# This file is intended for testing moveit_ci on travis
-# It should only list a very few, fast-to-build repositories
-- git:
-    local-name: geometric_shapes
-    uri: https://github.com/ros-planning/geometric_shapes.git
-    version: melodic-devel
+# This file is intended for testing moveit_ci on travis.
+# It should be empty. unittest packages are provided in folder test_pkgs

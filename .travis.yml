@@ -13,32 +13,47 @@ notifications:
     recipients:
        - dave@dav.ee
 env:
+  global: # default values
+    - ROS_DISTRO=melodic
+    - ROS_REPO=ros
+    - BEFORE_DOCKER_SCRIPT="echo Performing normal build"
+    - EXPECTED_RESULT=0
   matrix:
-    - ROS_DISTRO=melodic ROS_REPO=ros   TEST=clang-format                        UPSTREAM_WORKSPACE=travis.rosinstall
-    - ROS_DISTRO=melodic ROS_REPO=ros   TEST="clang-tidy-check clang-tidy-fix"   UPSTREAM_WORKSPACE=travis.rosinstall
+    # default success case, successful BEFORE_SCRIPT
+    - BEFORE_SCRIPT="echo first && false; echo second > /dev/null; echo Testing on $ROS_DISTRO"
+    - UPSTREAM_WORKSPACE=travis.rosinstall
+    - CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/valid     TEST=clang-format
 
-    - ROS_DISTRO=kinetic ROS_REPO=ros   TEST=clang-format                        UPSTREAM_WORKSPACE=travis.rosinstall
-    - ROS_DISTRO=kinetic ROS_REPO=ros   TEST="clang-tidy-check clang-tidy-fix"   UPSTREAM_WORKSPACE=travis.rosinstall
+    # failures: result=2 indicates terminate of Travis script
+    - EXPECTED_RESULT=2  BEFORE_SCRIPT="echo \"Failing BEFORE_SCRIPT\"; return 1"
+    - EXPECTED_RESULT=2  UPSTREAM_WORKSPACE=missing.rosinstall  # missing UPSTREAM_WORKSPACE
+    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_format  TEST=clang-format
+    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_tidy    TEST="clang-tidy-check clang-tidy-fix"
+    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_format  TEST=clang-format                        ROS_DISTRO=kinetic
+    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_tidy    TEST="clang-tidy-check clang-tidy-fix"   ROS_DISTRO=kinetic
 
-    # Test BEFORE_SCRIPT and ros vs. ros-shadow-fixed
-    - ROS_DISTRO=kinetic ROS_REPO=ros              BEFORE_SCRIPT="echo first && false; echo second > /dev/null; echo Testing on $ROS_DISTRO"
-    - ROS_DISTRO=kinetic ROS_REPO=ros-shadow-fixed BEFORE_DOCKER_SCRIPT="wget -nv www.google.com; return 1"
-
-    # Build MoveIt repo. Specifying CI_SOURCE_PATH, we enforce that this one will be validated with clang-* tools
-    - ROS_DISTRO=melodic ROS_REPO=ros-shadow-fixed TEST=clang-tidy-fix
-      CI_SOURCE_PATH=/root/moveit_ci/moveit
+    # Build MoveIt! repository
+    - CI_SOURCE_PATH=/root/ws_moveit/src/moveit
       TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
       UPSTREAM_WORKSPACE="https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall,
                           https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall"
                           # Duplicated rosinstall file for testing purposes
 
-  matrix:
-    include: # Build MoveIt! repository with clang + clang-tidy
-      - env: ROS_DISTRO=melodic ROS_REPO=ros-shadow-fixed TEST=clang-tidy-check
-             CI_SOURCE_PATH=/root/ws_moveit/src/moveit
-             TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
-             UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
-        compiler: clang
+    # Build geometric_shapes and apply clang-tidy-fix
+    - CI_SOURCE_PATH=/root/ws_moveit/src/geometric_shapes  TEST=clang-tidy-fix
+      UPSTREAM_WORKSPACE=https://github.com/ros-planning/geometric_shapes
+
+matrix:
+  include: # Build MoveIt! repository with clang + clang-tidy
+    - env: CI_SOURCE_PATH=/root/ws_moveit/src/moveit    TEST=clang-tidy-check
+           TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
+           UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
+      compiler: clang
+
+  allow_failures:
+    - env: CI_SOURCE_PATH=/root/ws_moveit/src/geometric_shapes  TEST=clang-tidy-fix
+           UPSTREAM_WORKSPACE=https://github.com/ros-planning/geometric_shapes
+      compiler: gcc
 
 before_script:
   - ln -s . .moveit_ci  # pretend to have the usual location .moveit_ci

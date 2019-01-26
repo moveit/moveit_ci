@@ -9,6 +9,9 @@
 #
 # Author:  Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 
+# For unittesting of this repo, we might expect failure. The default, of course, is success.
+export EXPECTED_RESULT=${EXPECTED_RESULT:-0}
+
 export MOVEIT_CI_DIR=$(dirname $0)  # path to the directory running the current script
 export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
 export CATKIN_WS=${CATKIN_WS:-/root/ws_moveit} # location of catkin workspace
@@ -72,6 +75,15 @@ if ! [ "$IN_DOCKER" ]; then
         124) echo -e "${ANSI_YELLOW}Timed out, but try again! Having saved cache results, Travis will probably succeed next time.${ANSI_RESET}\\n" ;;
         *) echo -e "${ANSI_RED}Travis script finished with errors.${ANSI_RESET}" ;;
     esac
+    if [ -n "${EXPECTED_RESULT}" ] ; then  # special unit testing mode for this repo
+        if [ ${EXPECTED_RESULT} -eq $return_value ] ; then
+            echo -e "${ANSI_GREEN}UnitTest finished with expected result: $return_value${ANSI_RESET}"
+            return_value=0
+        else
+            echo -e "${ANSI_RED}UnitTest failed: Expected result $EXPECTED_RESULT, but finished with $return_value${ANSI_RESET}"
+            return_value=2
+        fi
+    fi
     exit $return_value
 fi
 
