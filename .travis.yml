@@ -18,6 +18,7 @@ env:
     - ROS_REPO=ros
     - BEFORE_DOCKER_SCRIPT="echo Performing normal build"
     - EXPECTED_RESULT=0
+    - WARNINGS_OK=true
   matrix:
     # default success case, successful BEFORE_SCRIPT
     - BEFORE_SCRIPT="echo first && false; echo second > /dev/null; echo Testing on $ROS_DISTRO"
@@ -27,6 +28,10 @@ env:
     # failures: result=2 indicates terminate of Travis script
     - EXPECTED_RESULT=2  BEFORE_SCRIPT="echo \"Failing BEFORE_SCRIPT\"; return 1"
     - EXPECTED_RESULT=2  UPSTREAM_WORKSPACE=missing.rosinstall  # missing UPSTREAM_WORKSPACE
+    - EXPECTED_RESULT=2  TEST=invalid # invalid test
+    - EXPECTED_RESULT=0  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/warnings      WARNINGS_OK=true
+    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/warnings      WARNINGS_OK=false
+    - EXPECTED_RESULT=0  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/valid         WARNINGS_OK=false
     - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_format  TEST=clang-format
     - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_tidy    TEST="clang-tidy-check clang-tidy-fix"
     - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_format  TEST=clang-format                        ROS_DISTRO=kinetic

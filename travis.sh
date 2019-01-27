@@ -72,6 +72,10 @@ if ! [ "$IN_DOCKER" ]; then
     echo
     case $return_value in
         0) echo -e "${ANSI_GREEN}Travis script finished successfully.${ANSI_RESET}" ;;
+        42) # special error code for warnings
+            # if warnings are accepted (via true, 1, or yes), return success, otherwise fail
+            test ${WARNINGS_OK:=true} == true -o ${WARNINGS_OK} == 1 -o ${WARNINGS_OK} == yes && return_value=0 || return_value=2
+            ;;
         124) echo -e "${ANSI_YELLOW}Timed out, but try again! Having saved cache results, Travis will probably succeed next time.${ANSI_RESET}\\n" ;;
         *) echo -e "${ANSI_RED}Travis script finished with errors.${ANSI_RESET}" ;;
     esac
@@ -124,7 +128,7 @@ for t in $(unify_list " ,;" "$TEST") ; do
             ;;
         *)
             echo -e "${ANSI_RED}Unknown TEST: $t${ANSI_RESET}"
-            exit 1
+            exit 2
             ;;
     esac
 done
@@ -262,8 +266,8 @@ else
 fi
 
 # Run clang-tidy-fix check
-case "$TEST" in
-    *clang-tidy-fix*)
-        source ${MOVEIT_CI_DIR}/check_clang_tidy.sh || exit 2
-        ;;
-esac
+if [[ "$TEST" == *clang-tidy-fix* ]] ; then
+   source ${MOVEIT_CI_DIR}/check_clang_tidy.sh || exit 2
+fi
+# Run warnings check
+source ${MOVEIT_CI_DIR}/check_warnings.sh

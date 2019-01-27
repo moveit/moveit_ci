@@ -35,6 +35,7 @@ env:
     - ROS_DISTRO=melodic   # ROS distro to test for
     - ROS_REPO=ros         # ROS binary repository [ros | ros-shadow-fixed]
     - TEST_BLACKLIST=      # list packages, for which to skip the unittests
+    - WARNINGS_OK=false    # Don't accept warnings [true | false]
   matrix:  # define various jobs
     - TEST=clang-format    # check code formatting for compliance to .clang-format rules
     - TEST=clang-tidy-fix  # perform static code analysis and compliance check against .clang-tidy rules
@@ -91,6 +92,11 @@ Use ``TEST=clang-format`` to enable this test.
 ``clang-tidy`` allows for static code analysis and validation of naming rules.
 Use ``TEST=clang-tidy-check`` to enable clang-tidy analysis, but only issuing warnings.
 Use ``TEST=clang-tidy-fix`` to reject code that doesn't comply to the rules.
+
+## `WARNINGS_OK`
+
+The script automatically checks for warnings issued during the build process and provides
+a summary in the end. If don't want to accept warnings, and make Travis fail your build in this case, please specify ``WARNINGS_OK=false``.
 
 ## Running Locally For Testing
 
