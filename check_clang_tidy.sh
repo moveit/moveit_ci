@@ -1,32 +1,38 @@
-# Change to source directory.
-pushd $CI_SOURCE_PATH
-
-# This directory can have its own .clang-tidy config file but if not, MoveIt's will be provided
-if [ ! -f .clang-tidy ]; then
-    wget "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy"
-fi
+travis_fold start clang.tidy "Running clang-tidy check"
+travis_run_impl --display "cd to repository source: $CI_SOURCE_PATH" cd $CI_SOURCE_PATH
 
 # Find run-clang-tidy script: Xenial and Bionic install them with different names
 export RUN_CLANG_TIDY=$(ls -1 /usr/bin/run-clang-tidy* | head -1)
 
-# Run clang-tidy in all build folders containing a compile_commands.json file
-# Pipe the very verbose output of clang-tidy to /dev/null
-echo "Running clang-tidy"
+# Run clang-tidy for all packages in CI_SOURCE_PATH
+SOURCE_PKGS=$(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null)
 
-ls $CATKIN_WS/build
-find $CATKIN_WS/build -name compile_commands.json
-travis_run_wait 60 find $CATKIN_WS/build -name compile_commands.json -exec \
-    sh -c 'echo "Processing $(basename $(dirname {}))"; $RUN_CLANG_TIDY -fix -format -p $(dirname {}) > /dev/null 2>&1' \;
+TAINTED_PKGS=""
+COUNTER=0
+(
+    for file in $(find $CATKIN_WS/build -name compile_commands.json) ; do
+        # skip an external package
+        PKG=$(basename $(dirname $file))
+        [[ "$SOURCE_PKGS" =~ (^|[[:space:]])$PKG($|[[:space:]]) ]] && continue
 
-echo "Showing changes in code:"
-git --no-pager diff
+        let "COUNTER += 1"
+        travis_fold start clang.tidy.$COUNTER "${ANSI_THIN}Processing $PKG"
 
-# Make sure no changes have occured in repo
-if ! git diff-index --quiet HEAD --; then
-    # changes
-    echo "clang-tidy test failed: changes required to comply to rules. See diff above."
-    exit 1
+        cmd="$RUN_CLANG_TIDY -fix -p $(dirname $file)"
+        # Suppress the very verbose output of clang-tidy!
+        travis_run_impl --timing --display "$cmd" "$cmd > /dev/null 2>&1"
+        travis_have_fixes && TAINTED_PKGS="$TAINTED_PKGS\\n$PKG"
+        travis_fold end clang.tidy.$COUNTER
+    done
+) &  # run in background to allow timeout monitoring
+travis_wait $! $(travis_timeout)
+
+# Finish fold before printing result summary
+travis_fold end clang.tidy
+
+if [ -z "$TAINTED_PKGS" ] ; then
+  echo -e "${ANSI_GREEN}Passed clang-tidy check${ANSI_RESET}"
+else
+  echo -e "${ANSI_RED}clang-tidy check failed for the following packages:\\n${ANSI_RESET}$TAINTED_PKGS"
+  exit 2
 fi
-
-echo "Passed clang-tidy check"
-popd
