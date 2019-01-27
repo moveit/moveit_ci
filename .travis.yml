@@ -39,8 +39,7 @@ env:
     - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_tidy    TEST="clang-tidy-check clang-tidy-fix"   ROS_DISTRO=kinetic
 
     # Build MoveIt! repository
-    - CI_SOURCE_PATH=/root/ws_moveit/src/moveit
-      TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
+    - CI_SOURCE_PATH=/root/ws_moveit/src/moveit   TEST_BLACKLIST=moveit_ros_perception
       UPSTREAM_WORKSPACE="https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall,
                           https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall"
                           # Duplicated rosinstall file for testing purposes
@@ -51,8 +50,7 @@ env:
 
 matrix:
   include: # Build MoveIt! repository with clang + clang-tidy
-    - env: CI_SOURCE_PATH=/root/ws_moveit/src/moveit    TEST=clang-tidy-check
-           TEST_BLACKLIST=moveit,moveit_ros,moveit_runtime,moveit_ros_perception
+    - env: CI_SOURCE_PATH=/root/ws_moveit/src/moveit    TEST_BLACKLIST=moveit_ros_perception    TEST=clang-tidy-check
            UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
       compiler: clang
 

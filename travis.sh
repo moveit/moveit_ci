@@ -240,31 +240,31 @@ travis_run --title "ccache statistics" ccache -s
 echo -e "${ANSI_GREEN}Testing Workspace${ANSI_RESET}"
 travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
 
-# Choose which packages to run tests on
-echo "Test blacklist: $TEST_BLACKLIST"
-TEST_PKGS=$(filter-out "$TEST_BLACKLIST" $(catkin_topological_order $CATKIN_WS/src --only-names))
+# Consider TEST_BLACKLIST
+TEST_BLACKLIST=$(unify_list " ,;" $TEST_BLACKLIST)
+echo -e "${ANSI_YELLOW}Test blacklist:${ANSI_THIN} $TEST_BLACKLIST${ANSI_RESET}"
+test -n "$TEST_BLACKLIST" && catkin config --blacklist $TEST_BLACKLIST &> /dev/null
 
-if [ -n "$TEST_PKGS" ]; then
-    echo "Test packages: $TEST_PKGS"
-    TEST_PKGS="--no-deps $TEST_PKGS"
+# Also blacklist external packages
+all_pkgs=$(catkin_topological_order $CATKIN_WS --only-names 2> /dev/null)
+source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null)
+blacklist_pkgs=$(filter-out "$source_pkgs" "$all_pkgs")
+test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist &> /dev/null
 
-    # Build tests
-    travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests -- $TEST_PKGS
-    # Run tests, suppressing the output (confuses Travis display?)
-    travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize $TEST_PKGS 2>/dev/null"
+# Build tests
+travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests --
+# Run tests, suppressing the output (confuses Travis display?)
+travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize 2>/dev/null"
 
-    # Show failed tests
-    travis_fold start test.results "catkin_test_results"
-    for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
-        travis_run --display "Test log of $file" cat $file
-    done
-    travis_fold end test.results
+# Show failed tests
+travis_fold start test.results "catkin_test_results"
+for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
+    travis_run --display "Test log of $file" cat $file
+done
+travis_fold end test.results
 
-    # Show test results summary and throw error if necessary
-    catkin_test_results || exit 2
-else
-    echo "No packages to test."
-fi
+# Show test results summary and throw error if necessary
+catkin_test_results || exit 2
 
 # Run clang-tidy-fix check
 if [[ "$TEST" == *clang-tidy-fix* ]] ; then
