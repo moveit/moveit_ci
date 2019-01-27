@@ -106,25 +106,26 @@ travis_run apt-get -qq update
 # Make sure the packages are up-to-date
 travis_run apt-get -qq dist-upgrade
 
-# Split for different tests
+# Check for different tests, Keep fold "update" open to include potential clang-tidy installs
 for t in $(unify_list " ,;" "$TEST") ; do
     case "$t" in
         clang-format)
-            travis_fold end update
+            travis_fold end update  # close "update" fold
             source ${MOVEIT_CI_DIR}/check_clang_format.sh || exit 2
             exit 0 # This runs as an independent job, do not run regular travis test
             ;;
         clang-tidy-check)  # run clang-tidy along with compiler and report warning
-            # Install clang-tidy
-            travis_run apt-get -qq install -y clang-tidy
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy"
             ;;
         clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
-            # Install clang-tidy
-            travis_run apt-get -qq install -y clang-tidy
             # run-clang-tidy is part of clang-tools in Bionic
             travis_run_true apt-get -qq install -y clang-tools
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ;;
+        catkin_lint)
+            travis_fold end update  # close "update" fold
+            source ${MOVEIT_CI_DIR}/check_catkin_lint.sh || exit 2
+            exit 0 # This runs as an independent job, do not run regular travis test
             ;;
         *)
             echo -e "${ANSI_RED}Unknown TEST: $t${ANSI_RESET}"

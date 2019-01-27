@@ -32,6 +32,7 @@ env:
     - EXPECTED_RESULT=0  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/warnings      WARNINGS_OK=true
     - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/warnings      WARNINGS_OK=false
     - EXPECTED_RESULT=0  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/valid         WARNINGS_OK=false
+    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/catkin_lint   TEST=catkin_lint
     - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_format  TEST=clang-format
     - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_tidy    TEST="clang-tidy-check clang-tidy-fix"
     - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_format  TEST=clang-format                        ROS_DISTRO=kinetic

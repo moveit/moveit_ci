@@ -12,4 +12,6 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-catkin_add_gtest(${PROJECT_NAME} test.cpp)
+if(CATKIN_ENABLE_TESTING)
+  catkin_add_gtest(${PROJECT_NAME} test.cpp)
+endif()

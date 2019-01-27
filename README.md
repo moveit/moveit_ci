@@ -93,6 +93,10 @@ Use ``TEST=clang-format`` to enable this test.
 Use ``TEST=clang-tidy-check`` to enable clang-tidy analysis, but only issuing warnings.
 Use ``TEST=clang-tidy-fix`` to reject code that doesn't comply to the rules.
 
+## Catkin Lint
+
+``catkin_lint`` checks for comment issues in your ``package.xml`` and ``CMakeLists`` files.
+
 ## `WARNINGS_OK`
 
 The script automatically checks for warnings issued during the build process and provides
