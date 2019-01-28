@@ -21,12 +21,6 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-export ANSI_RED="\033[31;1m"
-export ANSI_GREEN="\033[32;1m"
-export ANSI_YELLOW="\033[33;1m"
-export ANSI_RESET="\033[0m"
-export ANSI_CLEAR="\033[0K"
-
 travis_nanoseconds() {
   local cmd='date'
   local format='+%s%N'

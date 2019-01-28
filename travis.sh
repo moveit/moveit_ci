@@ -9,9 +9,6 @@
 #
 # Author:  Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 
-# For unittesting of this repo, we might expect failure. The default, of course, is success.
-export EXPECTED_RESULT=${EXPECTED_RESULT:-0}
-
 export MOVEIT_CI_DIR=$(dirname $0)  # path to the directory running the current script
 export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
 export CATKIN_WS=${CATKIN_WS:-/root/ws_moveit} # location of catkin workspace
@@ -23,14 +20,22 @@ MOVEIT_CI_TRAVIS_TIMEOUT=${MOVEIT_CI_TRAVIS_TIMEOUT:-47}  # 50min minus safety m
 # Helper functions
 source ${MOVEIT_CI_DIR}/util.sh
 
+# This repository has some dummy catkin packages in folder test_pkgs, which are needed for unit testing only.
+# To not clutter normal builds, we just create a CATKIN_IGNORE file in that folder.
+# A unit test can be recognized from the presence of the environment variable $TEST_PKG (see unit_tests.sh)
+test -z "$TEST_PKG" && touch ${MOVEIT_CI_DIR}/test_pkgs/CATKIN_IGNORE # not a unit test build
+
+# normalize WARNINGS_OK to 0/1. Originally we accept true, yes, or 1 to allow warnings.
+test ${WARNINGS_OK:=true} == true -o "$WARNINGS_OK" == 1 -o "$WARNINGS_OK" == yes && WARNINGS_OK=1 || WARNINGS_OK=0
+
 # Run all CI in a Docker container
 if ! [ "$IN_DOCKER" ]; then
-    echo -e "${ANSI_YELLOW}Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'${ANSI_RESET}"
+    echo -e $(colorize YELLOW "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'")
     # Run BEFORE_DOCKER_SCRIPT
     if [ "${BEFORE_DOCKER_SCRIPT// }" != "" ]; then
-        travis_run --title "${ANSI_BOLD}Running BEFORE_DOCKER_SCRIPT${ANSI_THIN}" $BEFORE_DOCKER_SCRIPT
+        travis_run --title "$(colorize BOLD Running BEFORE_DOCKER_SCRIPT)" $BEFORE_DOCKER_SCRIPT
         result=$?
-        test $result -ne 0 && echo -e "${ANSI_RED}Script failed with return value: $result. Aborting.${ANSI_RESET}" && exit 2
+        test $result -ne 0 && echo -e "$(colorize RED Script failed with return value: $result. Aborting.)" && exit 2
     fi
 
     # Choose the correct CI container to use
@@ -42,7 +47,7 @@ if ! [ "$IN_DOCKER" ]; then
             export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci
             ;;
     esac
-    echo -e "${ANSI_BOLD}Starting Docker image: $DOCKER_IMAGE${ANSI_RESET}"
+    echo -e "$(colorize BOLD Starting Docker image: $DOCKER_IMAGE)"
 
     travis_run docker pull $DOCKER_IMAGE
 
@@ -58,6 +63,7 @@ if ! [ "$IN_DOCKER" ]; then
         -e TRAVIS_BRANCH \
         -e TEST \
         -e TEST_BLACKLIST \
+        -e WARNINGS_OK \
         -e CC \
         -e CXX \
         -e CFLAGS \
@@ -71,33 +77,24 @@ if ! [ "$IN_DOCKER" ]; then
 
     echo
     case $return_value in
-        0) echo -e "${ANSI_GREEN}Travis script finished successfully.${ANSI_RESET}" ;;
-        42) # special error code for warnings
-            # if warnings are accepted (via true, 1, or yes), return success, otherwise fail
-            test ${WARNINGS_OK:=true} == true -o ${WARNINGS_OK} == 1 -o ${WARNINGS_OK} == yes && return_value=0 || return_value=2
-            ;;
-        124) echo -e "${ANSI_YELLOW}Timed out, but try again! Having saved cache results, Travis will probably succeed next time.${ANSI_RESET}\\n" ;;
-        *) echo -e "${ANSI_RED}Travis script finished with errors.${ANSI_RESET}" ;;
+        0) echo -e "$(colorize GREEN Travis script finished successfully.)" ;;
+        124) echo -e "$(colorize YELLOW Timed out, but try again! Having saved cache results, Travis will probably succeed next time.)\\n" ;;
+        *) echo -e "$(colorize RED Travis script finished with errors.)" ;;
     esac
-    if [ -n "${EXPECTED_RESULT}" ] ; then  # special unit testing mode for this repo
-        if [ ${EXPECTED_RESULT} -eq $return_value ] ; then
-            echo -e "${ANSI_GREEN}UnitTest finished with expected result: $return_value${ANSI_RESET}"
-            return_value=0
-        else
-            echo -e "${ANSI_RED}UnitTest failed: Expected result $EXPECTED_RESULT, but finished with $return_value${ANSI_RESET}"
-            return_value=2
-        fi
-    fi
     exit $return_value
 fi
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
 
+# Prepend current dir if $CI_SOURCE_PATH is not yet absolute
+[[ "$CI_SOURCE_PATH" != /* ]] && CI_SOURCE_PATH=$PWD/$CI_SOURCE_PATH
+[[ "$MOVEIT_CI_DIR" != /* ]] && MOVEIT_CI_DIR=$PWD/$MOVEIT_CI_DIR
+
 # Define CC/CXX defaults and print compiler version info
 export CC=${CC:-cc}
 export CXX=${CXX:-c++}
-travis_run --title "${ANSI_RESET}$CXX compiler info" $CXX --version
+travis_run --title "CXX compiler info" $CXX --version
 
 travis_fold start update "Updating system packages"
 # Update the sources
@@ -128,7 +125,7 @@ for t in $(unify_list " ,;" "$TEST") ; do
             exit 0 # This runs as an independent job, do not run regular travis test
             ;;
         *)
-            echo -e "${ANSI_RED}Unknown TEST: $t${ANSI_RESET}"
+            echo -e "$(colorize RED Unknown TEST: $t)"
             exit 2
             ;;
     esac
@@ -149,7 +146,7 @@ travis_fold start xvfb "Starting virtual X11 server to allow for X11-based unit 
 travis_run apt-get -qq install xvfb mesa-utils
 travis_run "Xvfb -screen 0 640x480x24 :99 &"
 export DISPLAY=:99.0
-travis_run_true glxinfo
+travis_run_true glxinfo -B
 travis_fold end xvfb
 
 # Create workspace
@@ -157,6 +154,43 @@ travis_fold start catkin.ws "Setting up catkin workspace"
 travis_run_simple mkdir -p $CATKIN_WS/src
 travis_run_simple cd $CATKIN_WS/src
 
+# Pull additional packages into the catkin workspace
+travis_run wstool init .
+for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
+   case "$item" in
+      debian)
+         echo "Obtaining debian packages for all upstream dependencies."
+         break ;;
+      https://github.com/*) # clone from github
+         travis_run_true git clone -q --depth 1 $item
+         test $? -ne 0 && echo -e "$(colorize RED Failed clone repository. Aborting.)" && exit 2
+         continue ;;
+      http://* | https://* | file://*) ;; # use url as is
+      *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
+   esac
+   travis_run_true wstool merge -k $item
+   test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
+done
+
+# Download upstream packages into workspace
+if [ -e .rosinstall ]; then
+    # ensure that the to-be-tested package is not in .rosinstall
+    travis_run_true wstool rm $REPOSITORY_NAME
+    # perform shallow checkout: only possible with wstool init
+    travis_run_simple mv .rosinstall rosinstall
+    travis_run cat rosinstall
+    travis_run wstool init --shallow . rosinstall
+fi
+
+# Link in the repo we are testing
+travis_run --no-assert --timing --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into catkin workspace" \
+    ln -s $CI_SOURCE_PATH .
+# Allow failure if (and only if) CI_SOURCE_PATH != REPOSITORY_NAME
+if [ $? -ne 0 -a "$(basename $CI_SOURCE_PATH)" == $REPOSITORY_NAME ] ; then
+   echo -e "$(colorize RED Aborting.)" && exit 2
+fi
+
+# Fetch clang-tidy configs
 if [ "$TEST" == clang-tidy-check ] ; then
     # clang-tidy-check essentially runs during the build process for *all* packages.
     # However, we only want to check one repository ($CI_SOURCE_PATH).
@@ -171,51 +205,15 @@ if [[ "$TEST" == clang-tidy-* ]] ; then
     travis_run --display "Applying the following clang-tidy checks:" cat $CI_SOURCE_PATH/.clang-tidy
 fi
 
-# Pull additional packages into the catkin workspace
-travis_run wstool init .
-for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
-   case "$item" in
-      debian)
-         echo "Obtaining debian packages for all upstream dependencies."
-         break ;;
-      https://github.com/*) # clone from github
-         travis_run_true git clone -q --depth 1 $item
-         test $? -ne 0 && echo -e "${ANSI_RED}Failed clone repository. Aborting.${ANSI_RESET}" && exit 2
-         continue ;;
-      http://* | https://* | file://*) ;; # use url as is
-      *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
-   esac
-   travis_run_true wstool merge -k $item
-   test $? -ne 0 && echo -e "${ANSI_RED}Failed to find rosinstall file. Aborting.${ANSI_RESET}" && exit 2
-done
-
-# Download upstream packages into workspace
-if [ -e .rosinstall ]; then
-    # ensure that the to-be-tested package is not in .rosinstall
-    travis_run_true wstool rm $REPOSITORY_NAME
-    # perform shallow checkout: only possible with wstool init
-    travis_run_simple mv .rosinstall rosinstall
-    travis_run cat rosinstall
-    travis_run wstool init --shallow . rosinstall
-fi
-
-# Link in the repo we are testing
-# Use travis_run_impl to accept failure
-travis_run_impl --timing --title "${ANSI_RESET}Symlinking to-be-tested repo $CI_SOURCE_PATH into catkin workspace" \
-    ln -s $CI_SOURCE_PATH .
-# Allow failure if (and only if) CI_SOURCE_PATH != REPOSITORY_NAME
-if [ $? -ne 0 -a "$(basename $CI_SOURCE_PATH)" == $REPOSITORY_NAME ] ; then
-   echo -e "${ANSI_RED}Aborting.${ANSI_RESET}" && exit 2
-fi
 
 # Debug: see the files in current folder
-travis_run --title "${ANSI_RESET}List files catkin workspace's source folder" ls -a
+travis_run --title "List files in catkin workspace's source folder" ls --color=auto -alhF
 
 # Run BEFORE_SCRIPT
 if [ "${BEFORE_SCRIPT// }" != "" ]; then
-    travis_run --title "${ANSI_BOLD}Running BEFORE_SCRIPT${ANSI_THIN}" $BEFORE_SCRIPT
+    travis_run --title "$(colorize BOLD Running BEFORE_SCRIPT)" $BEFORE_SCRIPT
     result=$?
-    test $result -ne 0 && echo -e "${ANSI_RED}Script failed with return value: $result. Aborting.${ANSI_RESET}" && exit 2
+    test $result -ne 0 && echo -e "$(colorize RED Script failed with return value: $result. Aborting.)" && exit 2
 fi
 
 # Install source-based package dependencies
@@ -225,7 +223,7 @@ travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_
 travis_run_simple cd $CATKIN_WS
 travis_fold end catkin.ws
 
-echo -e "${ANSI_GREEN}Building Workspace${ANSI_RESET}"
+echo -e "$(colorize GREEN Building Workspace)"
 # Configure catkin
 travis_run --title "catkin config $CMAKE_ARGS" catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3" $CMAKE_ARGS --
 
@@ -237,12 +235,12 @@ travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize
 
 travis_run --title "ccache statistics" ccache -s
 
-echo -e "${ANSI_GREEN}Testing Workspace${ANSI_RESET}"
+echo -e "$(colorize GREEN Testing Workspace)"
 travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
 
 # Consider TEST_BLACKLIST
 TEST_BLACKLIST=$(unify_list " ,;" $TEST_BLACKLIST)
-echo -e "${ANSI_YELLOW}Test blacklist:${ANSI_THIN} $TEST_BLACKLIST${ANSI_RESET}"
+echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
 test -n "$TEST_BLACKLIST" && catkin config --blacklist $TEST_BLACKLIST &> /dev/null
 
 # Also blacklist external packages

@@ -14,8 +14,8 @@ result=$?
 travis_fold end check.catkin_lint
 
 if [ $result -eq 0 ] ; then
-  echo -e "${ANSI_GREEN}No catkin_lint issues reported.${ANSI_RESET}"
+  echo -e $(colorize GREEN "No catkin_lint issues reported.")
 else
-  echo -e "${ANSI_YELLOW}catkin_lint reports errors. Please fix them!${ANSI_RESET}"
+  echo -e $(colorize YELLOW "catkin_lint reports errors. Please fix them!")
   exit 2
 fi

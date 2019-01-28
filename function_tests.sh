@@ -35,44 +35,37 @@
 #********************************************************************/
 
 # Author: Robert Haschke
-# Desc: unittests for travis_* functions in util.sh
+# Desc: unit tests for travis_* functions in util.sh
 
-export MOVEIT_CI_DIR=$(dirname $0)  # path to the directory running the current script
-source ${MOVEIT_CI_DIR}/util.sh
+source ${MOVEIT_CI_DIR:=$(dirname $0)}/util.sh
+source ${MOVEIT_CI_DIR}/test_util.sh
 
-# To suppress normal Travis output:
-# - save stdout as 3 and stderr as 4,
-# - then redirect stdout(1) to /dev/null and stderr(2) to 3(stdout)
-exec 3>&1  4>&2  1>/dev/null  2>&3
+echo -e $(colorize YELLOW THIN "Testing basic travis functions")
 
-function debug { # use instead of "echo ..."
-	1>&3 echo -e "$*"
+# Suppress normal Travis output: save stdout as 3, then redirect stdout(1) to /dev/null
+exec 3>&1  1>/dev/null
+
+function restore_stdout() {
+	exec 1>&${STDOUT:-1}
+	STDOUT=1
 }
-PASSES=0
+trap restore_stdout EXIT # automatically restore output when exiting
+
+# validate EXPECT_TRUE
+! EXPECT_TRUE "test 0 -eq 0" $0:$LINENO "" && echo -e "$(colorize RED EXPECT_TRUE reports an error for no reason)" && exit 2
+EXPECT_TRUE "test 0 -eq 1" $0:$LINENO "" && echo -e "$(colorize RED EXPECT_TRUE missed an error)" && exit 2
+# validate ASSERT_TRUE
+! (ASSERT_TRUE "test 0 -eq 0" $0:$LINENO "") && echo -e "$(colorize RED ASSERT_TRUE reports an error for no reason)" && exit 2
+(ASSERT_TRUE "test 0 -eq 1" $0:$LINENO "") && echo -e "$(colorize RED ASSERT_TRUE missed an error)" && exit 2
+
+# enable really_echo() from here on
+STDOUT=3
+
+really_echo -e $(colorize GREEN $(colorize THIN "EXPECT_TRUE and ASSERT_TRUE work as expected. Let's start."))
+
+# reset test counts (previous calls already generated 2 passes and 2 failures
+PASSED=0
 FAILED=0
-function EXPECT_TRUE {
-	local test_cmd=$1
-	local location=$2
-	local message="$3 "
-	local type=${4:-"Expectation"}
-	if ! eval $test_cmd ; then
-		1>&3 echo -e "${ANSI_RED}${type} failed: ${ANSI_RESET}${test_cmd}\\n${message% }($location)"
-		let "FAILED += 1"
-		return 1
-	else
-		let "PASSES += 1"
-	fi
-}
-function ASSERT_TRUE {
-	if ! EXPECT_TRUE "$@" "Assertion"; then
-		exec 1>&3  2>&4  # restore stdout + stderr
-		echo -e "${ANSI_RED}Terminating.${ANSI_RESET}"
-		exit 2
-	fi
-}
-function strip_off_ansi_codes {
-	echo -e $* | sed -e 's:\x1B\[[0-9;]*[mK]::g' -e 's:[[:cntrl:]]::g'
-}
 
 # Testing strip_off_ansi_codes
 output=$(strip_off_ansi_codes "${ANSI_RED}foo\\r\\t${ANSI_RESET}bar${ANSI_CLEAN}")
@@ -82,18 +75,15 @@ ASSERT_TRUE "test \"$output\" == \"foobar\"" $0:$LINENO "Should strip all ansi c
 # signatures of start / end timing tag
 TIMING_START="travis_time:start:[[:xdigit:]]+"
 TIMING_END="travis_time:end:[[:xdigit:]]+:start=[[:digit:]]+,finish=[[:digit:]]+,duration=[[:digit:]]+"
-# signatures of start / end folding tag
-FOLDING_START="travis_fold:start:moveit_ci\."
-FOLDING_END="travis_fold:end:moveit_ci\."
 
 # Testing travis_fold
 output=$(strip_off_ansi_codes $(travis_fold start; travis_fold end))
-EXPECT_TRUE "[[ \"$output\" =~ ^${FOLDING_START}1${FOLDING_END}1$ ]]" $0:$LINENO "fold tag generation fails"
+EXPECT_TRUE "[[ \"$output\" =~ ^$(FOLDING_START)1$(FOLDING_END)1$ ]]" $0:$LINENO "fold tag generation fails"
 output=$(strip_off_ansi_codes $(travis_fold start; travis_fold start))
-EXPECT_TRUE "[[ \"$output\" =~ ^${FOLDING_START}1${FOLDING_START}2$ ]]" $0:$LINENO "Expecting number to increase"
+EXPECT_TRUE "[[ \"$output\" =~ ^$(FOLDING_START)1$(FOLDING_START)2$ ]]" $0:$LINENO "Expecting number to increase"
 
 output=$(strip_off_ansi_codes $(travis_fold start name; travis_fold end name))
-EXPECT_TRUE "[[ \"$output\" =~ ^travis_fold:start:name\.1travis_fold:end:name\.1$ ]]" $0:$LINENO "fold tag generation fails"
+EXPECT_TRUE "[[ \"$output\" =~ ^$(FOLDING_START name)1$(FOLDING_END name)1$ ]]" $0:$LINENO "fold tag generation fails"
 
 output=$(travis_fold start name; travis_fold end other)
 EXPECT_TRUE "test $? -eq 1" $0:$LINENO "Expecting failure due to mismatching fold names"
@@ -104,10 +94,10 @@ EXPECT_TRUE "test $? -eq 1" $0:$LINENO "Expecting failure due to missing start f
 EXPECT_TRUE "[[ \"$(strip_off_ansi_codes $output)\" == *issing* ]]" $0:$LINENO "Expecting error message mentioning missing start"
 
 output=$(strip_off_ansi_codes $(travis_fold start name message))
-EXPECT_TRUE "[[ \"$output\" =~ ^travis_fold:start:name\.1message$ ]]" $0:$LINENO "For start action, message should be shown"
+EXPECT_TRUE "[[ \"$output\" =~ ^$(FOLDING_START name)1message$ ]]" $0:$LINENO "For start action, message should be shown"
 
 output=$(strip_off_ansi_codes $(travis_fold start name; travis_fold end name message))
-EXPECT_TRUE "[[ \"$output\" =~ ^travis_fold:start:name\.1travis_fold:end:name\.1$ ]]" $0:$LINENO "For end action, message should be suppressed"
+EXPECT_TRUE "[[ \"$output\" =~ ^$(FOLDING_START name)1$(FOLDING_END name)1$ ]]" $0:$LINENO "For end action, message should be suppressed"
 
 
 # Testing travis_timeout
@@ -165,8 +155,8 @@ EXPECT_TRUE "test $? -eq 2" $0:$LINENO "Expecting terminate"
 
 # Validate multi-token commands with multi-token custom message
 # signatures of start / end tokens
-TOKEN_START="${FOLDING_START}2${TIMING_START}"
-TOKEN_END="${TIMING_END}${FOLDING_END}2"
+TOKEN_START="$(FOLDING_START)2${TIMING_START}"
+TOKEN_END="${TIMING_END}$(FOLDING_END)2"
 output=$(strip_off_ansi_codes $(travis_run --display "me ss age" echo con tent))
 EXPECT_TRUE "[[ \"$output\" =~ ^${TOKEN_START}me\ ss\ age\ con\ tent\ ${TOKEN_END}$ ]]" $0:$LINENO "Expecting custom message"
 output=$(strip_off_ansi_codes $(travis_run_true --display "me ss age" echo con tent))
@@ -231,12 +221,5 @@ EXPECT_TRUE "test \"$output\" == \"a b c d\"" $0:$LINENO ""
 output=$(unify_list "," "a,b;c d")
 EXPECT_TRUE "test \"$output\" == \"a b;c d\"" $0:$LINENO ""
 
-exec 1>&3  2>&4  # restore stdout + stderr
 
-ALL=$(($PASSES + $FAILED))
-if [ $FAILED -ne 0 ] ; then
-	echo -e "${ANSI_RED}$FAILED out of $ALL tests failed. Terminating.${ANSI_RESET}"
-	exit 2
-else
-	echo -e "${ANSI_GREEN}${ANSI_THIN}Successfully passed all $ALL tests${ANSI_RESET}"
-fi
+test_summary

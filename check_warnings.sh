@@ -15,16 +15,17 @@ packages_with_warnings() {
       issues="${issues}$(echo $files | sed -ne 's:.*/build\.make\.000.*:build :p')"
       issues="${issues}$(echo $files | sed -ne 's:.*/build\.make\.001.*:test-build :p')"
       # Print result
-      test -n "${files}" && echo -e "- ${ANSI_YELLOW}${ANSI_THIN}$pkg${ANSI_RESET}: $issues"
+      test -n "${files}" && echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $issues"
    done
 }
 
 have_warnings=$(packages_with_warnings)
 if [ -n "$have_warnings" ] ; then
-   travis_run_simple --display "${ANSI_YELLOW}The following packages have warnings in the shown build steps:${ANSI_RESET}" \
-         "echo -e \"$have_warnings\""
-   echo -e "${ANSI_BOLD}Please look for build details and take the time to fix them.${ANSI_RESET}"
-   exit 42  # special error code for warnings
+   test "$WARNINGS_OK" == 1 && color=YELLOW || color=RED
+   travis_run_simple --display "$(colorize $color The following packages have warnings in the shown build steps:)" "echo -e \"$have_warnings\""
+   echo -e $(colorize BOLD "Please look into the build details and take the time to fix those issues.")
+   # if warnings are not allowed, fail
+   test "$WARNINGS_OK" == 0 && exit 2 || true
 else   
-   echo -e "${ANSI_GREEN}No warnings. Great!${ANSI_RESET}"
+   echo -e $(colorize GREEN "No warnings. Great!")
 fi

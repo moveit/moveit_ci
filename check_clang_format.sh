@@ -26,9 +26,9 @@ result=$?
 travis_fold end clang.format
 
 if [ $result -eq 1 ] ; then
-  echo -e "${ANSI_GREEN}Passed clang-format check${ANSI_RESET}"
+  echo -e $(colorize GREEN "Passed clang-format check")
 else
-  echo -e "${ANSI_RED}clang-format check failed. Open fold for details.${ANSI_RESET}"
+  echo -e $(colorize RED "clang-format check failed. Open fold for details.")
   echo -e "Run the following command to fix these issues:\\n$cmd"
   exit 2
 fi

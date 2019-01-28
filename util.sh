@@ -39,11 +39,18 @@
 # https://github.com/travis-ci/travis-build/blob/master/lib/travis/build/bash
 
 # source default functions, copied from travis-ci project
-source ${MOVEIT_CI_DIR}/travis_functions.sh
+source ${MOVEIT_CI_DIR:-$(dirname ${BASH_SOURCE:-$0})}/travis_functions.sh
 
-export ANSI_BLUE="\033[34;1m"
+export ANSI_RED="\033[31m"
+export ANSI_GREEN="\033[32m"
+export ANSI_YELLOW="\033[33m"
+export ANSI_BLUE="\033[34m"
+
 export ANSI_THIN="\033[22m"
 export ANSI_BOLD="\033[1m"
+
+export ANSI_RESET="\033[0m"
+export ANSI_CLEAR="\033[0K"
 
 # set start time (if not yet done)
 MOVEIT_CI_START_TIME=${MOVEIT_CI_START_TIME:-$(travis_nanoseconds)}
@@ -79,7 +86,7 @@ travis_fold() {
   local name="${2:-moveit_ci}"  # name defaults to moveit_ci
   name="${name/ /.}"  # replace spaces with dots in name
   local message="$3"
-  test -n "$message" && message="${ANSI_BLUE}$3${ANSI_RESET}\\n"  # print message in bold blue by default
+  test -n "$message" && message="$(colorize BLUE BOLD $3)\\n"  # print message in bold blue by default
 
   local length=${#_TRAVIS_FOLD_NAME_STACK[@]}
   if [ "$action" == "start" ] ; then
@@ -162,7 +169,7 @@ travis_run_impl() {
   fi
 
   if [ -z "${hide}" ]; then
-    echo -e "${ANSI_BLUE}${ANSI_THIN}${title}${display:-${cmds}}${ANSI_RESET}"
+    echo -e "$(colorize BLUE THIN ${title}${display:-${cmds}})"
   fi
 
   # Actually run cmds
@@ -171,7 +178,7 @@ travis_run_impl() {
     travis_wait $! $timeout "$cmds" # wait for the subshell process to finish
     result="${?}"
     if [ $result -eq 124 ] ; then
-       echo -e "The command \"${TRAVIS_CMD}\" reached the ${ANSI_YELLOW}internal timeout of ${timeout} minutes. Aborting.${ANSI_RESET}\\n"
+       echo -e "The command \"${TRAVIS_CMD}\" reached the $(colorize YELLOW internal $(colorize BOLD timeout) of ${timeout} minutes. Aborting.)\\n"
        exit 124
     fi
   else
@@ -185,7 +192,7 @@ travis_run_impl() {
 
   # When asserting success, but we got a failure (and not a timeout (124)), terminate
   if [ -n "${assert}" -a $result -ne 0 -a $result -ne 124 ]; then
-    echo -e "${ANSI_RED}The command \"${TRAVIS_CMD}\" failed and exited with ${result}.${ANSI_RESET}\\n"
+    echo -e $(colorize RED "The command \"${TRAVIS_CMD}\" $(colorize BOLD failed with error code ${result}).\\n")
     exit  2
 #    travis_terminate 2
   fi
@@ -264,7 +271,7 @@ travis_monitor() {
 # Check repository for changes, return success(0) if there are changes
 travis_have_fixes() {
   if ! git diff-index --quiet HEAD -- . ; then  # check for changes in current dir
-    echo -e "${ANSI_RED}\\nThe following issues were detected:${ANSI_RESET}"
+    echo -e $(colorize RED "\\nThe following issues were detected:")
     git --no-pager diff
     git checkout . # undo changes in current dir
     return 0
@@ -302,4 +309,22 @@ filter-out() {
 unify_list() {
   local separators=$1; shift
   echo "$*" | tr "$separators" ' '
+}
+
+# usage: echo -e $(colorize RED Some ${fancy} text.)
+function colorize() {
+   local color reset
+   while true ; do
+      case "$1" in
+         RED|GREEN|YELLOW|BLUE)
+            color="ANSI_$1"; eval "color=\$$color"; reset="${ANSI_RESET}" ;;
+         THIN)
+            color="${color}${ANSI_THIN}" ;;
+         BOLD)
+            color="${color}${ANSI_BOLD}"; reset="${reset:-${ANSI_THIN}}" ;;
+         *) break ;;
+      esac
+      shift
+   done
+   echo -e "${color}$@${reset}"
 }

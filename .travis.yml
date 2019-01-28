@@ -16,52 +16,38 @@ env:
   global: # default values
     - ROS_DISTRO=melodic
     - ROS_REPO=ros
-    - BEFORE_DOCKER_SCRIPT="echo Performing normal build"
-    - EXPECTED_RESULT=0
-    - WARNINGS_OK=true
+    - SCRIPT=travis.sh
   matrix:
-    # default success case, successful BEFORE_SCRIPT
-    - BEFORE_SCRIPT="echo first && false; echo second > /dev/null; echo Testing on $ROS_DISTRO"
-    - UPSTREAM_WORKSPACE=travis.rosinstall
-    - CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/valid     TEST=clang-format
+    - SCRIPT=unit_tests.sh
+    # skip clang-tidy-check on Xenial. It's only supported for cmake >= 3.6. clang-tidy-fix is tested.
+    - SCRIPT=unit_tests.sh   SKIP=clang-tidy-check   ROS_DISTRO=kinetic
 
-    # failures: result=2 indicates terminate of Travis script
-    - EXPECTED_RESULT=2  BEFORE_SCRIPT="echo \"Failing BEFORE_SCRIPT\"; return 1"
-    - EXPECTED_RESULT=2  UPSTREAM_WORKSPACE=missing.rosinstall  # missing UPSTREAM_WORKSPACE
-    - EXPECTED_RESULT=2  TEST=invalid # invalid test
-    - EXPECTED_RESULT=0  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/warnings      WARNINGS_OK=true
-    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/warnings      WARNINGS_OK=false
-    - EXPECTED_RESULT=0  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/valid         WARNINGS_OK=false
-    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/catkin_lint   TEST=catkin_lint
-    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_format  TEST=clang-format
-    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_tidy    TEST="clang-tidy-check clang-tidy-fix"
-    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_format  TEST=clang-format                        ROS_DISTRO=kinetic
-    - EXPECTED_RESULT=2  CI_SOURCE_PATH=/root/moveit_ci/test_pkgs/clang_tidy    TEST="clang-tidy-check clang-tidy-fix"   ROS_DISTRO=kinetic
-
-    # Build MoveIt! repository
-    - CI_SOURCE_PATH=/root/ws_moveit/src/moveit   TEST_BLACKLIST=moveit_ros_perception
-      UPSTREAM_WORKSPACE="https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall,
-                          https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall"
-                          # Duplicated rosinstall file for testing purposes
+    # Build MoveIt! repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
+    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
+      TEST_BLACKLIST=moveit_ros_perception
+      CI_SOURCE_PATH=/root/ws_moveit/src/moveit # manually specify main source repo (not coincides with moveit_ci)
 
     # Build geometric_shapes and apply clang-tidy-fix
-    - CI_SOURCE_PATH=/root/ws_moveit/src/geometric_shapes  TEST=clang-tidy-fix
-      UPSTREAM_WORKSPACE=https://github.com/ros-planning/geometric_shapes
+    - UPSTREAM_WORKSPACE=https://github.com/ros-planning/geometric_shapes
+      TEST=clang-tidy-fix
+      CI_SOURCE_PATH=/root/ws_moveit/src/geometric_shapes # manually specify main source repo (not coincides with moveit_ci)
 
 matrix:
-  include: # Build MoveIt! repository with clang + clang-tidy
-    - env: CI_SOURCE_PATH=/root/ws_moveit/src/moveit    TEST_BLACKLIST=moveit_ros_perception    TEST=clang-tidy-check
-           UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
+  include: # Add a separate config to the matrix, using clang as compiler
+    - env: UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
+           TEST_BLACKLIST=moveit_ros_perception    TEST=clang-tidy-check
+           CI_SOURCE_PATH=/root/ws_moveit/src/moveit # manually specify main source repo (not coincides with moveit_ci)
       compiler: clang
 
   allow_failures:
-    - env: CI_SOURCE_PATH=/root/ws_moveit/src/geometric_shapes  TEST=clang-tidy-fix
-           UPSTREAM_WORKSPACE=https://github.com/ros-planning/geometric_shapes
+    # geometric_shapes just serves as a small example for clang-tidy-fix
+    - env: UPSTREAM_WORKSPACE=https://github.com/ros-planning/geometric_shapes
+           TEST=clang-tidy-fix
+           CI_SOURCE_PATH=/root/ws_moveit/src/geometric_shapes # manually specify main source repo (not coincides with moveit_ci)
       compiler: gcc
 
 before_script:
   - ln -s . .moveit_ci  # pretend to have the usual location .moveit_ci
-  - ./unittest.sh  # unittests for travis' utility functions
 
 script:
-  - .moveit_ci/travis.sh
+  - .moveit_ci/$SCRIPT
