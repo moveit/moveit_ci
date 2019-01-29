@@ -51,7 +51,7 @@ matrix:
     - env: TEST=clang-tidy-check  # run static code analysis, but don't check for available auto-fixes
       compiler: clang
   allow_failures:
-    - env: ROS_DISTRO=kinetic  ROS_REPO=ros              UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/kinetic-devel/moveit.rosinstall
+    - env: ROS_DISTRO=kinetic  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit#$ROS_DISTRO-devel
 
 before_script:
   # Clone the moveit_ci repository into Travis' workspace
@@ -70,7 +70,7 @@ script:
 - `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the catkin workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
 - `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your catkin workspace.
   By default, all dependent packages will be downloaded as binary packages from `$ROS_REPO`.
-  Setting this variable to a `http://github.com/` repository url, will clone the corresponding repository into the workspace.
+  Setting this variable to a `http://github.com/user/repo#branch` repository url, will clone the corresponding repository into the workspace.
   Setting this variable to a `http://` url, or a local file in your repository, will merge the corresponding `.rosinstall` file with [`wstool`](http://wiki.ros.org/wstool) into your workspace.
 When set as "file", the dependended packages that need to be built from source are downloaded based on a .rosinstall file in your repository. Multiple sources can be given as a comma-, or semicolon-separated lists. Note: their order matters -- if the same resource is defined twice, only the first one is considered.
 - `TEST_BLACKLIST`: Allow certain tests to be skipped if necessary (not recommended).

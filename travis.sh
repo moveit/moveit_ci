@@ -162,7 +162,11 @@ for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
          echo "Obtaining debian packages for all upstream dependencies."
          break ;;
       https://github.com/*) # clone from github
-         travis_run_true git clone -q --depth 1 $item
+         # extract url and optional branch from item=<url>#<branch>
+         item="${item}#"
+         url=${item%%#*}
+         branch=${item#*#}; branch=${branch%#}; branch=${branch:+--branch ${branch}}
+         travis_run_true git clone -q --depth 1 $branch $url
          test $? -ne 0 && echo -e "$(colorize RED Failed clone repository. Aborting.)" && exit 2
          continue ;;
       http://* | https://* | file://*) ;; # use url as is
