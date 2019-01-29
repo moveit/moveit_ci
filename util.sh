@@ -256,13 +256,14 @@ travis_wait() {
 # adapted from travis_jigger.bash
 travis_monitor() {
   local cmd_pid=$1  # we are waiting for this process to finish
-  local timeout=$2  # timeout in mins
-  local elapsed=0   # elapsed time in mins
-
+  local timeout=$(($2 * 60))  # timeout in secs
+  local elapsed=0   # elapsed time in secs
   while [ "${elapsed}" -lt "${timeout}" ]; do
-    elapsed="$((elapsed + 1))"
-    sleep 60 # wait 60s
-    echo -ne "[$elapsed min]      \\r"
+     for s in "/" "-" "\\" "|"; do
+        echo -ne "$s \\r"
+        let "elapsed += 1"
+        sleep 1 # wait 1s
+     done
   done
 
   kill -9 $cmd_pid  # kill monitored process
