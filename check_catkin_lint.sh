@@ -1,4 +1,4 @@
-# Software License Agreement - BSD License
+# Software License Agreement - BSD 3-Clause License
 #
 # Author:  Robert Haschke
 # Desc: Check for warnings during build process of repo $CI_SOURCE_PATH
