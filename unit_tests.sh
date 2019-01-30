@@ -60,7 +60,7 @@ while true ; do
 		--quiet|-q) QUIET=/dev/null ;;  # suppress bulk of test's stdout
 		--no-docker) export IN_DOCKER=1 ;; # run without docker
 		--skip) skip_groups="$skip_groups $2"; shift ;; # skip certain tests
-		--help|-h) echo "$0 [--quiet | -q] [--no-docker] tests ($all_groups)" ;;
+		--help|-h) echo "$0 [--quiet | -q] [--no-docker] tests ($all_groups)"; exit 0 ;;
 		*) break;;
 	esac
 	shift
@@ -91,11 +91,14 @@ for group in $test_groups ; do
 			;;
 		catkin_lint)
 			run_test 0 $0:$LINENO "catkin_lint on 'valid' package" TEST_PKG=valid TEST=catkin_lint
+			run_test 0 $0:$LINENO "catkin_lint + clang-format on 'valid' package" TEST_PKG=valid 'TEST="catkin_lint clang-format"'
 			run_test 2 $0:$LINENO "catkin_lint on 'catkin_lint' package" TEST_PKG=catkin_lint TEST=catkin_lint
+			run_test 2 $0:$LINENO "catkin_lint + clang-format on 'catkin_lint' package" TEST_PKG=catkin_lint 'TEST="catkin_lint, clang-format"'
 			;;
 		clang-format)
 			run_test 0 $0:$LINENO "clang-format on 'valid' package" TEST_PKG=valid TEST=clang-format
 			run_test 2 $0:$LINENO "clang-format on 'clang_format' package" TEST_PKG=clang_format TEST=clang-format
+			run_test 2 $0:$LINENO "catkin_lint + clang-format on 'clang_format' package" TEST_PKG=clang_format 'TEST="catkin_lint; clang-format"'
 			;;
 		clang-tidy-fix)
 			run_test 0 $0:$LINENO "clang-tidy-fix on 'valid' package" TEST_PKG=valid TEST=clang-tidy-fix

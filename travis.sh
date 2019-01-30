@@ -103,34 +103,10 @@ travis_run apt-get -qq update
 # Make sure the packages are up-to-date
 travis_run apt-get -qq dist-upgrade
 
-# Check for different tests, Keep fold "update" open to include potential clang-tidy installs
-for t in $(unify_list " ,;" "$TEST") ; do
-    case "$t" in
-        clang-format)
-            travis_fold end update  # close "update" fold
-            source ${MOVEIT_CI_DIR}/check_clang_format.sh || exit 2
-            exit 0 # This runs as an independent job, do not run regular travis test
-            ;;
-        clang-tidy-check)  # run clang-tidy along with compiler and report warning
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy"
-            ;;
-        clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
-            # run-clang-tidy is part of clang-tools in Bionic
-            travis_run_true apt-get -qq install -y clang-tools
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
-            ;;
-        catkin_lint)
-            travis_fold end update  # close "update" fold
-            source ${MOVEIT_CI_DIR}/check_catkin_lint.sh || exit 2
-            exit 0 # This runs as an independent job, do not run regular travis test
-            ;;
-        *)
-            echo -e "$(colorize RED Unknown TEST: $t)"
-            exit 2
-            ;;
-    esac
-done
-[[ "$TEST" == *clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy # Install clang-tidy (once for all clang-tidy-* checks)
+# Install clang-tidy stuff if needed
+[[ "$TEST" == clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
+# run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
+[ "$TEST" == clang-tidy-fix ] && travis_run_true apt-get -qq install -y clang-tools
 
 # Enable ccache
 travis_run apt-get -qq install ccache
@@ -140,6 +116,35 @@ export PATH=/usr/lib/ccache:$PATH
 travis_run rosdep update
 
 travis_fold end update
+
+
+# Check for different tests. clang-format and catkin_lint will trigger an early exit
+# EARLY_RESULT="" -> no early exit, EARLY_RESULT=0 -> early success, otherwise early failure
+for t in $(unify_list " ,;" "$TEST") ; do
+    case "$t" in
+        clang-format)
+            (source ${MOVEIT_CI_DIR}/check_clang_format.sh) # run in subshell to not exit
+            EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
+            ;;
+        catkin_lint)
+            (source ${MOVEIT_CI_DIR}/check_catkin_lint.sh) # run in subshell to not exit
+            EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
+            ;;
+        clang-tidy-check)  # run clang-tidy along with compiler and report warning
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy"
+            ;;
+        clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ;;
+        *)
+            echo -e "$(colorize RED Unknown TEST: $t)"
+            EARLY_RESULT=$(( ${EARLY_RESULT:-0} + 2 ))
+            ;;
+    esac
+done
+if test -n "$EARLY_RESULT" ; then  # early exit?
+   test $EARLY_RESULT -eq 0 && exit 0 || exit 2
+fi
 
 # Install and run xvfb to allow for X11-based unittests on DISPLAY :99
 travis_fold start xvfb "Starting virtual X11 server to allow for X11-based unit tests"

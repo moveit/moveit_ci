@@ -99,8 +99,9 @@ function run_test() {
 	local location="$1"; shift     # file location, $0:$LINENO
 	local description="$1"; shift  # descriptive text
 	local PRETTY_PRINT="s#^[^=]*#\x1B[1m&\x1B[0m#g" # regex to highlight variable name
-	local quote=$(colorize YELLOW \")
-	local escape=$(colorize YELLOW \\\")
+	local squote=$(colorize YELLOW BOLD \')
+	local dquote=$(colorize YELLOW BOLD \")
+	local escape=$(colorize YELLOW BOLD \\\")
 	local comment
 
 	travis_fold start unittest "$(colorize YELLOW Running test:) $description"
@@ -113,7 +114,7 @@ function run_test() {
 			if ! eval "export $item" ; then
 				echo -en "$(colorize RED Failed to setup test environment.) "
 				echo -en "Check that quoting of\\n$(echo $item | sed $PRETTY_PRINT)\\nfollows the scheme: "
-				echo -e  "VARIABLE=${quote}some ${escape}escaped${escape} content${quote}"
+				echo -e  "${squote}VARIABLE=${dquote}some ${escape}escaped${escape} content${dquote}${squote}"
 				exit 255
 			fi
 		done
