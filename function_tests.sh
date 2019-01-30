@@ -37,8 +37,8 @@
 # Author: Robert Haschke
 # Desc: unit tests for travis_* functions in util.sh
 
-source ${MOVEIT_CI_DIR:=$(dirname $0)}/util.sh
-source ${MOVEIT_CI_DIR}/test_util.sh
+source $(dirname ${BASH_SOURCE:-$0})/util.sh
+source $(dirname ${BASH_SOURCE:-$0})/test_util.sh
 
 echo -e $(colorize YELLOW THIN "Testing basic travis functions")
 

@@ -52,6 +52,14 @@ export ROS_REPO=ros
 export ROS_DISTRO=${ROS_DISTRO:-melodic}
 export WARNINGS_OK=true
 
+# dummy functions to skip updates with --no-updates functions
+apt-get() {
+	echo "Dummy apt-get $*"
+}
+rosdep() {
+	echo "Dummy rosdep $*"
+}
+
 all_groups="sanity warnings catkin_lint clang-format clang-tidy-fix clang-tidy-check"
 skip_groups="${SKIP:-}"
 # process options
@@ -59,8 +67,9 @@ while true ; do
 	case "$1" in
 		--quiet|-q) QUIET=/dev/null ;;  # suppress bulk of test's stdout
 		--no-docker) export IN_DOCKER=1 ;; # run without docker
+		--no-updates) export -f apt-get; export -f rosdep ;;
 		--skip) skip_groups="$skip_groups $2"; shift ;; # skip certain tests
-		--help|-h) echo "$0 [--quiet | -q] [--no-docker] tests ($all_groups)"; exit 0 ;;
+		--help|-h) echo "$0 [--quiet | -q] [--no-docker] [--no-updates] tests ($all_groups)"; exit 0 ;;
 		*) break;;
 	esac
 	shift
@@ -68,7 +77,7 @@ done
 test_groups="$@"
 test -z "$test_groups" && test_groups=$all_groups
 test_groups=$(filter-out "$skip_groups" "$test_groups")
-echo "Testing: $test_groups"
+echo -e "$(colorize BOLD Configured unit tests:) $test_groups"
 
 for group in $test_groups ; do
 	case $group in
@@ -82,7 +91,10 @@ for group in $test_groups ; do
 			run_test 2 $0:$LINENO "missing rosinstall file" TEST_PKG=valid \
 				'UPSTREAM_WORKSPACE="missing.rosinstall;travis.rosinstall"'
 
-			run_test 2 $0:$LINENO "unknown TEST" TEST=invalid TEST_PKG=valid
+			run_test 1 $0:$LINENO "unknown TEST" TEST=invalid TEST_PKG=valid
+
+			run_test 1 $0:$LINENO "empty catkin workspace" TEST_PKG=valid 'BEFORE_SCRIPT="rm valid"'
+
 			;;
 		warnings)
 			run_test 0 $0:$LINENO "'warnings' package with warnings allowed" TEST_PKG=warnings WARNINGS_OK=true

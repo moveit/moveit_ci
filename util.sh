@@ -39,7 +39,7 @@
 # https://github.com/travis-ci/travis-build/blob/master/lib/travis/build/bash
 
 # source default functions, copied from travis-ci project
-source ${MOVEIT_CI_DIR:-$(dirname ${BASH_SOURCE:-$0})}/travis_functions.sh
+source $(dirname ${BASH_SOURCE:-$0})/travis_functions.sh
 
 export ANSI_RED="\033[31m"
 export ANSI_GREEN="\033[32m"

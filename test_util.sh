@@ -119,10 +119,11 @@ function run_test() {
 			fi
 		done
 		# custom source path to test
-		export CI_SOURCE_PATH=$MOVEIT_CI_DIR/test_pkgs/$TEST_PKG
+		export CI_SOURCE_PATH=test_pkgs/$TEST_PKG
 		echo -e "  $(echo "CI_SOURCE_PATH=$CI_SOURCE_PATH" | sed $PRETTY_PRINT)"
 		# TEST_PKG indicates a unit test!
 		export TEST_PKG
+		export CXX=${CXX:-c++}
 
 		# finally run travis.sh script
 		source ${MOVEIT_CI_DIR}/travis.sh >&${QUIET:-1}
