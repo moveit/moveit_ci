@@ -25,15 +25,15 @@ env:
     # Build MoveIt! repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
     - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
       TEST="clang-format, catkin_lint"
-      CI_SOURCE_PATH=/root/ws_moveit/src/moveit # manually specify main source repo (not coincides with moveit_ci)
+      CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
     - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
       TEST_BLACKLIST=moveit_ros_perception   WARNINGS_OK=no
-      CI_SOURCE_PATH=/root/ws_moveit/src/moveit # manually specify main source repo (not coincides with moveit_ci)
+      CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
 
     # geometric_shapes just serves as a small example for clang-tidy-fix
     - UPSTREAM_WORKSPACE=https://github.com/ros-planning/geometric_shapes
       TEST=clang-tidy-fix
-      CI_SOURCE_PATH=/root/ws_moveit/src/geometric_shapes # manually specify main source repo (not coincides with moveit_ci)
+      CI_SOURCE_PATH=geometric_shapes # manually specify main source repo (not coincides with moveit_ci)
 
 matrix:
   allow_failures: # While the above tests are proper unit tests, testing external workspaces has the risk of external issues
