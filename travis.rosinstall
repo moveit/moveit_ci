@@ -1,1 +1,2 @@
-# This file is intended for testing moveit_ci on travis
+# This file is intended for testing moveit_ci on travis.
+# It should be empty. unittest packages are provided in folder test_pkgs

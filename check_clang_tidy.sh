@@ -1,32 +1,53 @@
-# Change to source directory.
-pushd $CI_SOURCE_PATH
+# Software License Agreement - BSD 3-Clause License
+#
+# Author:  Robert Haschke
 
-# This directory can have its own .clang-tidy config file but if not, MoveIt's will be provided
-if [ ! -f .clang-tidy ]; then
-    wget "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy"
-fi
+_travis_run_clang_tidy_fix() {
+    local SOURCE_PKGS COMPILED_PKGS counter pkg file
+    SOURCE_PKGS=($(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null))
+
+    # filter repository packages for those which have a compile_commands.json file in their build folder
+    declare -A PKGS  # associative array
+    for pkg in ${SOURCE_PKGS[@]} ; do
+        file="$CATKIN_WS/build/$pkg/compile_commands.json"
+        test -r "$file" && PKGS[$pkg]=$(dirname "$file")
+    done
+
+    for pkg in ${SOURCE_PKGS[@]} ; do  # process files in topological order
+        test -z "${PKGS[$pkg]}" && continue  # skip pkgs without compile_commands.json
+        travis_fold start clang.tidy "  - $(colorize BLUE Processing $pkg)"
+        travis_run_wait "$RUN_CLANG_TIDY_EXECUTABLE -fix -p ${PKGS[$pkg]} 2> /dev/null"
+        # if there are workspace changes, print broken pkg to file descriptor 3
+        travis_have_fixes && 1>&3 echo $pkg || true  # should always succeed ;-)
+        travis_fold end clang.tidy
+    done
+}
+
+travis_fold start clang.tidy "Running clang-tidy check"
+travis_run_simple --display "- cd to repository source: $CI_SOURCE_PATH" cd $CI_SOURCE_PATH
 
 # Find run-clang-tidy script: Xenial and Bionic install them with different names
-export RUN_CLANG_TIDY=$(ls -1 /usr/bin/run-clang-tidy* | head -1)
+RUN_CLANG_TIDY_EXECUTABLE=$(ls -1 /usr/bin/run-clang-tidy* | head -1)
+test -z "$RUN_CLANG_TIDY_EXECUTABLE" && \
+   echo -e $(colorize YELLOW $(colorize THIN "Missing run-clang-tidy. Aborting.")) && \
+   exit 2
+# Check whether -quiet options is supported
+test ! $RUN_CLANG_TIDY_EXECUTABLE -quiet 2>&1 | grep -- "-quiet" > /dev/null && RUN_CLANG_TIDY_EXECUTABLE="$RUN_CLANG_TIDY_EXECUTABLE -quiet"
 
-# Run clang-tidy in all build folders containing a compile_commands.json file
-# Pipe the very verbose output of clang-tidy to /dev/null
-echo "Running clang-tidy"
+# Run _travis_run_clang_tidy_fix() and redirect file descriptor 3 to /tmp/clang-tidy.tainted to collect tainted pkgs
+3>/tmp/clang-tidy.tainted travis_run_simple --display "- run-clang-tidy for all source packages" _travis_run_clang_tidy_fix
+result=$?
+test $result -ne 0 && exit $result
 
-ls $CATKIN_WS/build
-find $CATKIN_WS/build -name compile_commands.json
-travis_run_wait 60 find $CATKIN_WS/build -name compile_commands.json -exec \
-    sh -c 'echo "Processing $(basename $(dirname {}))"; $RUN_CLANG_TIDY -fix -format -p $(dirname {}) > /dev/null 2>&1' \;
+# Read content of /tmp/clang-tidy.tainted into variable TAINTED_PKGS
+TAINTED_PKGS=$(< /tmp/clang-tidy.tainted)
 
-echo "Showing changes in code:"
-git --no-pager diff
+# Finish fold before printing result summary
+travis_fold end clang.tidy
 
-# Make sure no changes have occured in repo
-if ! git diff-index --quiet HEAD --; then
-    # changes
-    echo "clang-tidy test failed: changes required to comply to rules. See diff above."
-    exit 1
+if [ -z "$TAINTED_PKGS" ] ; then
+  echo -e $(colorize GREEN "Passed clang-tidy check")
+else
+  echo -e "$(colorize RED \"clang-tidy check failed for the following packages:\")\\n$(colorize YELLOW $(colorize THIN $TAINTED_PKGS))"
+  exit 2
 fi
-
-echo "Passed clang-tidy check"
-popd

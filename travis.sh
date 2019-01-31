@@ -1,4 +1,5 @@
 #!/bin/bash
+# -*- indent-tabs-mode: nil  -*-
 
 # Software License Agreement - BSD License
 #
@@ -8,232 +9,306 @@
 #
 # Author:  Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 
-# Note: ROS_REPOSITORY_PATH is no longer a valid option, use ROS_REPO. See README.md
+export MOVEIT_CI_DIR=$(dirname $0)  # path to the directory running the current script
+export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
+export CATKIN_WS=${CATKIN_WS:-/root/ws_moveit} # location of catkin workspace
 
-export CI_SOURCE_PATH=$(pwd) # The repository code in this pull request that we are testing
-export CI_PARENT_DIR=.moveit_ci  # This is the folder name that is used in downstream repositories in order to point to this repo.
-export HIT_ENDOFSCRIPT=false
-export REPOSITORY_NAME=${PWD##*/}
-export CATKIN_WS=/root/ws_moveit
-echo "---"
-echo "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'"
+# Travis' default timeout for open source projects is 50 mins
+# If your project has a larger timeout, specify this variable in your .travis.yml file!
+MOVEIT_CI_TRAVIS_TIMEOUT=${MOVEIT_CI_TRAVIS_TIMEOUT:-47}  # 50min minus safety margin
 
 # Helper functions
-source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/util.sh
+source ${MOVEIT_CI_DIR}/util.sh
 
-# Run all CI in a Docker container
-if ! [ "$IN_DOCKER" ]; then
-    # Run BEFORE_DOCKER_SCRIPT
-    if [ "${BEFORE_DOCKER_SCRIPT// }" != "" ]; then
-        travis_run sh -c "${BEFORE_DOCKER_SCRIPT}"
-    fi
+# usage: run_script BEFORE_SCRIPT  or run_script BEFORE_DOCKER_SCRIPT
+function run_script() {
+   local script
+   eval "script=\$$1"  # fetch value of variable passed in $1 (double indirection)
+   if [ "${script// }" != "" ]; then  # only run when non-empty
+      travis_run --title "$(colorize BOLD Running $1)" $script
+      result=$?
+      test $result -ne 0 && echo -e $(colorize RED "$1 failed with return value: $result. Aborting.") && exit 2
+   fi
+}
 
-    # Choose the correct CI container to use
-    case "$ROS_REPO" in
-        ros-shadow-fixed)
-            export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed
-            ;;
-        *)
-            export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci
-            ;;
+function run_docker() {
+   echo -e $(colorize YELLOW "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'")
+   run_script BEFORE_DOCKER_SCRIPT
+
+    # Choose the docker container to use
+    case "${ROS_REPO:-ros}" in
+       ros) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci ;;
+       ros-shadow-fixed) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed ;;
+       *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros' or 'ros-shadow-fixed'"); exit 1 ;;
     esac
-    echo "Starting Docker image: $DOCKER_IMAGE"
 
-    # Pull first to allow us to hide console output
-    docker pull $DOCKER_IMAGE > /dev/null
+    echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
+    travis_run docker pull $DOCKER_IMAGE
 
     # Start Docker container
     docker run \
         -e TRAVIS \
+        -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
         -e ROS_REPO \
         -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
-        -e CI_PARENT_DIR \
-        -e CI_SOURCE_PATH \
+        -e CI_SOURCE_PATH=${CI_SOURCE_PATH:-/root/$REPOSITORY_NAME} \
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
         -e TEST \
         -e TEST_BLACKLIST \
-        -e CC \
-        -e CXX \
+        -e WARNINGS_OK \
+        -e CC=${CC_FOR_BUILD:-${CC:-cc}} \
+        -e CXX=${CXX_FOR_BUILD:-${CXX:-c++}} \
         -e CFLAGS \
         -e CXXFLAGS \
         -v $(pwd):/root/$REPOSITORY_NAME \
         -v $HOME/.ccache:/root/.ccache \
         -t \
-        $DOCKER_IMAGE \
-        /bin/bash -c "cd /root/$REPOSITORY_NAME; source .moveit_ci/travis.sh;"
-    return_value=$?
+        -w /root/$REPOSITORY_NAME \
+        $DOCKER_IMAGE /root/$REPOSITORY_NAME/.moveit_ci/travis.sh
+    result=$?
 
-    if [ $return_value -eq 0 ]; then
-        echo "$DOCKER_IMAGE container finished successfully"
-        HIT_ENDOFSCRIPT=true;
-        exit 0
-    fi
-    echo "$DOCKER_IMAGE container finished with errors"
-    exit 1 # error
-fi
+    echo
+    case $result in
+        0) echo -e $(colorize GREEN "Travis script finished successfully.") ;;
+        124) echo -e $(colorize YELLOW "Timed out, but try again! Having saved cache results, Travis will probably succeed next time.") ;;
+        *) echo -e $(colorize RED "Travis script finished with errors.") ;;
+    esac
+    exit $result
+}
+
+function update_system() {
+   travis_fold start update "Updating system packages"
+   # Update the sources
+   travis_run apt-get -qq update
+
+   # Make sure the packages are up-to-date
+   travis_run apt-get -qq dist-upgrade
+
+   # Install clang-tidy stuff if needed
+   [[ "$TEST" == clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
+   # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
+   [ "$TEST" == clang-tidy-fix ] && travis_run_true apt-get -qq install -y clang-tools
+
+   # Enable ccache
+   travis_run apt-get -qq install ccache
+   export PATH=/usr/lib/ccache:$PATH
+
+   # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
+   travis_run rosdep update
+
+   travis_fold end update
+}
+
+function prepare_or_run_early_tests() {
+   # Check for different tests. clang-format and catkin_lint will trigger an early exit
+   # However, they can only run when $CI_SOURCE_PATH is already available. If not try later again.
+   if ! [ -d "$CI_SOURCE_PATH" ] ; then return 0; fi
+
+   # EARLY_RESULT="" -> no early exit, EARLY_RESULT=0 -> early success, otherwise early failure
+   local EARLY_RESULT
+   for t in $(unify_list " ,;" "$TEST") ; do
+      case "$t" in
+         clang-format)
+            (source ${MOVEIT_CI_DIR}/check_clang_format.sh) # run in subshell to not exit
+            EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
+            ;;
+         catkin_lint)
+            (source ${MOVEIT_CI_DIR}/check_catkin_lint.sh) # run in subshell to not exit
+            EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
+            ;;
+         clang-tidy-check)  # run clang-tidy along with compiler and report warning
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy"
+            ;;
+         clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ;;
+         *)
+            echo -e $(colorize RED "Unknown TEST: $t")
+            EARLY_RESULT=$(( ${EARLY_RESULT:-0} + 1 ))
+            ;;
+      esac
+   done
+   test -n "$EARLY_RESULT" && exit $EARLY_RESULT
+}
+
+# Install and run xvfb to allow for X11-based unittests on DISPLAY :99
+function run_xvfb() {
+   travis_fold start xvfb "Starting virtual X11 server to allow for X11-based unit tests"
+   travis_run apt-get -qq install xvfb mesa-utils
+   travis_run "Xvfb -screen 0 640x480x24 :99 &"
+   export DISPLAY=:99.0
+   travis_run_true glxinfo -B
+   travis_fold end xvfb
+}
+
+function prepare_catkin_workspace() {
+   travis_fold start catkin.ws "Setting up catkin workspace"
+   travis_run_simple mkdir -p $CATKIN_WS/src
+   travis_run_simple cd $CATKIN_WS/src
+
+   # Pull additional packages into the catkin workspace
+   travis_run wstool init .
+   for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
+      case "$item" in
+         debian)
+            echo "Obtaining debian packages for all upstream dependencies."
+            break ;;
+         https://github.com/*) # clone from github
+            # extract url and optional branch from item=<url>#<branch>
+            item="${item}#"
+            url=${item%%#*}
+            branch=${item#*#}; branch=${branch%#}; branch=${branch:+--branch ${branch}}
+            travis_run_true git clone -q --depth 1 $branch $url
+            test $? -ne 0 && echo -e "$(colorize RED Failed clone repository. Aborting.)" && exit 2
+            continue ;;
+         http://* | https://* | file://*) ;; # use url as is
+         *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
+      esac
+      travis_run_true wstool merge -k $item
+      test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
+   done
+
+   # Download upstream packages into workspace
+   if [ -e .rosinstall ]; then
+      # ensure that the to-be-tested package is not in .rosinstall
+      travis_run_true wstool rm $REPOSITORY_NAME
+      # perform shallow checkout: only possible with wstool init
+      travis_run_simple mv .rosinstall rosinstall
+      travis_run cat rosinstall
+      travis_run wstool init --shallow . rosinstall
+   fi
+
+   # Link in the repo we are testing
+   if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then
+      travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into catkin workspace" ln -s $CI_SOURCE_PATH .
+   fi
+
+   # Fetch clang-tidy configs
+   if [ "$TEST" == clang-tidy-check ] ; then
+      # clang-tidy-check essentially runs during the build process for *all* packages.
+      # However, we only want to check one repository ($CI_SOURCE_PATH).
+      # Thus, we provide a dummy .clang-tidy config file as a fallback for the whole workspace
+      travis_run_simple --no-assert cp $MOVEIT_CI_DIR/.dummy-clang-tidy $CATKIN_WS/src/.clang-tidy
+   fi
+   if [[ "$TEST" == clang-tidy-* ]] ; then
+      # Ensure a useful .clang-tidy config file is present in the to-be-tested repo ($CI_SOURCE_PATH)
+      [ -f $CI_SOURCE_PATH/.clang-tidy ] || \
+         travis_run --title "Fetching default clang-tidy config from MoveIt" \
+                    wget -nv https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy \
+                         -O $CI_SOURCE_PATH/.clang-tidy
+      travis_run --display "Applying the following clang-tidy checks:" cat $CI_SOURCE_PATH/.clang-tidy
+   fi
+
+   # run BEFORE_SCRIPT, which might modify the workspace further
+   run_script BEFORE_SCRIPT
+
+   # For debugging: list the files in workspace's source folder
+   travis_run_simple cd $CATKIN_WS/src
+   travis_run --title "List files in catkin workspace's source folder" ls --color=auto -alhF
+
+   # Install source-based package dependencies
+   travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
+
+   # Change to base of workspace
+   travis_run_simple cd $CATKIN_WS
+
+   # Validate that we have some packages to build
+   test -z "$(catkin list)" && echo -e "$(colorize RED Workspace $CATKIN_WS has no packages to build. Terminating.)" && exit 1
+   travis_fold end catkin.ws
+}
+
+function build_workspace() {
+   echo -e $(colorize GREEN Building Workspace)
+   # Configure catkin
+   travis_run --title "catkin config $CMAKE_ARGS" catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3" $CMAKE_ARGS --
+
+   # Console output fix for: "WARNING: Could not encode unicode characters"
+   export PYTHONIOENCODING=UTF-8
+
+   # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
+   travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize
+
+   # Allow to verify ccache usage
+   travis_run --title "ccache statistics" ccache -s
+}
+
+function test_workspace() {
+   echo -e $(colorize GREEN Testing Workspace)
+   travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
+
+   # Consider TEST_BLACKLIST
+   TEST_BLACKLIST=$(unify_list " ,;" $TEST_BLACKLIST)
+   echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
+   test -n "$TEST_BLACKLIST" && catkin config --blacklist $TEST_BLACKLIST &> /dev/null
+
+   # Also blacklist external packages
+   all_pkgs=$(catkin_topological_order $CATKIN_WS --only-names 2> /dev/null)
+   source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null)
+   blacklist_pkgs=$(filter-out "$source_pkgs" "$all_pkgs")
+   test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist &> /dev/null
+
+   # Build tests
+   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests --
+   # Run tests, suppressing the output (confuses Travis display?)
+   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize 2>/dev/null"
+
+   # Show failed tests
+   travis_fold start test.results "catkin_test_results"
+   for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
+      travis_run --display "Test log of $file" cat $file
+   done
+   travis_fold end test.results
+
+   # Show test results summary and throw error if necessary
+   catkin_test_results || exit 2
+}
+
+###########################################################################################################
+# main program
+ 
+# This repository has some dummy catkin packages in folder test_pkgs, which are needed for unit testing only.
+# To not clutter normal builds, we just create a CATKIN_IGNORE file in that folder.
+# A unit test can be recognized from the presence of the environment variable $TEST_PKG (see unit_tests.sh)
+test -z "$TEST_PKG" && touch ${MOVEIT_CI_DIR}/test_pkgs/CATKIN_IGNORE # not a unit test build
+
+# Re-run the script in a Docker container
+if ! [ "$IN_DOCKER" ]; then run_docker; fi
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
 
+# Prepend current dir if path is not yet absolute
+[[ "$MOVEIT_CI_DIR" != /* ]] && MOVEIT_CI_DIR=$PWD/$MOVEIT_CI_DIR
+if [[ "$CI_SOURCE_PATH" != /* ]] ; then
+   # If CI_SOURCE_PATH is not yet absolute
+   if [ -d "$PWD/$CI_SOURCE_PATH" ] ; then
+      CI_SOURCE_PATH=$PWD/$CI_SOURCE_PATH  # prepend with current dir, if that's feasible
+   else
+      # otherwise assume the folder will be created in $CATKIN_WS/src
+      CI_SOURCE_PATH=$CATKIN_WS/src/$CI_SOURCE_PATH
+   fi
+fi
+
+# normalize WARNINGS_OK to 0/1. Originally we accept true, yes, or 1 to allow warnings.
+test ${WARNINGS_OK:=true} == true -o "$WARNINGS_OK" == 1 -o "$WARNINGS_OK" == yes && WARNINGS_OK=1 || WARNINGS_OK=0
+
 # Define CC/CXX defaults and print compiler version info
-export CC=${CC:-cc}
-export CXX=${CXX:-c++}
-$CXX --version
+travis_run --title "CXX compiler info" $CXX --version
 
-# Update the sources
-travis_run apt-get -qq update
+update_system
+prepare_or_run_early_tests
+run_xvfb
+prepare_catkin_workspace
+prepare_or_run_early_tests
 
-# Make sure the packages are up-to-date
-travis_run apt-get -qq dist-upgrade
-
-# Split for different tests
-for t in $TEST; do
-    case "$t" in
-        clang-format)
-            source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/check_clang_format.sh || exit 1
-            exit 0 # This runs as an independent job, do not run regular travis test
-            ;;
-        clang-tidy-check)  # run clang-tidy along with compiler and report warning
-            # Install clang-tidy
-            travis_run apt-get -qq install -y clang-tidy
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy"
-            ;;
-        clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
-            # Install clang-tidy
-            travis_run apt-get -qq install -y clang-tidy
-            # run-clang-tidy is part of clang-tools in Bionic
-            travis_run_true apt-get -qq install -y clang-tools
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
-            ;;
-        *)
-            echo "Unknown TEST: $t"
-            exit 1
-            ;;
-    esac
-done
-
-# Enable ccache
-travis_run apt-get -qq install ccache
-export PATH=/usr/lib/ccache:$PATH
-
-# Install and run xvfb to allow for X11-based unittests on DISPLAY :99
-travis_run apt-get -qq install xvfb mesa-utils
-Xvfb -screen 0 640x480x24 :99 &
-export DISPLAY=:99.0
-travis_run_true glxinfo
-
-# Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
-travis_run rosdep update
-
-# Create workspace
-travis_run mkdir -p $CATKIN_WS/src
-travis_run cd $CATKIN_WS/src
-
-# Install dependencies necessary to run build using .rosinstall files
-if [ ! "$UPSTREAM_WORKSPACE" ]; then
-    export UPSTREAM_WORKSPACE="debian";
-fi
-case "$UPSTREAM_WORKSPACE" in
-    debian)
-        echo "Obtain deb binary for upstream packages."
-        ;;
-    http://* | https://*) # When UPSTREAM_WORKSPACE is an http url, use it directly
-        travis_run wstool init .
-        # Handle multiple rosintall entries.
-        (  # parentheses ensure that IFS is automatically reset
-            IFS=','  # Multiple URLs can be given separated by comma.
-            for rosinstall in $UPSTREAM_WORKSPACE; do
-                travis_run wstool merge -k $rosinstall
-            done
-        )
-        ;;
-    *) # Otherwise assume UPSTREAM_WORKSPACE is a local file path
-        travis_run wstool init .
-        if [ -e $CI_SOURCE_PATH/$UPSTREAM_WORKSPACE ]; then
-            # install (maybe unreleased version) dependencies from source
-            travis_run wstool merge file://$CI_SOURCE_PATH/$UPSTREAM_WORKSPACE
-        else
-            echo "No rosinstall file found, aborting" && exit 1
-        fi
-        ;;
-esac
-
-# download upstream packages into workspace
-if [ -e .rosinstall ]; then
-    # ensure that the downstream is not in .rosinstall
-    travis_run_true wstool rm $REPOSITORY_NAME
-    # perform shallow checkout: only possible with wstool init
-    travis_run mv .rosinstall rosinstall
-    travis_run cat rosinstall
-    travis_run wstool init --shallow . rosinstall
-fi
-
-# link in the repo we are testing
-travis_run ln -s $CI_SOURCE_PATH .
-
-# Debug: see the files in current folder
-travis_run ls -a
-
-# Run BEFORE_SCRIPT
-if [ "${BEFORE_SCRIPT// }" != "" ]; then
-    travis_run sh -c "${BEFORE_SCRIPT}";
-fi
-
-# Install source-based package dependencies
-travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
-
-# Change to base of workspace
-travis_run cd $CATKIN_WS
-
-# Configure catkin
-travis_run catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3" $CMAKE_ARGS --
-
-# Console output fix for: "WARNING: Could not encode unicode characters"
-export PYTHONIOENCODING=UTF-8
-
-# For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-travis_run_wait 60 catkin build --no-status --summarize || exit 1
-
-travis_run ccache -s
-
-# Source the new built workspace
-travis_run source install/setup.bash;
-
-# Choose which packages to run tests on
-echo "Test blacklist: $TEST_BLACKLIST"
-echo "--------------"
-TEST_PKGS=$(catkin_topological_order $CATKIN_WS/src --only-names | grep -Fvxf <(echo "$TEST_BLACKLIST" | tr ' ;,' '\n') | tr '\n' ' ')
-
-if [ -n "$TEST_PKGS" ]; then
-    TEST_PKGS="--no-deps $TEST_PKGS";
-    # Fix formatting of list of packages to work correctly with Travis
-    IFS=' ' read -r -a TEST_PKGS <<< "$TEST_PKGS"
-fi
-echo -e "Test packages: ${TEST_PKGS}"
-
-# Run catkin package tests
-travis_run catkin build --no-status --summarize --make-args tests -- ${TEST_PKGS[@]}
-
-# Run non-catkin package tests
-travis_run catkin build --catkin-make-args run_tests -- --no-status --summarize ${TEST_PKGS[@]}
-
-# Show failed tests
-for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
-    travis_run cat $file
-done
-
-# Show test results summary and throw error if necessary
-travis_run catkin_test_results
+build_workspace
+test_workspace
 
 # Run clang-tidy-fix check
-case "$TEST" in
-    *clang-tidy-fix*)
-        source ${CI_SOURCE_PATH}/$CI_PARENT_DIR/check_clang_tidy.sh || exit 1
-        ;;
-esac
-
-echo "Travis script has finished successfully"
-HIT_ENDOFSCRIPT=true
-exit 0
+if [[ "$TEST" == *clang-tidy-fix* ]] ; then
+   source ${MOVEIT_CI_DIR}/check_clang_tidy.sh || exit 2
+fi
+# Run warnings check
+source ${MOVEIT_CI_DIR}/check_warnings.sh
