@@ -58,6 +58,7 @@ function run_docker() {
         -e TEST \
         -e TEST_BLACKLIST \
         -e WARNINGS_OK \
+        -e ABI_BASE_URL \
         -e CC=${CC_FOR_BUILD:-${CC:-cc}} \
         -e CXX=${CXX_FOR_BUILD:-${CXX:-c++}} \
         -e CFLAGS \
@@ -90,6 +91,8 @@ function update_system() {
    [[ "$TEST" == *clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
    [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
+   # Install abi-compliance-checker if needed
+   [[ "$TEST" == *abi* ]] && travis_run_true apt-get -qq install -y abi-dumper abi-compliance-checker links
 
    # Enable ccache
    travis_run apt-get -qq install ccache
@@ -123,6 +126,9 @@ function prepare_or_run_early_tests() {
             ;;
          clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+            ;;
+         abi)  # abi-checker requires debug symbols
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo"
             ;;
          *)
             echo -e $(colorize RED "Unknown TEST: $t")
@@ -311,6 +317,10 @@ for t in $(unify_list " ,;" "$TEST") ; do
    case "$t" in
       clang-tidy-fix)
          (source ${MOVEIT_CI_DIR}/check_clang_tidy.sh)
+         test $? -eq 0 || result=$(( ${result:-0} + 1 ))
+         ;;
+      abi)
+         (source ${MOVEIT_CI_DIR}/check_abi.sh)
          test $? -eq 0 || result=$(( ${result:-0} + 1 ))
          ;;
    esac
