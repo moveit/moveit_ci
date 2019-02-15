@@ -9,7 +9,7 @@
 #
 # Author:  Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 
-export MOVEIT_CI_DIR=$(dirname $0)  # path to the directory running the current script
+export MOVEIT_CI_DIR=$(dirname ${BASH_SOURCE:-$0})  # path to the directory running the current script
 export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
 export CATKIN_WS=${CATKIN_WS:-/root/ws_moveit} # location of catkin workspace
 
