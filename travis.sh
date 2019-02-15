@@ -87,9 +87,9 @@ function update_system() {
    travis_run apt-get -qq dist-upgrade
 
    # Install clang-tidy stuff if needed
-   [[ "$TEST" == clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
+   [[ "$TEST" == *clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
-   [ "$TEST" == clang-tidy-fix ] && travis_run_true apt-get -qq install -y clang-tools
+   [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
 
    # Enable ccache
    travis_run apt-get -qq install ccache
@@ -306,9 +306,17 @@ prepare_or_run_early_tests
 build_workspace
 test_workspace
 
-# Run clang-tidy-fix check
-if [[ "$TEST" == *clang-tidy-fix* ]] ; then
-   source ${MOVEIT_CI_DIR}/check_clang_tidy.sh || exit 2
-fi
+# Run all remaining tests
+for t in $(unify_list " ,;" "$TEST") ; do
+   case "$t" in
+      clang-tidy-fix)
+         (source ${MOVEIT_CI_DIR}/check_clang_tidy.sh)
+         test $? -eq 0 || result=$(( ${result:-0} + 1 ))
+         ;;
+   esac
+done
 # Run warnings check
-source ${MOVEIT_CI_DIR}/check_warnings.sh
+(source ${MOVEIT_CI_DIR}/check_warnings.sh)
+test $? -eq 0 || result=$(( ${result:-0} + 1 ))
+
+exit ${result:-0}
