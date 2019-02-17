@@ -105,13 +105,14 @@ function abi_check() {
 # TODO: If ABI_BASE_URL is not provided, need to build from last tag/merge (as industrial_ci)
 test -z "$ABI_BASE_URL" && echo -e $(colorize YELLOW "For ABI check, please specify ABI_BASE_URL variable") && exit 1
 
-test "$TRAVIS" == true && abi_install
-
 if [ "$ABI_BASE_URL" == "generate" ] ; then
+	test "$TRAVIS" == true && abi_install
 	travis_run abi_check \
 			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include" \
 			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include"
-else
+elif [ "$TRAVIS_PULL_REQUEST" == true ]; then
+	# For a pull request, actually perform the abi check
+	test "$TRAVIS" == true && abi_install
 	# fetch and extract old abi from $ABI_BASE_URL
 	mkdir -p "${ABI_TMP_DIR}/old"
 	travis_run --display "Download and extract base ABI" \
@@ -119,5 +120,7 @@ else
 	travis_run abi_check \
 			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include" \
 			"${ABI_TMP_DIR}/old/lib" "${ABI_TMP_DIR}/old/include"
+else
+	# TODO: If this commit is a release, push the install folder to ABI_BASE_URL
+	:
 fi
-# TODO: If this commit is a release, push the install folder to ABI_BASE_URL
