@@ -93,7 +93,13 @@ function update_system() {
    [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
    # Install abi-compliance-checker if needed
    [[ "$TEST" == *abi* ]] && travis_run_true apt-get -qq install -y abi-dumper abi-compliance-checker links
-
+   # Install catkin_lint if needed
+   if [[ "$TEST" == *catkin_lint* ]]
+   then
+       travis_run apt-get -qq install -y python-pip
+       travis_run pip install catkin_lint
+       travis_run catkin_lint --version
+   fi
    # Enable ccache
    travis_run apt-get -qq install ccache
    export PATH=/usr/lib/ccache:$PATH
@@ -273,7 +279,7 @@ function test_workspace() {
 
 ###########################################################################################################
 # main program
- 
+
 # This repository has some dummy catkin packages in folder test_pkgs, which are needed for unit testing only.
 # To not clutter normal builds, we just create a CATKIN_IGNORE file in that folder.
 # A unit test can be recognized from the presence of the environment variable $TEST_PKG (see unit_tests.sh)
