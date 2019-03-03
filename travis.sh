@@ -94,11 +94,9 @@ function update_system() {
    # Install abi-compliance-checker if needed
    [[ "$TEST" == *abi* ]] && travis_run_true apt-get -qq install -y abi-dumper abi-compliance-checker links
    # Install catkin_lint if needed
-   if [[ "$TEST" == *catkin_lint* ]]
-   then
+   if [[ "$TEST" == *catkin_lint* ]]; then
        travis_run apt-get -qq install -y python-pip
        travis_run pip install catkin_lint
-       travis_run catkin_lint --version
    fi
    # Enable ccache
    travis_run apt-get -qq install ccache
