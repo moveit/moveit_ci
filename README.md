@@ -121,6 +121,8 @@ Manually define the variables, Travis would otherwise define for you. These are 
     export TRAVIS_BRANCH=melodic-devel
     export ROS_DISTRO=melodic
     export ROS_REPO=ros-shadow-fixed
+    export CC=gcc
+    export CXX=g++
 
 The rest is optional:
 
