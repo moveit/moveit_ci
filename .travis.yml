@@ -14,7 +14,7 @@ notifications:
        - dave@dav.ee
 env:
   global: # default values
-    - ROS_DISTRO=melodic
+    - ROS_DISTRO=crystal
     - ROS_REPO=ros
     - SCRIPT=travis.sh
   matrix:
@@ -23,10 +23,10 @@ env:
     - SCRIPT=unit_tests.sh   SKIP=clang-tidy-check   ROS_DISTRO=kinetic
 
     # Build MoveIt! repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
-    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
+    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/moveit2-ci/moveit.rosinstall
       TEST="clang-format, catkin_lint"
       CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
-    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
+    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/moveit2-ci/moveit.rosinstall
       TEST_BLACKLIST=moveit_ros_perception   WARNINGS_OK=no
       CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
 

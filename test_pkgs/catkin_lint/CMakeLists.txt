@@ -1,13 +1,16 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(catkin_lint)
 
-add_compile_options(-std=c++14)
-find_package(catkin REQUIRED)
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
 
-catkin_package()
+find_package(ament_cmake REQUIRED)
 
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(${PROJECT_NAME} test.cpp)
+endif()
 
-catkin_add_gtest(${PROJECT_NAME} test.cpp)
+ament_package()
