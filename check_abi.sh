@@ -80,12 +80,14 @@ function abi_check() {
 				-o "$old_dump" -public-headers "$old_include_dir"
 		fi
 
-		travis_run_simple abi-compliance-checker -report-path "${ABI_TMP_DIR}/reports/$lib_name.html" \
+		travis_run_simple --no-assert abi-compliance-checker -report-path "${ABI_TMP_DIR}/reports/$lib_name.html" \
 			-l "$lib_name" -n "$new_dump" -o "$old_dump"
 		result=$?
 		case "$result" in
 			0) ;;
-			1) broken+=("$(basename \"$lib\")") ;;
+			1) broken+=("$(basename \"$lib\")")
+				travis_run_true links -dump "${ABI_TMP_DIR}/reports/$lib_name.html"
+				;;
 			*) return "$result"
 		esac
 	done
