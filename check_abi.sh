@@ -40,11 +40,15 @@ ABI_TMP_DIR=${ABI_TMP_DIR:-/tmp/abi}
 
 function abi_install() {
 	travis_fold start abi_check "Installing ABI checker"
-	travis_run apt-get install -y -qq abi-dumper abi-compliance-checker links
+	travis_run sudo apt-get install -y -qq wget perl links
+
+	mkdir -p "${ABI_TMP_DIR}"
+	wget -q -O /tmp/abi_installer.pl https://raw.githubusercontent.com/lvc/installer/master/installer.pl
+	perl /tmp/abi_installer.pl -install -prefix $ABI_TMP_DIR abi-compliance-checker
+	perl /tmp/abi_installer.pl -install -prefix $ABI_TMP_DIR abi-dumper
 
 	# abi-dumper requires universal ctags
-	mkdir -p "${ABI_TMP_DIR}"
-	travis_run apt-get install -y -qq autoconf pkg-config
+	travis_run sudo apt-get install -y -qq autoconf pkg-config
 	travis_run git clone --depth 1 https://github.com/universal-ctags/ctags.git $ABI_TMP_DIR/ctags
 	travis_run --display "Build universal ctags" "(cd $ABI_TMP_DIR/ctags && ./autogen.sh && ./configure --prefix $ABI_TMP_DIR && make install)"
 	export PATH=$ABI_TMP_DIR/bin:$PATH
@@ -80,12 +84,14 @@ function abi_check() {
 				-o "$old_dump" -public-headers "$old_include_dir"
 		fi
 
-		travis_run_simple abi-compliance-checker -report-path "${ABI_TMP_DIR}/reports/$lib_name.html" \
+		travis_run_simple --no-assert abi-compliance-checker -report-path "${ABI_TMP_DIR}/reports/$lib_name.html" \
 			-l "$lib_name" -n "$new_dump" -o "$old_dump"
 		result=$?
 		case "$result" in
 			0) ;;
-			1) broken+=("$(basename \"$lib\")") ;;
+			1) broken+=("$(basename \"$lib\")")
+				travis_run_true links -dump "${ABI_TMP_DIR}/reports/$lib_name.html"
+				;;
 			*) return "$result"
 		esac
 	done
@@ -99,14 +105,22 @@ function abi_check() {
 # TODO: If ABI_BASE_URL is not provided, need to build from last tag/merge (as industrial_ci)
 test -z "$ABI_BASE_URL" && echo -e $(colorize YELLOW "For ABI check, please specify ABI_BASE_URL variable") && exit 1
 
-test "$TRAVIS" == true && abi_install
-
-# fetch and extract old abi from $ABI_BASE_URL
-mkdir -p "${ABI_TMP_DIR}/old"
-travis_run --display "Download and extract base ABI" \
+if [ "$ABI_BASE_URL" == "generate" ] ; then
+	test "$TRAVIS" == true && abi_install
+	travis_run abi_check \
+			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include" \
+			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include"
+elif [ "$TRAVIS_PULL_REQUEST" == true ]; then
+	# For a pull request, actually perform the abi check
+	test "$TRAVIS" == true && abi_install
+	# fetch and extract old abi from $ABI_BASE_URL
+	mkdir -p "${ABI_TMP_DIR}/old"
+	travis_run --display "Download and extract base ABI" \
 		"(cd ${ABI_TMP_DIR} && wget -c $ABI_BASE_URL && cd old && tar xf ../$(basename $ABI_BASE_URL))"
-travis_run abi_check \
+	travis_run abi_check \
 			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include" \
 			"${ABI_TMP_DIR}/old/lib" "${ABI_TMP_DIR}/old/include"
-
-# TODO: If this commit is a release, push the install folder to ABI_BASE_URL
+else
+	# TODO: If this commit is a release, push the install folder to ABI_BASE_URL
+	:
+fi
