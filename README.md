@@ -118,9 +118,9 @@ Next clone the CI script:
 
 Manually define the variables, Travis would otherwise define for you. These are required:
 
-    export TRAVIS_BRANCH=melodic-devel
-    export ROS_DISTRO=melodic
-    export ROS_REPO=ros-shadow-fixed
+    export TRAVIS_BRANCH=ros2-port
+    export ROS_DISTRO=crystal
+    export ROS_REPO=ros
 
 The rest is optional:
 
@@ -137,4 +137,5 @@ It's also possible to run the script without using docker. To this end, issue th
     export CI_SOURCE_PATH=$PWD       # repository location in, i.e. /tmp/travis/moveit
     export ROS_WS=/tmp/catkin_ws  # define a new catkin workspace location
     mkdir $ROS_WS                 # and create it
+
     .moveit_ci/travis.sh
