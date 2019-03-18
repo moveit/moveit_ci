@@ -135,6 +135,6 @@ It's also possible to run the script without using docker. To this end, issue th
 
     export IN_DOCKER=1               # pretend running docker
     export CI_SOURCE_PATH=$PWD       # repository location in, i.e. /tmp/travis/moveit
-    export CATKIN_WS=/tmp/catkin_ws  # define a new catkin workspace location
-    mkdir $CATKIN_WS                 # and create it
+    export ROS_WS=/tmp/catkin_ws  # define a new catkin workspace location
+    mkdir $ROS_WS                 # and create it
     .moveit_ci/travis.sh

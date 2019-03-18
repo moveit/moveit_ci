@@ -51,7 +51,7 @@ function abi_install() {
 	travis_fold end abi_check
 }
 
-# abi_check new_lib_dir 
+# abi_check new_lib_dir
 function abi_check() {
 	local new_lib_dir=$1
 	local new_include_dir=$2
@@ -106,7 +106,7 @@ mkdir -p "${ABI_TMP_DIR}/old"
 travis_run --display "Download and extract base ABI" \
 		"(cd ${ABI_TMP_DIR} && wget -c $ABI_BASE_URL && cd old && tar xf ../$(basename $ABI_BASE_URL))"
 travis_run abi_check \
-			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include" \
+			"${ROS_WS}/install/lib" "${ROS_WS}/install/include" \
 			"${ABI_TMP_DIR}/old/lib" "${ABI_TMP_DIR}/old/include"
 
 # TODO: If this commit is a release, push the install folder to ABI_BASE_URL

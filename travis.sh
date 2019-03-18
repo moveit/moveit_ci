@@ -11,7 +11,7 @@
 
 export MOVEIT_CI_DIR=$(dirname ${BASH_SOURCE:-$0})  # path to the directory running the current script
 export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
-export CATKIN_WS=${CATKIN_WS:-/root/ws_moveit} # location of catkin workspace
+export ROS_WS=${ROS_WS:-/root/ws_moveit} # location of catkin workspace
 
 # Travis' default timeout for open source projects is 50 mins
 # If your project has a larger timeout, specify this variable in your .travis.yml file!
@@ -155,8 +155,8 @@ function run_xvfb() {
 
 function prepare_catkin_workspace() {
    travis_fold start catkin.ws "Setting up catkin workspace"
-   travis_run_simple mkdir -p $CATKIN_WS/src
-   travis_run_simple cd $CATKIN_WS/src
+   travis_run_simple mkdir -p $ROS_WS/src
+   travis_run_simple cd $ROS_WS/src
 
    # Pull additional packages into the catkin workspace
    travis_run wstool init .
@@ -200,7 +200,7 @@ function prepare_catkin_workspace() {
       # clang-tidy-check essentially runs during the build process for *all* packages.
       # However, we only want to check one repository ($CI_SOURCE_PATH).
       # Thus, we provide a dummy .clang-tidy config file as a fallback for the whole workspace
-      travis_run_simple --no-assert cp $MOVEIT_CI_DIR/.dummy-clang-tidy $CATKIN_WS/src/.clang-tidy
+      travis_run_simple --no-assert cp $MOVEIT_CI_DIR/.dummy-clang-tidy $ROS_WS/src/.clang-tidy
    fi
    if [[ "$TEST" == clang-tidy-* ]] ; then
       # Ensure a useful .clang-tidy config file is present in the to-be-tested repo ($CI_SOURCE_PATH)
@@ -215,17 +215,17 @@ function prepare_catkin_workspace() {
    run_script BEFORE_SCRIPT
 
    # For debugging: list the files in workspace's source folder
-   travis_run_simple cd $CATKIN_WS/src
+   travis_run_simple cd $ROS_WS/src
    travis_run --title "List files in catkin workspace's source folder" ls --color=auto -alhF
 
    # Install source-based package dependencies
    travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
    # Change to base of workspace
-   travis_run_simple cd $CATKIN_WS
+   travis_run_simple cd $ROS_WS
 
    # Validate that we have some packages to build
-   test -z "$(catkin list)" && echo -e "$(colorize RED Workspace $CATKIN_WS has no packages to build. Terminating.)" && exit 1
+   test -z "$(catkin list)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
    travis_fold end catkin.ws
 }
 
@@ -254,7 +254,7 @@ function test_workspace() {
    test -n "$TEST_BLACKLIST" && catkin config --blacklist $TEST_BLACKLIST &> /dev/null
 
    # Also blacklist external packages
-   all_pkgs=$(catkin_topological_order $CATKIN_WS --only-names 2> /dev/null)
+   all_pkgs=$(catkin_topological_order $ROS_WS --only-names 2> /dev/null)
    source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null)
    blacklist_pkgs=$(filter-out "$source_pkgs" "$all_pkgs")
    test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist &> /dev/null
@@ -296,8 +296,8 @@ if [[ "$CI_SOURCE_PATH" != /* ]] ; then
    if [ -d "$PWD/$CI_SOURCE_PATH" ] ; then
       CI_SOURCE_PATH=$PWD/$CI_SOURCE_PATH  # prepend with current dir, if that's feasible
    else
-      # otherwise assume the folder will be created in $CATKIN_WS/src
-      CI_SOURCE_PATH=$CATKIN_WS/src/$CI_SOURCE_PATH
+      # otherwise assume the folder will be created in $ROS_WS/src
+      CI_SOURCE_PATH=$ROS_WS/src/$CI_SOURCE_PATH
    fi
 fi
 
