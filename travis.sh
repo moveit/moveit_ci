@@ -92,11 +92,6 @@ function update_system() {
    [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
    # Install abi-compliance-checker if needed
    [[ "$TEST" == *abi* ]] && travis_run_true apt-get -qq install -y abi-dumper abi-compliance-checker links
-   # Install catkin_lint if needed
-   if [[ "$TEST" == *catkin_lint* ]]; then
-       travis_run apt-get -qq install -y python-pip
-       travis_run pip install catkin_lint
-   fi
    # Enable ccache
    travis_run apt-get -qq install ccache
    export PATH=/usr/lib/ccache:$PATH
@@ -108,7 +103,7 @@ function update_system() {
 }
 
 function prepare_or_run_early_tests() {
-   # Check for different tests. clang-format and catkin_lint will trigger an early exit
+   # Check for different tests. clang-format will trigger an early exit
    # However, they can only run when $CI_SOURCE_PATH is already available. If not try later again.
    if ! [ -d "$CI_SOURCE_PATH" ] ; then return 0; fi
 
@@ -118,10 +113,6 @@ function prepare_or_run_early_tests() {
       case "$t" in
          clang-format)
             (source ${MOVEIT_CI_DIR}/check_clang_format.sh) # run in subshell to not exit
-            EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
-            ;;
-         catkin_lint)
-            (source ${MOVEIT_CI_DIR}/check_catkin_lint.sh) # run in subshell to not exit
             EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
             ;;
          clang-tidy-check)  # run clang-tidy along with compiler and report warning
