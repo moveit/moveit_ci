@@ -109,8 +109,8 @@ It's also possible to run the moveit\_ci script locally, without Travis. We demo
 First clone the repo you want to test:
 
     cd /tmp/travis   # any working directory will do
-    git clone https://github.com/ros-planning/moveit
-    cd moveit
+    git clone https://github.com/ros-planning/moveit2
+    cd moveit2
 
 Next clone the CI script:
 
