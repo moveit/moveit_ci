@@ -19,8 +19,6 @@ env:
     - SCRIPT=travis.sh
   matrix:
     - SCRIPT=unit_tests.sh
-    # skip clang-tidy-check on Xenial. It's only supported for cmake >= 3.6. clang-tidy-fix is tested.
-    - SCRIPT=unit_tests.sh   SKIP=clang-tidy-check   ROS_DISTRO=kinetic
 
     # Build MoveIt! repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
     - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/moveit2-ci/moveit.rosinstall
