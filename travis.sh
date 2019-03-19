@@ -233,7 +233,7 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   travis_run_wait 60 --title "colcon build" colcon build --symlink-install
+   travis_run_wait 60 --title "colcon build" colcon build --symlink-install --packages-up-to $REPOSITORY_NAME
 
    # Allow to verify ccache usage
    travis_run --title "ccache statistics" ccache -s
@@ -243,14 +243,8 @@ function test_workspace() {
    echo -e $(colorize GREEN Testing Workspace)
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
 
-   # # Also blacklist external packages
-   # all_pkgs=$(catkin_topological_order $ROS_WS --only-names 2> /dev/null)
-   # source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null)
-   # blacklist_pkgs=$(filter-out "$source_pkgs" "$all_pkgs")
-   # test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist &> /dev/null
-
    # Build tests
-   travis_run_wait --title "colcon build" colcon build --symlink-install
+   travis_run_wait --title "colcon build" colcon build --symlink-install --packages-up-to $REPOSITORY_NAME
    # Run tests, suppressing the output (confuses Travis display?)
    travis_run_wait --title "colcon test" "colcon test --packages-select $REPOSITORY_NAME --summarize 2>/dev/null"
 
@@ -263,6 +257,7 @@ function test_workspace() {
    travis_fold end test.results
 
    # Show test results summary and throw error if necessary
+   # TODO(mlautman): parse test results and report success/failure
    # catkin_test_results || exit 2
 }
 
