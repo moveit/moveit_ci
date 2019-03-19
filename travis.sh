@@ -235,7 +235,7 @@ function build_workspace() {
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
    # TODO(mlautman): implement `--packages-up-to $REPOSITORY_NAME` like functionality
-   travis_run_wait 60 --title "colcon build" colcon build --symlink-install
+   travis_run_wait 60 --title "colcon build" colcon build --symlink-install --event-handlers console_direct+
 
    # Allow to verify ccache usage
    travis_run --title "ccache statistics" ccache -s
@@ -247,10 +247,10 @@ function test_workspace() {
 
    # Build tests
    # TODO(mlautman): implement `--packages-up-to $REPOSITORY_NAME` like functionality
-   travis_run_wait --title "colcon build" colcon build --symlink-install
+   travis_run_wait --title "colcon build" colcon build --symlink-install --event-handlers console_direct+
    # Run tests, suppressing the output (confuses Travis display?)
    # TODO(mlautman): implement `--packages-select $REPOSITORY_NAME` like functionality
-   travis_run_wait --title "colcon test" "colcon test --return-code-on-test-failure 2>/dev/null"
+   travis_run_wait --title "colcon test" "colcon test --return-code-on-test-failure --event-handlers console_direct+ 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "colcon test results"
