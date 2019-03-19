@@ -252,17 +252,18 @@ function test_workspace() {
    # TODO(mlautman): implement `--packages-select $REPOSITORY_NAME` like functionality
    travis_run_wait --title "colcon test" "colcon test --return-code-on-test-failure --event-handlers console_direct+ 2>/dev/null"
 
+
    # Show failed tests
-   travis_fold start test.results "colcon test results"
+   # travis_fold start test.results "colcon test results"
 
-   travis_run echo "TODO(mlautman): parse test results and report success/failure"
-   if [[ $? ]]; then exit 2; fi
-
-   travis_fold end test.results
-
-   # Show test results summary and throw error if necessary
    # TODO(mlautman): parse test results and report success/failure
-   # catkin_test_results || exit 2
+   # Show test results summary and throw error if necessary
+   # TODO(mlautman): Is this needed?
+   # # travis_run echo "TODO(mlautman): parse test results and report success/failure"
+   # if [[ "$?" -ne "0" ]]; then
+   #  exit 2
+   # fi
+   # travis_fold end test.results
 }
 
 ###########################################################################################################
