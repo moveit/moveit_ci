@@ -14,41 +14,11 @@ notifications:
        - dave@dav.ee
 env:
   global: # default values
-    - ROS_DISTRO=melodic
+    - ROS_DISTRO=crystal
     - ROS_REPO=ros
     - SCRIPT=travis.sh
   matrix:
     - SCRIPT=unit_tests.sh
-    # skip clang-tidy-check on Xenial. It's only supported for cmake >= 3.6. clang-tidy-fix is tested.
-    - SCRIPT=unit_tests.sh   SKIP=clang-tidy-check   ROS_DISTRO=kinetic
-
-    # Build MoveIt! repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
-    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
-      TEST="clang-format, catkin_lint"
-      CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
-    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
-      TEST_BLACKLIST=moveit_ros_perception   WARNINGS_OK=no
-      CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
-
-    # geometric_shapes just serves as a small example for clang-tidy-fix
-    - UPSTREAM_WORKSPACE=https://github.com/ros-planning/geometric_shapes
-      TEST=clang-tidy-fix
-      CI_SOURCE_PATH=geometric_shapes # manually specify main source repo (not coincides with moveit_ci)
-
-matrix:
-  allow_failures: # While the above tests are proper unit tests, testing external workspaces has the risk of external issues
-    # Build MoveIt! repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
-    - env: UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
-           TEST="clang-format, catkin_lint"
-           CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
-    - env: UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
-           TEST_BLACKLIST=moveit_ros_perception   WARNINGS_OK=no
-           CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
-
-    # geometric_shapes just serves as a small example for clang-tidy-fix
-    - env: UPSTREAM_WORKSPACE=https://github.com/ros-planning/geometric_shapes
-           TEST=clang-tidy-fix
-           CI_SOURCE_PATH=geometric_shapes # manually specify main source repo (not coincides with moveit_ci)
 
 before_script:
   - ln -s . .moveit_ci  # pretend to have the usual location .moveit_ci

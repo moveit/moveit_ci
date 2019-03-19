@@ -47,7 +47,7 @@ ASSERT_TRUE "test $? == 0" $0:$LINENO "function tests failed"
 PASSED=0 # reset count after ASSERT_TRUE
 
 # set default environment
-export CATKIN_WS=/tmp/catkin_ws
+export ROS_WS=/tmp/catkin_ws
 export ROS_REPO=ros
 export ROS_DISTRO=${ROS_DISTRO:-melodic}
 export WARNINGS_OK=true

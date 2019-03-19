@@ -3,7 +3,7 @@ Common Travis CI configuration for MoveIt! project
 
 Authors: Dave Coleman, Isaac I. Y. Saito, Robert Haschke
 
-- Uses [pre-build Docker containers](https://hub.docker.com/r/moveit/moveit) for all ROS distros to save setup time
+- Uses [pre-build Docker containers](https://hub.docker.com/r/moveit/moveit2) for all ROS distros to save setup time
 - Simple Travis configuration
 - Nicely folded Travis output, tweaked to prevent Travis from bailing out due to oversized log or stalled output
 - Allows to pull in additional ROS repositories and build them from source along with the to-be-tested one
@@ -135,6 +135,6 @@ It's also possible to run the script without using docker. To this end, issue th
 
     export IN_DOCKER=1               # pretend running docker
     export CI_SOURCE_PATH=$PWD       # repository location in, i.e. /tmp/travis/moveit
-    export CATKIN_WS=/tmp/catkin_ws  # define a new catkin workspace location
-    mkdir $CATKIN_WS                 # and create it
+    export ROS_WS=/tmp/catkin_ws  # define a new catkin workspace location
+    mkdir $ROS_WS                 # and create it
     .moveit_ci/travis.sh

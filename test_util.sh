@@ -105,7 +105,7 @@ function run_test() {
 	local comment
 
 	travis_fold start unittest "$(colorize YELLOW Running test:) $description"
-	travis_run_true --title "Create catkin workspace" mkdir "$CATKIN_WS"
+	travis_run_true --title "Create catkin workspace" mkdir "$ROS_WS"
 	( # Run actual test in sub shell
 		echo -e $(colorize BOLD "Test environment:")
 		# pretty print and setup test environment, highlighting the variable name
@@ -129,7 +129,7 @@ function run_test() {
 		source ${MOVEIT_CI_DIR}/travis.sh >&${QUIET:-1}
 	)
 	result=$?
-	travis_run_true --title "Remove catkin workspace" rm -r "$CATKIN_WS"
+	travis_run_true --title "Remove catkin workspace" rm -r "$ROS_WS"
 	travis_fold end unittest # close fold before reporting error
 
 	if [ $result -ne $expected ] ; then
