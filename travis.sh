@@ -37,8 +37,8 @@ function run_docker() {
 
     # Choose the docker container to use
     case "${ROS_REPO:-ros}" in
-       ros) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci ;;
-       ros-shadow-fixed) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed ;;
+       ros) export DOCKER_IMAGE=moveit/moveit2:$ROS_DISTRO-ci ;;
+       ros-shadow-fixed) export DOCKER_IMAGE=moveit/moveit2:$ROS_DISTRO-ci-shadow-fixed ;;
        *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros' or 'ros-shadow-fixed'"); exit 1 ;;
     esac
 
