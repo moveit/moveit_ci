@@ -250,15 +250,14 @@ function test_workspace() {
    travis_run_wait --title "colcon build" colcon build --symlink-install
    # Run tests, suppressing the output (confuses Travis display?)
    # TODO(mlautman): implement `--packages-select $REPOSITORY_NAME` like functionality
-   travis_run_wait --title "colcon test" "colcon test 2>/dev/null"
+   travis_run_wait --title "colcon test" "colcon test --return-code-on-test-failure 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "colcon test results"
-   # TODO(mlautman): parse test results and report success/failure
-   # travis_fold start test.results "catkin_test_results"
-   # for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
-   #    travis_run --display "Test log of $file" cat $file
-   # done
+
+   travis_run echo "TODO(mlautman): parse test results and report success/failure"
+   if [[ $? ]]; then exit 2; fi
+
    travis_fold end test.results
 
    # Show test results summary and throw error if necessary
