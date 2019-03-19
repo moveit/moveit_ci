@@ -43,8 +43,8 @@ env:
     # pull in packages from a local .rosinstall file
     - UPSTREAM_WORKSPACE=moveit.rosinstall
     # pull in packages from a remote .rosinstall file and run for a non-default ROS_DISTRO
-    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
-      ROS_DISTRO=kinetic  ROS_REPO=ros-shadow-fixed
+    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/$ROS_DISTRO-devel/moveit.rosinstall
+      ROS_DISTRO=crystal
 
 matrix:
   include: # Add a separate config to the matrix, using clang as compiler
