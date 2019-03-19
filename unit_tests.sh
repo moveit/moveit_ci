@@ -93,7 +93,9 @@ for group in $test_groups ; do
 
 			run_test 1 $0:$LINENO "unknown TEST" TEST=invalid TEST_PKG=valid
 
-			run_test 1 $0:$LINENO "empty catkin workspace" TEST_PKG=valid 'BEFORE_SCRIPT="rm valid"'
+			# TODO(mlautman): Decide if we should keep this test as an empty ros workspace doesn't
+			# 				  seem to be an acutual issue
+			# run_test 1 $0:$LINENO "empty ROS workspace" TEST_PKG=valid 'BEFORE_SCRIPT="rm valid"'
 
 			;;
 		warnings)
