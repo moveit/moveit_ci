@@ -253,6 +253,7 @@ function test_workspace() {
    travis_run_wait --title "colcon test" "colcon test 2>/dev/null"
 
    # Show failed tests
+   travis_fold start test.results "colcon test results"
    # TODO(mlautman): parse test results and report success/failure
    # travis_fold start test.results "catkin_test_results"
    # for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
