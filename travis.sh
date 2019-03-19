@@ -160,6 +160,7 @@ function prepare_ros_workspace() {
    # Pull additional packages into the ros workspace
    travis_run wstool init .
    for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
+      echo "$item"
       case "$item" in
          debian)
             echo "Obtaining debian packages for all upstream dependencies."
@@ -233,7 +234,8 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   travis_run_wait 60 --title "colcon build" colcon build --symlink-install --packages-up-to $REPOSITORY_NAME
+   # TODO(mlautman): implement `--packages-up-to $REPOSITORY_NAME` like functionality
+   travis_run_wait 60 --title "colcon build" colcon build --symlink-install
 
    # Allow to verify ccache usage
    travis_run --title "ccache statistics" ccache -s
@@ -244,9 +246,11 @@ function test_workspace() {
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
 
    # Build tests
-   travis_run_wait --title "colcon build" colcon build --symlink-install --packages-up-to $REPOSITORY_NAME
+   # TODO(mlautman): implement `--packages-up-to $REPOSITORY_NAME` like functionality
+   travis_run_wait --title "colcon build" colcon build --symlink-install
    # Run tests, suppressing the output (confuses Travis display?)
-   travis_run_wait --title "colcon test" "colcon test --packages-select $REPOSITORY_NAME --summarize 2>/dev/null"
+   # TODO(mlautman): implement `--packages-select $REPOSITORY_NAME` like functionality
+   travis_run_wait --title "colcon test" "colcon test 2>/dev/null"
 
    # Show failed tests
    # TODO(mlautman): parse test results and report success/failure
