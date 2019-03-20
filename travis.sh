@@ -225,7 +225,7 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   # TODO(mlautman): implement `--packages-up-to $REPOSITORY_NAME` like functionality
+   # TODO(mlautman): implement `--packages-up-to $TEST_PKG` like functionality
    travis_run_wait 60 --title "colcon build" colcon build --symlink-install --event-handlers console_direct+
 
    # Allow to verify ccache usage
@@ -236,11 +236,8 @@ function test_workspace() {
    echo -e $(colorize GREEN Testing Workspace)
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
 
-   # Build tests
-   # TODO(mlautman): implement `--packages-up-to $REPOSITORY_NAME` like functionality
-   travis_run_wait --title "colcon build" colcon build --symlink-install --event-handlers console_direct+
    # Run tests, suppressing the output (confuses Travis display?)
-   # TODO(mlautman): implement `--packages-select $REPOSITORY_NAME` like functionality
+   # TODO(mlautman): implement `--packages-select $TEST_PKG` like functionality
    travis_run_wait --title "colcon test" "colcon test --return-code-on-test-failure --event-handlers console_direct+ 2>/dev/null"
 
 
