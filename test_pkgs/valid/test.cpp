@@ -58,7 +58,7 @@ protected:
   void camelCaseMethod(double* pointer, double& reference, const int* const_pointer, const int& const_reference);
 
   int member_;
-  const int CONST_MEMBER;
+  static const int CONST_MEMBER;
 };
 
 void TestClass::camelCaseMethod(double* pointer, double& reference, const int* const_pointer,
