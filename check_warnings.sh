@@ -8,14 +8,10 @@
 packages_with_warnings() {
    for pkg in $(colcon info | grep 'name: ' | sed -e "s/.*name: //g" 2> /dev/null) ; do
       # Warnings manifest themselves log files in catkin tools' logs folder
-      files=$(find $ROS_WS/log/latest_build/$pkg -name "stderr.log" 2> /dev/null)
-      # Extract types of failures from file names
-      issues=""
-      issues="${issues}$(echo $files | sed -ne 's:.*/build\.cmake\.000.*:cmake :p')"
-      issues="${issues}$(echo $files | sed -ne 's:.*/build\.make\.000.*:build :p')"
-      issues="${issues}$(echo $files | sed -ne 's:.*/build\.make\.001.*:test-build :p')"
+      log_file=$(find $ROS_WS/log/latest_build/$pkg -name "stderr.log" 2> /dev/null)
+      # Extract the stderr.log file
       # Print result
-      test -n "${files}" && echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $issues"
+      if [ -s ${log_file} ]; then echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"; fi
    done
 }
 

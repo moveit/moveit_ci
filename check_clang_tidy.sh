@@ -4,16 +4,16 @@
 
 _travis_run_clang_tidy_fix() {
     local SOURCE_PKGS COMPILED_PKGS counter pkg file
-    SOURCE_PKGS=($(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null))
+    SOURCE_PKGS=()
 
     # filter repository packages for those which have a compile_commands.json file in their build folder
     declare -A PKGS  # associative array
-    for pkg in ${SOURCE_PKGS[@]} ; do
+    for pkg in $(colcon info | grep 'name: ' | sed -e "s/.*name: //g" 2> /dev/null) ; do
         file="$ROS_WS/build/$pkg/compile_commands.json"
         test -r "$file" && PKGS[$pkg]=$(dirname "$file")
     done
 
-    for pkg in ${SOURCE_PKGS[@]} ; do  # process files in topological order
+    for pkg in $(colcon info | grep 'name: ' | sed -e "s/.*name: //g" 2> /dev/null) ; do  # process files in topological order
         test -z "${PKGS[$pkg]}" && continue  # skip pkgs without compile_commands.json
         travis_fold start clang.tidy "  - $(colorize BLUE Processing $pkg)"
         travis_run_wait "$RUN_CLANG_TIDY_EXECUTABLE -fix -p ${PKGS[$pkg]} 2> /dev/null"
