@@ -240,18 +240,14 @@ function test_workspace() {
    # TODO(mlautman): implement `--packages-select $TEST_PKG` like functionality
    travis_run_wait --title "colcon test" "colcon test --return-code-on-test-failure --event-handlers console_direct+ 2>/dev/null"
 
-
    # Show failed tests
-   # travis_fold start test.results "colcon test results"
-
-   # TODO(mlautman): parse test results and report success/failure
-   # Show test results summary and throw error if necessary
-   # TODO(mlautman): Is this needed?
-   # # travis_run echo "TODO(mlautman): parse test results and report success/failure"
-   # if [[ "$?" -ne "0" ]]; then
-   #  exit 2
-   # fi
-   # travis_fold end test.results
+   travis_fold start test.results "colcon test results"
+   # Warnings manifest themselves logs files in catkin tools' logs folder
+   log_file=$(find $ROS_WS/log/latest_test/$TEST_PKG -name "stdout.log" 2> /dev/null)
+   # Print result
+   if [ -s ${log_file} ]; then echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"; fi
+   done
+   travis_fold end test.results
 }
 
 ###########################################################################################################
