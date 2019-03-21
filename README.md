@@ -113,7 +113,7 @@ Next clone the CI script:
 
 Manually define the variables, Travis would otherwise define for you. These are required:
 
-    export TRAVIS_BRANCH=ros2-port
+    export TRAVIS_BRANCH=master
     export ROS_DISTRO=crystal
     export ROS_REPO=ros
 
