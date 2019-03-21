@@ -246,7 +246,6 @@ function test_workspace() {
    log_file=$(find $ROS_WS/log/latest_test/$TEST_PKG -name "stdout.log" 2> /dev/null)
    # Print result
    if [ -s ${log_file} ]; then echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"; fi
-   done
    travis_fold end test.results
 }
 
