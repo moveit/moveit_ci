@@ -76,7 +76,7 @@ while true ; do
 done
 test_groups="$@"
 test -z "$test_groups" && test_groups=$all_groups
-test_groups=$(filter-out "$skip_groups" "$test_groups")
+test_groups=$(filter_out "$skip_groups" "$test_groups")
 echo -e "$(colorize BOLD Configured unit tests:) $test_groups"
 
 for group in $test_groups ; do
