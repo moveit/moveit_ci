@@ -215,6 +215,9 @@ function prepare_ros_workspace() {
    # Change to base of workspace
    travis_run_simple cd $ROS_WS
 
+   # Validate that we have some packages to build
+   test -z "$(colcon info | grep 'name: ' | sed -e "s/.*name: //g" 2> /dev/null)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
+
    travis_fold end ros.ws
 }
 

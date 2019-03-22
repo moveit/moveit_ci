@@ -3,8 +3,7 @@
 # Author:  Robert Haschke
 
 _travis_run_clang_tidy_fix() {
-    local SOURCE_PKGS COMPILED_PKGS counter pkg file
-    SOURCE_PKGS=()
+    local COMPILED_PKGS counter pkg file
 
     # filter repository packages for those which have a compile_commands.json file in their build folder
     declare -A PKGS  # associative array

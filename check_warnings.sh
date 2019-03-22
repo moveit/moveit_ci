@@ -9,7 +9,7 @@ packages_with_warnings() {
    for pkg in $(colcon info | grep 'name: ' | sed -e "s/.*name: //g" 2> /dev/null) ; do
       # Warnings manifest themselves log files in catkin tools' logs folder
       log_file=$(find $ROS_WS/log/latest_build/$pkg -name "stderr.log" 2> /dev/null)
-      # Extract the stderr.log file
+      # Check if the stderr.log file is not empty and add it to the list of warnings if it is
       # Print result
       if [ -s ${log_file} ]; then echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"; fi
    done
