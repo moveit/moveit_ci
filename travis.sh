@@ -261,20 +261,23 @@ function test_workspace() {
    # Append TEST_BLACKLIST list to blacklist_pkgs
    test -n "$TEST_BLACKLIST" && blacklist_pkgs="$blacklist_pkgs $TEST_BLACKLIST"
 
+   test_packages=$(filter_out "$blacklist_pkgs" "$all_pkgs")
+
    # Run tests, suppressing the output (confuses Travis display?)
-   travis_run_wait --title "colcon test" "colcon test --packages-skip $blacklist_pkgs --event-handlers console_direct+ 2>/dev/null"
+   travis_run_wait --title "colcon test" "colcon test --packages-select $test_packages --event-handlers console_direct+ 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "colcon test results"
    # Warnings manifest themselves logs files in catkin tools' logs folder
-   for source_package in $source_pkgs; do
-      echo "================================================================"
-      echo "=== Test results for: $source_package "
-      echo "================================================================"
-      log_file=$(find $ROS_WS/log/latest_test/$source_package -name "stdout.log" 2> /dev/null)
+   for tested_package in $test_packages; do
+      log_file=$(find $ROS_WS/log/latest_test/$tested_package -name "stdout.log" 2> /dev/null)
       # Print result
       if [ -s ${log_file} ]; then
-         echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"
+         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+         echo "  Test results for: $tested_package"
+         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+         echo -e "- $(colorize YELLOW $(colorize THIN $tested_package)): $log_file"
+         cat $log_file
       fi
    done
    travis_fold end test.results
