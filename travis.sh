@@ -239,16 +239,44 @@ function test_workspace() {
    echo -e $(colorize GREEN Testing Workspace)
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
 
+   # Consider TEST_BLACKLIST
+   TEST_BLACKLIST=$(unify_list " ,;" $TEST_BLACKLIST)
+   echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
+
+   # Also blacklist external packages
+   all_pkgs=$(colcon info | grep 'name: ' | sed -e "s/.*name: //g" -e "s/://g" 2> /dev/null)
+
+   # This bash command is tricky.
+   # colcon info              Gets info on packges in the workspace
+   # sed -e 's/path: //g'     Trims the `path: ` prefix
+   # grep "$CI_SOURCE_PATH"   Filters for packages in the CI_SOURCE_PATH
+   # rev                      Reverses the strings to make it easy to get the package name from the full path
+   # cut -d/ -f1              Separates the string on `/` and only keeps the last one
+   # rev                      Reverses the strings restoring them
+   source_pkgs=$(colcon info | sed -e 's/path: //g' | grep "$" | rev | cut -d/ -f1 | rev)
+
+   # Blacklist everything outside the $CI_SOURCE_PATH
+   blacklist_pkgs=$(filter_out "$source_pkgs" "$all_pkgs")
+
+   # Append TEST_BLACKLIST list to blacklist_pkgs
+   test -n "$TEST_BLACKLIST" && blacklist_pkgs="$blacklist_pkgs $TEST_BLACKLIST"
+
    # Run tests, suppressing the output (confuses Travis display?)
-   # TODO(mlautman): implement `--packages-select $TEST_PKG` like functionality
-   travis_run_wait --title "colcon test" "colcon test --return-code-on-test-failure --event-handlers console_direct+ 2>/dev/null"
+   travis_run_wait --title "colcon test" "colcon test --packages-skip $blacklist_pkgs --event-handlers console_direct+ 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "colcon test results"
    # Warnings manifest themselves logs files in catkin tools' logs folder
-   log_file=$(find $ROS_WS/log/latest_test/$TEST_PKG -name "stdout.log" 2> /dev/null)
-   # Print result
-   if [ -s ${log_file} ]; then echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"; fi
+   for source_package in $source_pkgs; do
+      echo "================================================================"
+      echo "=== Test results for: $source_package "
+      echo "================================================================"
+      log_file=$(find $ROS_WS/log/latest_test/$source_package -name "stdout.log" 2> /dev/null)
+      # Print result
+      if [ -s ${log_file} ]; then
+         echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"
+      fi
+   done
    travis_fold end test.results
 }
 
