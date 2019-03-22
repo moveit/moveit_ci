@@ -102,12 +102,19 @@ for group in $test_groups ; do
 			run_test 0 $0:$LINENO "'warnings' package with warnings allowed" TEST_PKG=warnings WARNINGS_OK=true
 			run_test 1 $0:$LINENO "'warnings' package with warnings forbidden" TEST_PKG=warnings WARNINGS_OK=false
 			run_test 0 $0:$LINENO "'valid' package with warnings forbidden" TEST_PKG=valid WARNINGS_OK=false
-			;;
+      ;;
+		# TODO(mlautman): restore once ament_tidy has been setup for ROS2
+    # catkin_lint)
+			# run_test 0 $0:$LINENO "catkin_lint on 'valid' package" TEST_PKG=valid TEST=catkin_lint
+			# run_test 0 $0:$LINENO "catkin_lint + clang-format on 'valid' package" TEST_PKG=valid 'TEST="catkin_lint clang-format"'
+			# run_test 2 $0:$LINENO "catkin_lint on 'catkin_lint' package" TEST_PKG=catkin_lint TEST=catkin_lint
+			# run_test 2 $0:$LINENO "catkin_lint + clang-format on 'catkin_lint' package" TEST_PKG=catkin_lint 'TEST="catkin_lint, clang-format"'
+			# ;;
 		clang-format)
 			run_test 0 $0:$LINENO "clang-format on 'valid' package" TEST_PKG=valid TEST=clang-format
 			run_test 2 $0:$LINENO "clang-format on 'clang_format' package" TEST_PKG=clang_format TEST=clang-format
 			;;
-		# TODO(mlautman): restore once clang-tidy has been setup for ROS2
+		# TODO(mlautman): restore once ament_tidy has been setup for ROS2
 		#  clang-tidy-fix)
 			# run_test 0 $0:$LINENO "clang-tidy-fix on 'valid' package" TEST_PKG=valid TEST=clang-tidy-fix
 			# run_test 1 $0:$LINENO "clang-tidy-fix on 'clang_tidy' package" TEST_PKG=clang_tidy TEST=clang-tidy-fix
