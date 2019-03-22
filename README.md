@@ -32,7 +32,7 @@ notifications:
       # - user@email.com
 env:
   global: # default values that are common to all configurations (can be overriden below)
-    - ROS_DISTRO=melodic   # ROS distro to test for
+    - ROS_DISTRO=crystal   # ROS distro to test for
     - ROS_REPO=ros         # ROS binary repository [ros | ros-shadow-fixed]
     - TEST_BLACKLIST=      # list packages, for which to skip the unittests
     - WARNINGS_OK=false    # Don't accept warnings [true | false]
@@ -42,7 +42,7 @@ env:
     # pull in packages from a local .rosinstall file
     - UPSTREAM_WORKSPACE=moveit.rosinstall
     # pull in packages from a remote .rosinstall file and run for a non-default ROS_DISTRO
-    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/$ROS_DISTRO-devel/moveit.rosinstall
+    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/master/moveit.rosinstall
       ROS_DISTRO=crystal
 
 matrix:
@@ -50,7 +50,7 @@ matrix:
     - env: TEST=clang-tidy-check  # run static code analysis, but don't check for available auto-fixes
       compiler: clang
   allow_failures:
-    - env: ROS_DISTRO=kinetic  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit#$ROS_DISTRO-devel
+    - env: ROS_DISTRO=crystal  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit2#master
 
 before_script:
   # Clone the moveit_ci repository into Travis' workspace
@@ -88,6 +88,7 @@ Use ``TEST=clang-format`` to enable this test.
 
 ## Clang-Tidy
 
+**TODO(mlautman):** Port clang-tidy for ROS2
 ``clang-tidy`` allows for static code analysis and validation of naming rules.
 Use ``TEST=clang-tidy-check`` to enable clang-tidy analysis, but only issuing warnings.
 Use ``TEST=clang-tidy-fix`` to reject code that doesn't comply to the rules.
@@ -109,7 +110,7 @@ First clone the repo you want to test:
 
 Next clone the CI script:
 
-    git clone https://github.com/ros-planning/moveit_ci .moveit_ci
+    git clone -b ros2 https://github.com/ros-planning/moveit_ci .moveit_ci
 
 Manually define the variables, Travis would otherwise define for you. These are required:
 
@@ -130,7 +131,7 @@ It's also possible to run the script without using docker. To this end, issue th
 
     export IN_DOCKER=1               # pretend running docker
     export CI_SOURCE_PATH=$PWD       # repository location in, i.e. /tmp/travis/moveit
-    export ROS_WS=/tmp/ros_ws  # define a new catkin workspace location
-    mkdir $ROS_WS                 # and create it
+    export ROS_WS=/tmp/ros_ws        # define a new ROS workspace location
+    mkdir $ROS_WS                    # and create it
 
     .moveit_ci/travis.sh
