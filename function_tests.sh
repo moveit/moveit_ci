@@ -200,17 +200,17 @@ EXPECT_TRUE "test \"${output% *}\" == \"t1\"" $0:$LINENO ""
 output=$(filter "missing" "t1;t2;t3;t4")
 EXPECT_TRUE "test \"${output% *}\" == \"\"" $0:$LINENO ""
 
-# test filter-out
-output=$(filter-out "t2 t4" $(echo t1 t2 t3 t4))
+# test filter_out
+output=$(filter_out "t2 t4" $(echo t1 t2 t3 t4))
 EXPECT_TRUE "test \"${output% *}\" == \"t1 t3\"" $0:$LINENO ""
 
-output=$(filter-out "" "t1,t2,t3,t4")
+output=$(filter_out "" "t1,t2,t3,t4")
 EXPECT_TRUE "test \"${output% *}\" == \"t1 t2 t3 t4\"" $0:$LINENO ""
 
-output=$(filter-out "t1;" "t1;t2;t3;t4")
+output=$(filter_out "t1;" "t1;t2;t3;t4")
 EXPECT_TRUE "test \"${output% *}\" == \"t2 t3 t4\"" $0:$LINENO ""
 
-output=$(filter-out "missing" "t1;t2;t3;t4")
+output=$(filter_out "missing" "t1;t2;t3;t4")
 EXPECT_TRUE "test \"${output% *}\" == \"t1 t2 t3 t4\"" $0:$LINENO ""
 
 

@@ -6,16 +6,20 @@
 # Desc: Check for warnings during build process of repo $CI_SOURCE_PATH
 
 packages_with_warnings() {
-   for pkg in $(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null) ; do
+   for pkg in $(colcon info | grep 'name: ' | sed -e "s/.*name: //g" 2> /dev/null) ; do
       # Warnings manifest themselves log files in catkin tools' logs folder
-      files=$(find $ROS_WS/logs/$pkg -name "*build.cmake.000.log.stderr" -o -name "*build.make.00[01].log.stderr" 2> /dev/null)
-      # Extract types of failures from file names
-      issues=""
-      issues="${issues}$(echo $files | sed -ne 's:.*/build\.cmake\.000.*:cmake :p')"
-      issues="${issues}$(echo $files | sed -ne 's:.*/build\.make\.000.*:build :p')"
-      issues="${issues}$(echo $files | sed -ne 's:.*/build\.make\.001.*:test-build :p')"
+      log_file=$(find $ROS_WS/log/latest_build/$pkg -name "stderr.log" 2> /dev/null)
+      # Check if the stderr.log file is not empty and add it to the list of warnings if it is
       # Print result
-      test -n "${files}" && echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $issues"
+      if [ -s ${log_file} ]; then
+         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+         echo "  Test results for: $pkg"
+         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+         echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"
+         echo ""
+         cat $log_file
+         echo ""
+      fi
    done
 }
 
