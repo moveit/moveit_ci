@@ -11,7 +11,15 @@ packages_with_warnings() {
       log_file=$(find $ROS_WS/log/latest_build/$pkg -name "stderr.log" 2> /dev/null)
       # Check if the stderr.log file is not empty and add it to the list of warnings if it is
       # Print result
-      if [ -s ${log_file} ]; then echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"; fi
+      if [ -s ${log_file} ]; then
+         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+         echo "  Test results for: $pkg"
+         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+         echo -e "- $(colorize YELLOW $(colorize THIN $pkg)): $log_file"
+         echo ""
+         cat $log_file
+         echo ""
+      fi
    done
 }
 

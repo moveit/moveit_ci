@@ -277,7 +277,9 @@ function test_workspace() {
          echo "  Test results for: $tested_package"
          echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
          echo -e "- $(colorize YELLOW $(colorize THIN $tested_package)): $log_file"
+         echo ""
          cat $log_file
+         echo ""
       fi
    done
    travis_fold end test.results
