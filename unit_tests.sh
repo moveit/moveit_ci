@@ -112,15 +112,14 @@ for group in $test_groups ; do
 			run_test 0 $0:$LINENO "clang-format on 'valid' package" TEST_PKG=valid TEST=clang-format
 			run_test 2 $0:$LINENO "clang-format on 'clang_format' package" TEST_PKG=clang_format TEST=clang-format
 			;;
-		# TODO(mlautman): restore once ament_tidy has been setup for ROS2
-		#  clang-tidy-fix)
-			# run_test 0 $0:$LINENO "clang-tidy-fix on 'valid' package" TEST_PKG=valid TEST=clang-tidy-fix
-			# run_test 1 $0:$LINENO "clang-tidy-fix on 'clang_tidy' package" TEST_PKG=clang_tidy TEST=clang-tidy-fix
-			# ;;
-		# clang-tidy-check)  # only supported for cmake >= 3.6
-			# run_test 0 $0:$LINENO "clang-tidy-check on 'valid' package, warnings forbidden" TEST_PKG=valid TEST=clang-tidy-check WARNINGS_OK=false
-			# run_test 1 $0:$LINENO "clang-tidy-check on 'clang_tidy' package, warnings forbidden" TEST_PKG=clang_tidy TEST=clang-tidy-check WARNINGS_OK=false
-			# ;;
+		clang-tidy-fix)
+			run_test 0 $0:$LINENO "clang-tidy-fix on 'valid' package" TEST_PKG=valid TEST=clang-tidy-fix
+			run_test 1 $0:$LINENO "clang-tidy-fix on 'clang_tidy' package" TEST_PKG=clang_tidy TEST=clang-tidy-fix
+			;;
+		clang-tidy-check)  # only supported for cmake >= 3.6
+			run_test 0 $0:$LINENO "clang-tidy-check on 'valid' package, warnings forbidden" TEST_PKG=valid TEST=clang-tidy-check WARNINGS_OK=false
+			run_test 1 $0:$LINENO "clang-tidy-check on 'clang_tidy' package, warnings forbidden" TEST_PKG=clang_tidy TEST=clang-tidy-check WARNINGS_OK=false
+			;;
 		*) echo -e $(colorize YELLOW "Unknown test group '$group'.")
 			echo "Known groups are: $all_groups" ;;
 	esac

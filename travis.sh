@@ -228,8 +228,8 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   # TODO(mlautman): implement `--packages-up-to $TEST_PKG` like functionality
-   travis_run_wait 60 --title "colcon build" colcon build --symlink-install --event-handlers console_direct+
+   COLCON_CMAKE_ARGS="--cmake-args $CMAKE_ARGS --catkin-cmake-args $CMAKE_ARGS --ament-cmake-args $CMAKE_ARGS"
+   travis_run_wait 60 --title "colcon build" colcon build $COLCON_CMAKE_ARGS --event-handlers console_direct+
 
    # Allow to verify ccache usage
    travis_run --title "ccache statistics" ccache -s
