@@ -252,22 +252,14 @@ function test_workspace() {
    travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist --event-handlers status- 2>/dev/null"
 
    # Show failed tests
-   travis_fold start test.results "colcon test results"
-   # Warnings manifest themselves logs files in catkin tools' logs folder
-   for tested_package in $test_packages; do
-      log_file=$(find $ROS_WS/log/latest_test/$tested_package -name "stdout.log" 2> /dev/null)
-      # Print result
-      if [ -s ${log_file} ]; then
-         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-         echo "  Test results for: $tested_package"
-         echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-         echo -e "- $(colorize YELLOW $(colorize THIN $tested_package)): $log_file"
-         echo ""
-         cat $log_file
-         echo ""
-      fi
+   travis_fold start test.results "colcon test-results"
+   for file in $(colcon test-result | grep "\.xml:" | cut -d ":" -f1); do
+      travis_run --display "Test log of $file" cat $file
    done
    travis_fold end test.results
+
+   # Show test results summary and throw error if necessary
+   colcon test-result || exit 2
 }
 
 ###########################################################################################################
