@@ -161,6 +161,7 @@ function prepare_ros_workspace() {
    # Pull additional packages into the ros workspace
    travis_run wstool init .
    for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
+      echo "Adding $item"
       case "$item" in
          debian)
             echo "Obtaining debian packages for all upstream dependencies."
