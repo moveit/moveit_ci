@@ -20,6 +20,9 @@ MOVEIT_CI_TRAVIS_TIMEOUT=${MOVEIT_CI_TRAVIS_TIMEOUT:-47}  # 50min minus safety m
 # Helper functions
 source ${MOVEIT_CI_DIR}/util.sh
 
+# colcon output handling
+COLCON_EVENT_HANDLING="--event-handlers desktop_notification- status-"
+
 # usage: run_script BEFORE_SCRIPT  or run_script BEFORE_DOCKER_SCRIPT
 function run_script() {
    local script
@@ -229,7 +232,7 @@ function build_workspace() {
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
    COLCON_CMAKE_ARGS="--cmake-args $CMAKE_ARGS --catkin-cmake-args $CMAKE_ARGS --ament-cmake-args $CMAKE_ARGS"
-   travis_run_wait 60 --title "colcon build" colcon build $COLCON_CMAKE_ARGS --event-handlers console_direct+
+   travis_run_wait 60 --title "colcon build" colcon build $COLCON_CMAKE_ARGS $COLCON_EVENT_HANDLING
 
    # Allow to verify ccache usage
    travis_run --title "ccache statistics" ccache -s
@@ -249,7 +252,7 @@ function test_workspace() {
    blacklist_pkgs=$(filter_out "$source_pkgs" "$all_pkgs")
 
    # Run tests, suppressing the error output (confuses Travis display?)
-   travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist --event-handlers status- 2>/dev/null"
+   travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist $COLCON_EVENT_HANDLING 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "colcon test-results"
