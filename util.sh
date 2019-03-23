@@ -292,12 +292,12 @@ filter() {
   echo "$*" | tr ' ;,' '\n' | grep -Fxf <(echo "$PATTERN" | tr ' ;,' '\n') | tr '\n' ' '
 }
 
-# $(filter-out "PATTERN" "TEXT")
+# $(filter_out "PATTERN" "TEXT")
 # Returns all words in TEXT that *do not* match any of the PATTERN words,
 # removing the words that *do match* one or more.
 # This is the exact opposite of the filter function.
 # words can be separated by space, comma, semicolon or newline
-filter-out() {
+filter_out() {
   local PATTERN="$1"; shift
   # convert input lists into newline-separate lists: | tr ' ;,' '\n'
   # perform filtering: grep -Fvxf
