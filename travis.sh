@@ -216,7 +216,7 @@ function prepare_ros_workspace() {
    travis_run_simple cd $ROS_WS
 
    # Validate that we have some packages to build
-   test -z "$(colcon info | grep 'name: ' | sed -e "s/.*name: //g" 2> /dev/null)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
+   test -z "$(colcon list --names-only)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
 
    travis_fold end ros.ws
 }
@@ -244,27 +244,12 @@ function test_workspace() {
    echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
 
    # Also blacklist external packages
-   all_pkgs=$(colcon info | grep 'name: ' | sed -e "s/.*name: //g" -e "s/://g" 2> /dev/null)
-
-   # This bash command is tricky.
-   # colcon info              Gets info on packges in the workspace
-   # sed -e 's/path: //g'     Trims the `path: ` prefix
-   # grep "$CI_SOURCE_PATH"   Filters for packages in the CI_SOURCE_PATH
-   # rev                      Reverses the strings to make it easy to get the package name from the full path
-   # cut -d/ -f1              Separates the string on `/` and only keeps the last one
-   # rev                      Reverses the strings restoring them
-   source_pkgs=$(colcon info | sed -e 's/path: //g' | grep "$" | rev | cut -d/ -f1 | rev)
-
-   # Blacklist everything outside the $CI_SOURCE_PATH
+   all_pkgs=$(colcon list --topological-order --names-only --base-paths $ROS_WS 2> /dev/null)
+   source_pkgs=$(colcon list --topological-order --names-only --base-paths $CI_SOURCE_PATH 2> /dev/null)
    blacklist_pkgs=$(filter_out "$source_pkgs" "$all_pkgs")
 
-   # Append TEST_BLACKLIST list to blacklist_pkgs
-   test -n "$TEST_BLACKLIST" && blacklist_pkgs="$blacklist_pkgs $TEST_BLACKLIST"
-
-   test_packages=$(filter_out "$blacklist_pkgs" "$all_pkgs")
-
-   # Run tests, suppressing the output (confuses Travis display?)
-   travis_run_wait --title "colcon test" "colcon test --packages-select $test_packages --event-handlers console_direct+ 2>/dev/null"
+   # Run tests, suppressing the error output (confuses Travis display?)
+   travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist --event-handlers status- 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "colcon test results"
