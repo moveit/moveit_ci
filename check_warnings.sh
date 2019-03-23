@@ -6,7 +6,8 @@
 # Desc: Check for warnings during build process of repo $CI_SOURCE_PATH
 
 packages_with_warnings() {
-   for pkg in $(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null) ; do
+   SOURCE_PKGS=($(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null))
+   for pkg in ${SOURCE_PKGS[@]} ; do
       # Warnings manifest themselves log files in catkin tools' logs folder
       files=$(find $ROS_WS/logs/$pkg -name "*build.cmake.000.log.stderr" -o -name "*build.make.00[01].log.stderr" 2> /dev/null)
       # Extract types of failures from file names
@@ -26,6 +27,6 @@ if [ -n "$have_warnings" ] ; then
    echo -e $(colorize BOLD "Please look into the build details and take the time to fix those issues.")
    # if warnings are not allowed, fail
    test "$WARNINGS_OK" == 0 && exit 2 || true
-else   
+else
    echo -e $(colorize GREEN "No warnings. Great!")
 fi
