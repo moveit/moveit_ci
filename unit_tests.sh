@@ -47,7 +47,7 @@ ASSERT_TRUE "test $? == 0" $0:$LINENO "function tests failed"
 PASSED=0 # reset count after ASSERT_TRUE
 
 # set default environment
-export CATKIN_WS=/tmp/catkin_ws
+export ROS_WS=/tmp/ros_ws
 export ROS_REPO=ros
 export ROS_DISTRO=${ROS_DISTRO:-melodic}
 export WARNINGS_OK=true
@@ -93,7 +93,7 @@ for group in $test_groups ; do
 
 			run_test 1 $0:$LINENO "unknown TEST" TEST=invalid TEST_PKG=valid
 
-			run_test 1 $0:$LINENO "empty catkin workspace" TEST_PKG=valid 'BEFORE_SCRIPT="rm valid"'
+			run_test 1 $0:$LINENO "empty ROS workspace" TEST_PKG=valid 'BEFORE_SCRIPT="rm valid"'
 
 			;;
 		warnings)

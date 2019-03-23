@@ -9,7 +9,7 @@ _travis_run_clang_tidy_fix() {
     # filter repository packages for those which have a compile_commands.json file in their build folder
     declare -A PKGS  # associative array
     for pkg in ${SOURCE_PKGS[@]} ; do
-        file="$CATKIN_WS/build/$pkg/compile_commands.json"
+        file="$ROS_WS/build/$pkg/compile_commands.json"
         test -r "$file" && PKGS[$pkg]=$(dirname "$file")
     done
 

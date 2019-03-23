@@ -67,8 +67,8 @@ script:
 - `ROS_DISTRO`: (required) which version of ROS, i.e. kinetic, melodic, ...
 - `ROS_REPO`: (default: ros) install ROS debians from either regular release or from [shadow-fixed](http://packages.ros.org/ros-shadow-fixed/ubuntu)
 - `BEFORE_DOCKER_SCRIPT`: (default: none): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' ``before_script`` section, but the variable allows to dynamically switch scripts within the testing matrix.
-- `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the catkin workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
-- `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your catkin workspace.
+- `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the ROS workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
+- `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
   By default, all dependent packages will be downloaded as binary packages from `$ROS_REPO`.
   Setting this variable to a `http://github.com/user/repo#branch` repository url, will clone the corresponding repository into the workspace.
   Setting this variable to a `http://` url, or a local file in your repository, will merge the corresponding `.rosinstall` file with [`wstool`](http://wiki.ros.org/wstool) into your workspace.
@@ -137,6 +137,6 @@ It's also possible to run the script without using docker. To this end, issue th
 
     export IN_DOCKER=1               # pretend running docker
     export CI_SOURCE_PATH=$PWD       # repository location in, i.e. /tmp/travis/moveit
-    export CATKIN_WS=/tmp/catkin_ws  # define a new catkin workspace location
-    mkdir $CATKIN_WS                 # and create it
+    export ROS_WS=/tmp/ros_ws        # define a new ROS workspace location
+    mkdir $ROS_WS                    # and create it
     .moveit_ci/travis.sh

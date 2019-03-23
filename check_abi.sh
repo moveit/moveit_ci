@@ -55,7 +55,7 @@ function abi_install() {
 	travis_fold end abi_check
 }
 
-# abi_check new_lib_dir 
+# abi_check new_lib_dir
 function abi_check() {
 	local new_lib_dir=$1
 	local new_include_dir=$2
@@ -108,8 +108,8 @@ test -z "$ABI_BASE_URL" && echo -e $(colorize YELLOW "For ABI check, please spec
 if [ "$ABI_BASE_URL" == "generate" ] ; then
 	test "$TRAVIS" == true && abi_install
 	travis_run abi_check \
-			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include" \
-			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include"
+			"${ROS_WS}/install/lib" "${ROS_WS}/install/include" \
+			"${ROS_WS}/install/lib" "${ROS_WS}/install/include"
 elif [ "$TRAVIS_PULL_REQUEST" == true ]; then
 	# For a pull request, actually perform the abi check
 	test "$TRAVIS" == true && abi_install
@@ -118,7 +118,7 @@ elif [ "$TRAVIS_PULL_REQUEST" == true ]; then
 	travis_run --display "Download and extract base ABI" \
 		"(cd ${ABI_TMP_DIR} && wget -c $ABI_BASE_URL && cd old && tar xf ../$(basename $ABI_BASE_URL))"
 	travis_run abi_check \
-			"${CATKIN_WS}/install/lib" "${CATKIN_WS}/install/include" \
+			"${ROS_WS}/install/lib" "${ROS_WS}/install/include" \
 			"${ABI_TMP_DIR}/old/lib" "${ABI_TMP_DIR}/old/include"
 else
 	# TODO: If this commit is a release, push the install folder to ABI_BASE_URL
