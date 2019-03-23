@@ -39,6 +39,7 @@ env:
   matrix:  # define various jobs
     - TEST=clang-format    # check code formatting for compliance to .clang-format rules
     - TEST=clang-tidy-fix  # perform static code analysis and compliance check against .clang-tidy rules
+    - TEST=ament_lint      # perform ament_lint checks
     # pull in packages from a local .rosinstall file
     - UPSTREAM_WORKSPACE=moveit.rosinstall
     # pull in packages from a remote .rosinstall file and run for a non-default ROS_DISTRO
@@ -88,10 +89,13 @@ Use ``TEST=clang-format`` to enable this test.
 
 ## Clang-Tidy
 
-**TODO(mlautman):** Port clang-tidy for ROS2
 ``clang-tidy`` allows for static code analysis and validation of naming rules.
 Use ``TEST=clang-tidy-check`` to enable clang-tidy analysis, but only issuing warnings.
 Use ``TEST=clang-tidy-fix`` to reject code that doesn't comply to the rules.
+
+## Ament lint
+
+``ament_lint`` checks for comment issues in your ``package.xml`` and ``CMakeLists`` files.
 
 ## `WARNINGS_OK`
 

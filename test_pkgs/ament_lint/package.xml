@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>catkin_lint</name>
+  <name>ament_lint</name>
   <version>0.0.1</version>
   <description>dummy package to validate moveit_ci checking capabilities</description>
 

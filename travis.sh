@@ -106,7 +106,7 @@ function update_system() {
 }
 
 function prepare_or_run_early_tests() {
-   # Check for different tests. clang-format will trigger an early exit
+   # Check for different tests. clang-format and ament_lint will trigger an early exit
    # However, they can only run when $CI_SOURCE_PATH is already available. If not try later again.
    if ! [ -d "$CI_SOURCE_PATH" ] ; then return 0; fi
 
@@ -116,6 +116,10 @@ function prepare_or_run_early_tests() {
       case "$t" in
          clang-format)
             (source ${MOVEIT_CI_DIR}/check_clang_format.sh) # run in subshell to not exit
+            EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
+            ;;
+         ament_lint)
+            (source ${MOVEIT_CI_DIR}/check_ament_lint.sh) # run in subshell to not exit
             EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
             ;;
          clang-tidy-check)  # run clang-tidy along with compiler and report warning
