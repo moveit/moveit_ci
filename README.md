@@ -66,8 +66,8 @@ script:
 - `ROS_DISTRO`: (required) which version of ROS, i.e. crystal, ...
 - `ROS_REPO`: (default: ros) install ROS debians from either regular release or from [shadow-fixed](http://packages.ros.org/ros-shadow-fixed/ubuntu)
 - `BEFORE_DOCKER_SCRIPT`: (default: none): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' ``before_script`` section, but the variable allows to dynamically switch scripts within the testing matrix.
-- `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the catkin workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
-- `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your catkin workspace.
+- `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the ROS workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
+- `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
   By default, all dependent packages will be downloaded as binary packages from `$ROS_REPO`.
   Setting this variable to a `http://github.com/user/repo#branch` repository url, will clone the corresponding repository into the workspace.
   Setting this variable to a `http://` url, or a local file in your repository, will merge the corresponding `.rosinstall` file with [`wstool`](http://wiki.ros.org/wstool) into your workspace.
@@ -117,6 +117,8 @@ Manually define the variables, Travis would otherwise define for you. These are 
     export TRAVIS_BRANCH=master
     export ROS_DISTRO=crystal
     export ROS_REPO=ros
+    export CC=gcc
+    export CXX=g++
 
 The rest is optional:
 

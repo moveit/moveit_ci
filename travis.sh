@@ -11,7 +11,7 @@
 
 export MOVEIT_CI_DIR=$(dirname ${BASH_SOURCE:-$0})  # path to the directory running the current script
 export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
-export ROS_WS=${ROS_WS:-/root/ws_moveit} # location of ROS workspace
+export ROS_WS=${ROS_WS:-/root/ros_ws} # location of ROS workspace
 
 # Travis' default timeout for open source projects is 50 mins
 # If your project has a larger timeout, specify this variable in your .travis.yml file!
@@ -151,7 +151,7 @@ function prepare_ros_workspace() {
    # Pull additional packages into the ros workspace
    travis_run wstool init .
    for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
-      echo "$item"
+      echo "Adding $item"
       case "$item" in
          debian)
             echo "Obtaining debian packages for all upstream dependencies."
