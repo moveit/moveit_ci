@@ -39,6 +39,7 @@ env:
   matrix:  # define various jobs
     - TEST=clang-format    # check code formatting for compliance to .clang-format rules
     - TEST=clang-tidy-fix  # perform static code analysis and compliance check against .clang-tidy rules
+    - TEST=ament_lint      # perform ament_lint checks
     # pull in packages from a local .rosinstall file
     - UPSTREAM_WORKSPACE=moveit.rosinstall
     # pull in packages from a remote .rosinstall file and run for a non-default ROS_DISTRO
@@ -66,8 +67,8 @@ script:
 - `ROS_DISTRO`: (required) which version of ROS, i.e. crystal, ...
 - `ROS_REPO`: (default: ros) install ROS debians from either regular release or from [shadow-fixed](http://packages.ros.org/ros-shadow-fixed/ubuntu)
 - `BEFORE_DOCKER_SCRIPT`: (default: none): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' ``before_script`` section, but the variable allows to dynamically switch scripts within the testing matrix.
-- `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the catkin workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
-- `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your catkin workspace.
+- `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the ROS workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
+- `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
   By default, all dependent packages will be downloaded as binary packages from `$ROS_REPO`.
   Setting this variable to a `http://github.com/user/repo#branch` repository url, will clone the corresponding repository into the workspace.
   Setting this variable to a `http://` url, or a local file in your repository, will merge the corresponding `.rosinstall` file with [`wstool`](http://wiki.ros.org/wstool) into your workspace.
@@ -88,10 +89,13 @@ Use ``TEST=clang-format`` to enable this test.
 
 ## Clang-Tidy
 
-**TODO(mlautman):** Port clang-tidy for ROS2
 ``clang-tidy`` allows for static code analysis and validation of naming rules.
 Use ``TEST=clang-tidy-check`` to enable clang-tidy analysis, but only issuing warnings.
 Use ``TEST=clang-tidy-fix`` to reject code that doesn't comply to the rules.
+
+## Ament lint
+
+``ament_lint`` checks for comment issues in your ``package.xml`` and ``CMakeLists`` files.
 
 ## `WARNINGS_OK`
 
@@ -117,6 +121,8 @@ Manually define the variables, Travis would otherwise define for you. These are 
     export TRAVIS_BRANCH=master
     export ROS_DISTRO=crystal
     export ROS_REPO=ros
+    export CC=gcc
+    export CXX=g++
 
 The rest is optional:
 

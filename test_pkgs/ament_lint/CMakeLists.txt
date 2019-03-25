@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(catkin_lint)
+project(ament_lint)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -11,6 +11,6 @@ find_package(ament_cmake REQUIRED)
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   ament_add_gtest(${PROJECT_NAME} test.cpp)
-endif()
+endif()  
 
 ament_package()

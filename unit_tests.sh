@@ -60,7 +60,7 @@ rosdep() {
 	echo "Dummy rosdep $*"
 }
 
-all_groups="sanity warnings clang-format clang-tidy-fix clang-tidy-check"
+all_groups="sanity warnings ament_lint clang-format clang-tidy-fix clang-tidy-check"
 skip_groups="${SKIP:-}"
 # process options
 while true ; do
@@ -93,8 +93,6 @@ for group in $test_groups ; do
 
 			run_test 1 $0:$LINENO "unknown TEST" TEST=invalid TEST_PKG=valid
 
-			# TODO(mlautman): Decide if we should keep this test as an empty ros workspace doesn't
-			# 				  seem to be an acutual issue
 			run_test 1 $0:$LINENO "empty ROS workspace" TEST_PKG=valid 'BEFORE_SCRIPT="rm valid"'
 
 			;;
@@ -102,27 +100,26 @@ for group in $test_groups ; do
 			run_test 0 $0:$LINENO "'warnings' package with warnings allowed" TEST_PKG=warnings WARNINGS_OK=true
 			run_test 1 $0:$LINENO "'warnings' package with warnings forbidden" TEST_PKG=warnings WARNINGS_OK=false
 			run_test 0 $0:$LINENO "'valid' package with warnings forbidden" TEST_PKG=valid WARNINGS_OK=false
-      ;;
-		# TODO(mlautman): restore once ament_tidy has been setup for ROS2
-    # catkin_lint)
-			# run_test 0 $0:$LINENO "catkin_lint on 'valid' package" TEST_PKG=valid TEST=catkin_lint
-			# run_test 0 $0:$LINENO "catkin_lint + clang-format on 'valid' package" TEST_PKG=valid 'TEST="catkin_lint clang-format"'
-			# run_test 2 $0:$LINENO "catkin_lint on 'catkin_lint' package" TEST_PKG=catkin_lint TEST=catkin_lint
-			# run_test 2 $0:$LINENO "catkin_lint + clang-format on 'catkin_lint' package" TEST_PKG=catkin_lint 'TEST="catkin_lint, clang-format"'
-			# ;;
+			;;
+		ament_lint)
+			run_test 0 $0:$LINENO "ament_lint on 'valid' package" TEST_PKG=valid TEST=ament_lint
+			run_test 0 $0:$LINENO "ament_lint + clang-format on 'valid' package" TEST_PKG=valid 'TEST="ament_lint clang-format"'
+			run_test 2 $0:$LINENO "ament_lint on 'ament_lint' package" TEST_PKG=ament_lint TEST=ament_lint
+			run_test 2 $0:$LINENO "ament_lint + clang-format on 'ament_lint' package" TEST_PKG=ament_lint 'TEST="ament_lint, clang-format"'
+			;;
 		clang-format)
 			run_test 0 $0:$LINENO "clang-format on 'valid' package" TEST_PKG=valid TEST=clang-format
 			run_test 2 $0:$LINENO "clang-format on 'clang_format' package" TEST_PKG=clang_format TEST=clang-format
+			run_test 2 $0:$LINENO "ament_lint + clang-format on 'clang_format' package" TEST_PKG=clang_format 'TEST="ament_lint; clang-format"'
 			;;
-		# TODO(mlautman): restore once ament_tidy has been setup for ROS2
-		#  clang-tidy-fix)
-			# run_test 0 $0:$LINENO "clang-tidy-fix on 'valid' package" TEST_PKG=valid TEST=clang-tidy-fix
-			# run_test 1 $0:$LINENO "clang-tidy-fix on 'clang_tidy' package" TEST_PKG=clang_tidy TEST=clang-tidy-fix
-			# ;;
-		# clang-tidy-check)  # only supported for cmake >= 3.6
-			# run_test 0 $0:$LINENO "clang-tidy-check on 'valid' package, warnings forbidden" TEST_PKG=valid TEST=clang-tidy-check WARNINGS_OK=false
-			# run_test 1 $0:$LINENO "clang-tidy-check on 'clang_tidy' package, warnings forbidden" TEST_PKG=clang_tidy TEST=clang-tidy-check WARNINGS_OK=false
-			# ;;
+		clang-tidy-fix)
+			run_test 0 $0:$LINENO "clang-tidy-fix on 'valid' package" TEST_PKG=valid TEST=clang-tidy-fix
+			run_test 1 $0:$LINENO "clang-tidy-fix on 'clang_tidy' package" TEST_PKG=clang_tidy TEST=clang-tidy-fix
+			;;
+		clang-tidy-check)  # only supported for cmake >= 3.6
+			run_test 0 $0:$LINENO "clang-tidy-check on 'valid' package, warnings forbidden" TEST_PKG=valid TEST=clang-tidy-check WARNINGS_OK=false
+			run_test 1 $0:$LINENO "clang-tidy-check on 'clang_tidy' package, warnings forbidden" TEST_PKG=clang_tidy TEST=clang-tidy-check WARNINGS_OK=false
+			;;
 		*) echo -e $(colorize YELLOW "Unknown test group '$group'.")
 			echo "Known groups are: $all_groups" ;;
 	esac
