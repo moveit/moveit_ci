@@ -91,8 +91,6 @@ function update_system() {
    [[ "$TEST" == *clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
    [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
-   # Install abi-compliance-checker if needed
-   [[ "$TEST" == *abi* ]] && travis_run_true apt-get -qq install -y abi-dumper abi-compliance-checker links
    # Install catkin_lint if needed
    if [[ "$TEST" == *catkin_lint* ]]; then
        travis_run apt-get -qq install -y python-pip

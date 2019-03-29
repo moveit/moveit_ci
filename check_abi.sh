@@ -39,19 +39,21 @@ source $(dirname ${BASH_SOURCE:-$0})/util.sh
 ABI_TMP_DIR=${ABI_TMP_DIR:-/tmp/abi}
 
 function abi_install() {
-	travis_fold start abi_check "Installing ABI checker"
-	travis_run sudo apt-get install -y -qq wget perl links
+	travis_fold start abi_check "Installing ABI checker and dependencies"
+	travis_run sudo apt-get install -y -qq wget elfutils perl links
 
 	mkdir -p "${ABI_TMP_DIR}"
-	wget -q -O /tmp/abi_installer.pl https://raw.githubusercontent.com/lvc/installer/master/installer.pl
-	perl /tmp/abi_installer.pl -install -prefix $ABI_TMP_DIR abi-compliance-checker
-	perl /tmp/abi_installer.pl -install -prefix $ABI_TMP_DIR abi-dumper
 
 	# abi-dumper requires universal ctags
 	travis_run sudo apt-get install -y -qq autoconf pkg-config
 	travis_run git clone --depth 1 https://github.com/universal-ctags/ctags.git $ABI_TMP_DIR/ctags
 	travis_run --display "Build universal ctags" "(cd $ABI_TMP_DIR/ctags && ./autogen.sh && ./configure --prefix $ABI_TMP_DIR && make install)"
 	export PATH=$ABI_TMP_DIR/bin:$PATH
+
+	wget -q -O /tmp/abi_installer.pl https://raw.githubusercontent.com/lvc/installer/master/installer.pl
+	perl /tmp/abi_installer.pl -install -prefix $ABI_TMP_DIR abi-compliance-checker
+	perl /tmp/abi_installer.pl -install -prefix $ABI_TMP_DIR abi-dumper
+
 	travis_fold end abi_check
 }
 
@@ -110,7 +112,7 @@ if [ "$ABI_BASE_URL" == "generate" ] ; then
 	travis_run abi_check \
 			"${ROS_WS}/install/lib" "${ROS_WS}/install/include" \
 			"${ROS_WS}/install/lib" "${ROS_WS}/install/include"
-elif [ "$TRAVIS_PULL_REQUEST" == true ]; then
+elif [ "$TRAVIS_PULL_REQUEST" != false ]; then
 	# For a pull request, actually perform the abi check
 	test "$TRAVIS" == true && abi_install
 	# fetch and extract old abi from $ABI_BASE_URL
