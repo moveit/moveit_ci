@@ -114,7 +114,7 @@ First clone the repo you want to test:
 
 Next clone the CI script:
 
-    git clone -b ros2 https://github.com/ros-planning/moveit_ci .moveit_ci
+    git clone -b ros2 https://github.com/acutronicrobotics/moveit_ci .moveit_ci
 
 Manually define the variables, Travis would otherwise define for you. These are required:
 
