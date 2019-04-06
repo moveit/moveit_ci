@@ -217,7 +217,7 @@ function prepare_ros_workspace() {
    travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF
 
    # Install source-based package dependencies
-   travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
+   travis_run_true rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
    # Change to base of workspace
    travis_run_simple cd $ROS_WS
