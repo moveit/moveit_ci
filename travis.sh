@@ -97,8 +97,8 @@ function update_system() {
    # Make sure the packages are up-to-date
    travis_run apt-get -qq dist-upgrade
 
-   # Make sure autoconf is installed
-   travis_run apt-get -qq install -y autoconf
+   # Make sure autoconf is installed and python3-lxml for the tests
+   travis_run apt-get -qq install -y autoconf python3-lxml
 
    # Install clang-tidy stuff if needed
    [[ "$TEST" == *clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
