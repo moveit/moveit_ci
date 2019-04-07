@@ -254,6 +254,14 @@ function build_workspace() {
    # Console output fix for: "WARNING: Could not encode unicode characters"
    export PYTHONIOENCODING=UTF-8
 
+   # Change to base of workspace
+   travis_run_simple cd $ROS_WS
+
+   # COLCON_IGNORE packages that cause the build to fail
+   # TODO: review this
+   travis_run_simple touch src/image_common/camera_calibration_parsers/COLCON_IGNORE
+   travis_run_simple touch src/image_common/camera_info_manager/COLCON_IGNORE
+
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
    COLCON_CMAKE_ARGS="--cmake-args $CMAKE_ARGS --catkin-cmake-args $CMAKE_ARGS --ament-cmake-args $CMAKE_ARGS"
    travis_run_wait 60 --title "colcon build" colcon build $COLCON_CMAKE_ARGS $COLCON_EVENT_HANDLING

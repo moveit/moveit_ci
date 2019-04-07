@@ -163,3 +163,6 @@ Manually define the variables, Travis would otherwise define for you. These are 
     export CXX=g++
     export UPSTREAM_WORKSPACE=moveit.rosinstall
     export TRAVIS_OS_NAME=osx
+Start the script
+
+    .moveit_ci/travis.sh
