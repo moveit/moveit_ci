@@ -259,8 +259,8 @@ function build_workspace() {
 
    # COLCON_IGNORE packages that cause the build to fail
    # TODO: review this
-   travis_run_simple touch src/image_common/camera_calibration_parsers/COLCON_IGNORE
-   travis_run_simple touch src/image_common/camera_info_manager/COLCON_IGNORE
+   travis_run_simple touch $ROS_WS/src/image_common/camera_calibration_parsers/COLCON_IGNORE
+   travis_run_simple touch $ROS_WS/src/image_common/camera_info_manager/COLCON_IGNORE
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
    travis_run_wait 60 --title "colcon build" colcon build --merge-install $COLCON_CMAKE_ARGS $COLCON_EVENT_HANDLING
