@@ -40,12 +40,19 @@ function run_docker() {
 
     # Choose the docker container to use
     case "${ROS_REPO:-ros}" in
+       acutronicrobotics) export DOCKER_IMAGE=acutronicrobotics/moveit2:$ROS_DISTRO-ci ;;
        ros) export DOCKER_IMAGE=moveit/moveit2:$ROS_DISTRO-ci ;;
        *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros'"); exit 1 ;;
     esac
 
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
-    travis_run docker pull $DOCKER_IMAGE
+
+    if [[ "${ROS_REPO}" == acutronicrobotics ]]; then
+      # travis_run docker pull $DOCKER_IMAGE # Image not available from dockerhub for now, build locally
+      travis_run docker build -t $DOCKER_IMAGE .docker/ci/
+    else
+      travis_run docker pull $DOCKER_IMAGE
+    fi
 
     # Start Docker container
     docker run \
@@ -88,6 +95,9 @@ function update_system() {
 
    # Make sure the packages are up-to-date
    travis_run apt-get -qq dist-upgrade
+
+   # Make sure autoconf is installed
+   travis_run apt-get -qq install -y autoconf
 
    # Install clang-tidy stuff if needed
    [[ "$TEST" == *clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
@@ -153,40 +163,49 @@ function run_xvfb() {
 function prepare_ros_workspace() {
    travis_fold start ros.ws "Setting up ROS workspace"
    travis_run_simple mkdir -p $ROS_WS/src
-   travis_run_simple cd $ROS_WS/src
 
-   # Pull additional packages into the ros workspace
-   travis_run wstool init .
-   for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
-      echo "Adding $item"
-      case "$item" in
-         debian)
-            echo "Obtaining debian packages for all upstream dependencies."
-            break ;;
-         https://github.com/*) # clone from github
-            # extract url and optional branch from item=<url>#<branch>
-            item="${item}#"
-            url=${item%%#*}
-            branch=${item#*#}; branch=${branch%#}; branch=${branch:+--branch ${branch}}
-            travis_run_true git clone -q --depth 1 $branch $url
-            test $? -ne 0 && echo -e "$(colorize RED Failed clone repository. Aborting.)" && exit 2
-            continue ;;
-         http://* | https://* | file://*) ;; # use url as is
-         *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
-      esac
-      travis_run_true wstool merge -k $item
-      test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
-   done
+   if [[ "${ROS_REPO}" == acutronicrobotics ]]; then
+     travis_run_simple cd $ROS_WS
+     # There's already a moveit2.repos locally, no need to fetch it
+     # travis_run wget https://raw.githubusercontent.com/AcutronicRobotics/moveit2/master/moveit2.repos
+     travis_run vcs import src < moveit2.repos
+     travis_run_simple cd $ROS_WS/src
+   else
+     travis_run_simple cd $ROS_WS/src
 
-   # Download upstream packages into workspace
-   if [ -e .rosinstall ]; then
-      # ensure that the to-be-tested package is not in .rosinstall
-      travis_run_true wstool rm $REPOSITORY_NAME
-      # perform shallow checkout: only possible with wstool init
-      travis_run_simple mv .rosinstall rosinstall
-      travis_run cat rosinstall
-      travis_run wstool init --shallow . rosinstall
-   fi
+     # Pull additional packages into the ros workspace
+     travis_run wstool init .
+     for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
+        echo "Adding $item"
+        case "$item" in
+           debian)
+              echo "Obtaining debian packages for all upstream dependencies."
+              break ;;
+           https://github.com/*) # clone from github
+              # extract url and optional branch from item=<url>#<branch>
+              item="${item}#"
+              url=${item%%#*}
+              branch=${item#*#}; branch=${branch%#}; branch=${branch:+--branch ${branch}}
+              travis_run_true git clone -q --depth 1 $branch $url
+              test $? -ne 0 && echo -e "$(colorize RED Failed clone repository. Aborting.)" && exit 2
+              continue ;;
+           http://* | https://* | file://*) ;; # use url as is
+           *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
+        esac
+        travis_run_true wstool merge -k $item
+        test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
+     done
+
+     # Download upstream packages into workspace
+     if [ -e .rosinstall ]; then
+        # ensure that the to-be-tested package is not in .rosinstall
+        travis_run_true wstool rm $REPOSITORY_NAME
+        # perform shallow checkout: only possible with wstool init
+        travis_run_simple mv .rosinstall rosinstall
+        travis_run cat rosinstall
+        travis_run wstool init --shallow . rosinstall
+     fi
+  fi  # else
 
    # Link in the repo we are testing
    if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then

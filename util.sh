@@ -79,8 +79,13 @@ travis_timeout() {
 # travis_fold (start|end) [name] [message]
 travis_fold() {
   # option -g declares those arrays globally!
-  declare -ag _TRAVIS_FOLD_NAME_STACK  # "stack" array to hold name hierarchy
-  declare -Ag _TRAVIS_FOLD_COUNTERS  # associated array to hold global counters
+
+  if [[ "${TRAVIS_OS_NAME}" == osx ]]; then
+    :
+  else
+    declare -ag _TRAVIS_FOLD_NAME_STACK  # "stack" array to hold name hierarchy
+    declare -Ag _TRAVIS_FOLD_COUNTERS  # associated array to hold global counters
+  fi
 
   local action="$1"
   local name="${2:-moveit_ci}"  # name defaults to moveit_ci

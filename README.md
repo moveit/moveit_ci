@@ -109,7 +109,7 @@ It's also possible to run the moveit\_ci script locally, without Travis. We demo
 First clone the repo you want to test:
 
     cd /tmp/travis   # any working directory will do
-    git clone https://github.com/ros-planning/moveit2
+    git clone https://github.com/acutronicrobotics/moveit2
     cd moveit2
 
 Next clone the CI script:
@@ -141,3 +141,25 @@ It's also possible to run the script without using docker. To this end, issue th
     mkdir $ROS_WS                    # and create it
 
     .moveit_ci/travis.sh
+
+## Running Locally For Testing in `OS X`
+
+First clone the repo you want to test:
+
+    cd /tmp/travis   # any working directory will do
+    git clone https://github.com/acutronicrobotics/moveit2
+    cd moveit2
+
+Next clone the CI script:
+
+    git clone -b ros2 https://github.com/acutronicrobotics/moveit_ci .moveit_ci
+
+Manually define the variables, Travis would otherwise define for you. These are required:
+
+    export TRAVIS_BRANCH=master
+    export ROS_DISTRO=crystal
+    export ROS_REPO=acutronicrobotics
+    export CC=gcc
+    export CXX=g++
+    export UPSTREAM_WORKSPACE=moveit.rosinstall
+    export TRAVIS_OS_NAME=osx

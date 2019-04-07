@@ -31,6 +31,10 @@ travis_nanoseconds() {
     format='+%s000000000'
   fi
 
+  if [[ "${TRAVIS_OS_NAME}" == osx ]]; then
+    format='+%s000000000'
+  fi
+
   "${cmd}" -u "${format}"
 }
 travis_time_start() {
