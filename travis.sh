@@ -263,8 +263,7 @@ function build_workspace() {
    travis_run_simple touch src/image_common/camera_info_manager/COLCON_IGNORE
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   COLCON_CMAKE_ARGS="--cmake-args $CMAKE_ARGS --catkin-cmake-args $CMAKE_ARGS --ament-cmake-args $CMAKE_ARGS"
-   travis_run_wait 60 --title "colcon build" colcon build $COLCON_CMAKE_ARGS $COLCON_EVENT_HANDLING
+   travis_run_wait 60 --title "colcon build" colcon build --merge-install $COLCON_CMAKE_ARGS $COLCON_EVENT_HANDLING
 
    # Allow to verify ccache usage
    travis_run --title "ccache statistics" ccache -s
