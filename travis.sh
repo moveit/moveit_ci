@@ -49,8 +49,8 @@ function run_docker() {
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
 
     if [[ "${ROS_REPO}" == acutronicrobotics ]]; then
-      # travis_run docker pull $DOCKER_IMAGE # Image not available from dockerhub for now, build locally
-      travis_run docker build -t $DOCKER_IMAGE .docker/ci/
+      travis_run docker pull $DOCKER_IMAGE
+      #travis_run docker build -t $DOCKER_IMAGE .docker/ci/ # Compile docker image locally
     else
       travis_run docker pull $DOCKER_IMAGE
     fi
