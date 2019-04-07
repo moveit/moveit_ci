@@ -120,7 +120,7 @@ Manually define the variables, Travis would otherwise define for you. These are 
 
     export TRAVIS_BRANCH=master
     export ROS_DISTRO=crystal
-    export ROS_REPO=ros
+    export ROS_REPO=acutronicrobotics
     export CC=gcc
     export CXX=g++
 
