@@ -283,7 +283,7 @@ function test_workspace() {
    blacklist_pkgs=$(filter_out "$source_pkgs" "$all_pkgs")
 
    # Run tests, suppressing the error output (confuses Travis display?)
-   travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist $COLCON_EVENT_HANDLING 2>/dev/null"
+   travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist $COLCON_EVENT_HANDLING --merge-install 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "colcon test-results"
