@@ -35,13 +35,7 @@ function run_docker() {
    echo -e $(colorize YELLOW "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'")
    run_script BEFORE_DOCKER_SCRIPT
 
-    # Choose the docker container to use
-    case "${ROS_REPO:-ros}" in
-       ros) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci ;;
-       ros-shadow-fixed) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed ;;
-       *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros' or 'ros-shadow-fixed'"); exit 1 ;;
-    esac
-
+    # Echo the docker container to be used
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
     travis_run docker pull $DOCKER_IMAGE
 
@@ -49,7 +43,7 @@ function run_docker() {
     docker run \
         -e TRAVIS \
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
-        -e ROS_REPO \
+        -e MOVEIT_BRANCH \
         -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
         -e CI_SOURCE_PATH=${CI_SOURCE_PATH:-/root/$REPOSITORY_NAME} \

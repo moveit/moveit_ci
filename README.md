@@ -32,10 +32,14 @@ notifications:
       # - user@email.com
 env:
   global: # default values that are common to all configurations (can be overriden below)
-    - ROS_DISTRO=melodic   # ROS distro to test for
-    - ROS_REPO=ros         # ROS binary repository [ros | ros-shadow-fixed]
-    - TEST_BLACKLIST=      # list packages, for which to skip the unittests
-    - WARNINGS_OK=false    # Don't accept warnings [true | false]
+    - ROS_DISTRO=melodic           # ROS distro to test for
+    - TEST_BLACKLIST=              # list packages, for which to skip the unittests
+    - WARNINGS_OK=false            # Don't accept warnings [true | false]
+    - MOVEIT_BRANCH=melodic-devel  # Which branch of moveit should be used for ci
+    - DOCKER_IMAGE=melodic-ci      # Which moveit docker image to use in the format "DOCKER_BASE-DOCKER_IMAGE"
+                                   # where :
+                                   #   DOCKER_BASE is one of [master | melodic | kinetic | etc..]
+                                   #   DOCKER_BASE is one of [ci | shadow-fixed | source | release]
   matrix:  # define various jobs
     - TEST=clang-format    # check code formatting for compliance to .clang-format rules
     - TEST=clang-tidy-fix  # perform static code analysis and compliance check against .clang-tidy rules
@@ -44,14 +48,14 @@ env:
     - UPSTREAM_WORKSPACE=moveit.rosinstall
     # pull in packages from a remote .rosinstall file and run for a non-default ROS_DISTRO
     - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
-      ROS_DISTRO=kinetic  ROS_REPO=ros-shadow-fixed
+      ROS_DISTRO=kinetic  MOVEIT_BRANCH=kinetic-devel  DOCKER_IMAGE=kinetic-shadow-fixed
 
 matrix:
   include: # Add a separate config to the matrix, using clang as compiler
     - env: TEST=clang-tidy-check  # run static code analysis, but don't check for available auto-fixes
       compiler: clang
   allow_failures:
-    - env: ROS_DISTRO=kinetic  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit#$ROS_DISTRO-devel
+    - env: ROS_DISTRO=kinetic  MOVEIT_BRANCH=kinetic-devel DOCKER_IMAGE=kinetic-ci  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit#$ROS_DISTRO-devel
 
 before_script:
   # Clone the moveit_ci repository into Travis' workspace
@@ -65,11 +69,13 @@ script:
 ## Configurations
 
 - `ROS_DISTRO`: (required) which version of ROS, i.e. kinetic, melodic, ...
-- `ROS_REPO`: (default: ros) install ROS debians from either regular release or from [shadow-fixed](http://packages.ros.org/ros-shadow-fixed/ubuntu)
+- `DOCKER_IMAGE`: (default: melodic-ci) Which moveit docker image to use. This should be in the format DOCKER_
+BASE-DOCKER_IMAGE where DOCKER-base is one of [ master | melodic | kinetic | ... ] and DOCKER_IMAGE is one of [ ci | [shadow-fixed](http://packages.ros.org/ros-shadow-fixed/ubuntu) | source | release ]
+- `MOVEIT_BRANCH`: (default: melodic-devel) Which branch of moveit should be used for ci
 - `BEFORE_DOCKER_SCRIPT`: (default: none): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' ``before_script`` section, but the variable allows to dynamically switch scripts within the testing matrix.
 - `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the ROS workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
 - `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
-  By default, all dependent packages will be downloaded as binary packages from `$ROS_REPO`.
+  By default, all dependent packages will be downloaded as binary packages.
   Setting this variable to a `http://github.com/user/repo#branch` repository url, will clone the corresponding repository into the workspace.
   Setting this variable to a `http://` url, or a local file in your repository, will merge the corresponding `.rosinstall` file with [`wstool`](http://wiki.ros.org/wstool) into your workspace.
 When set as "file", the dependended packages that need to be built from source are downloaded based on a .rosinstall file in your repository. Multiple sources can be given as a comma-, or semicolon-separated lists. Note: their order matters -- if the same resource is defined twice, only the first one is considered.
@@ -120,7 +126,8 @@ Manually define the variables, Travis would otherwise define for you. These are 
 
     export TRAVIS_BRANCH=melodic-devel
     export ROS_DISTRO=melodic
-    export ROS_REPO=ros-shadow-fixed
+    export MOVEIT_IMAGE=melodic-devel
+    export DOCKER_IMAGE=melodic-ros-shadow-fixed
     export CC=gcc
     export CXX=g++
 
