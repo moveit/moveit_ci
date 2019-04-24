@@ -163,7 +163,9 @@ function prepare_ros_workspace() {
    travis_run_simple cd $ROS_WS/src
 
    # Pull additional packages into the ros workspace
-   travis_run wstool init .
+   if [[ ! -f .rosinstall ]]; then
+     travis_run wstool init .
+   fi
    for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
       echo "Adding $item"
       case "$item" in
@@ -181,7 +183,7 @@ function prepare_ros_workspace() {
          http://* | https://* | file://*) ;; # use url as is
          *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
       esac
-      travis_run_true wstool merge -k $item
+      travis_run_true wstool merge -r -y $item
       test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
    done
 
