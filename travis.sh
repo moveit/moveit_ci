@@ -162,6 +162,14 @@ function prepare_ros_workspace() {
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
 
+
+   # If the workspace is already built, source it
+   if [[ ! -f devel/setup.bash ]]; then
+     travis_run source devel/setup.bash
+   fi
+   if [[ ! -f .rosinstall ]]; then
+     travis_run wstool init .
+   fi
    # Pull additional packages into the ros workspace
    if [[ ! -f .rosinstall ]]; then
      travis_run wstool init .
