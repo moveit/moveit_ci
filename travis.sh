@@ -11,7 +11,7 @@
 
 export MOVEIT_CI_DIR=$(dirname ${BASH_SOURCE:-$0})  # path to the directory running the current script
 export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
-export ROS_WS=${ROS_WS:-/root/ros_ws} # location of ROS workspace
+export ROS_WS=${ROS_WS:-/root/ws_moveit} # location of ROS workspace
 
 # Travis' default timeout for open source projects is 50 mins
 # If your project has a larger timeout, specify this variable in your .travis.yml file!
@@ -56,6 +56,7 @@ function run_docker() {
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
         -e ROS_REPO \
         -e ROS_DISTRO \
+        -e ROS_WS \
         -e BEFORE_SCRIPT \
         -e CI_SOURCE_PATH=${CI_SOURCE_PATH:-/root/$REPOSITORY_NAME} \
         -e UPSTREAM_WORKSPACE \
