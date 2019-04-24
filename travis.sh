@@ -165,7 +165,7 @@ function prepare_ros_workspace() {
 
    # If the workspace is already built, source it
    if [[ ! -f devel/setup.bash ]]; then
-     travis_run source devel/setup.bash
+     travis_run source ../devel/setup.bash
    fi
    # Pull additional packages into the ros workspace
    if [[ ! -f .rosinstall ]]; then
@@ -196,10 +196,9 @@ function prepare_ros_workspace() {
    if [ -e .rosinstall ]; then
       # ensure that the to-be-tested package is not in .rosinstall
       travis_run_true wstool rm $REPOSITORY_NAME
-      # perform shallow checkout: only possible with wstool init
-      travis_run_simple mv .rosinstall rosinstall
-      travis_run cat rosinstall
-      travis_run wstool init merge -r -y rosinstall
+      # perform checkout with wstool merge
+      travis_run cat .rosinstall
+      travis_run wstool merge -r -y .rosinstall
    fi
 
    # Link in the repo we are testing
