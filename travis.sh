@@ -167,9 +167,6 @@ function prepare_ros_workspace() {
    if [[ ! -f devel/setup.bash ]]; then
      travis_run source devel/setup.bash
    fi
-   if [[ ! -f .rosinstall ]]; then
-     travis_run wstool init .
-   fi
    # Pull additional packages into the ros workspace
    if [[ ! -f .rosinstall ]]; then
      travis_run wstool init .
@@ -202,7 +199,7 @@ function prepare_ros_workspace() {
       # perform shallow checkout: only possible with wstool init
       travis_run_simple mv .rosinstall rosinstall
       travis_run cat rosinstall
-      travis_run wstool init --shallow . rosinstall
+      travis_run wstool init merge -r -y rosinstall
    fi
 
    # Link in the repo we are testing
