@@ -196,6 +196,7 @@ function prepare_ros_workspace() {
    if [ -e .rosinstall ]; then
       # ensure that the to-be-tested package is not in .rosinstall
       travis_run_true wstool rm $REPOSITORY_NAME
+      travis_run_true rm -rf $REPOSITORY_NAME
       # perform checkout with wstool merge
       travis_run cat .rosinstall
       travis_run wstool merge -r -y .rosinstall
