@@ -15,11 +15,12 @@ notifications:
 env:
   global: # default values
     - ROS_DISTRO=melodic
-    - DOCKER_IMAGE=moveit/moveit:master-ci
+    - ROS_REPO=ros
     - SCRIPT=travis.sh
   matrix:
-    - SCRIPT=unit_tests.sh
-    # skip clang-tidy-check on Xenial. It's only supported for cmake >= 3.6. clang-tidy-fix is tested.
+    # Run docker with custom image
+    - SCRIPT=unit_tests.sh   ROS_REPO=               DOCKER_IMAGE=moveit/moveit:master-ci
+    # Skip clang-tidy-check on Xenial. It's only supported for cmake >= 3.6. clang-tidy-fix is tested.
     - SCRIPT=unit_tests.sh   SKIP=clang-tidy-check   ROS_DISTRO=kinetic
 
     # Build MoveIt! repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
