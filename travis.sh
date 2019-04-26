@@ -68,7 +68,7 @@ function run_docker() {
         -e CFLAGS \
         -e CXXFLAGS \
         -v $(pwd):/root/$REPOSITORY_NAME \
-        -v $HOME/.ccache:/root/.ccache \
+        -v ${CCACHE_DIR:-$HOME/.ccache}:/root/.ccache \
         -t \
         -w /root/$REPOSITORY_NAME \
         $DOCKER_IMAGE /root/$REPOSITORY_NAME/.moveit_ci/travis.sh
