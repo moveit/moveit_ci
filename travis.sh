@@ -11,7 +11,6 @@
 
 export MOVEIT_CI_DIR=$(dirname ${BASH_SOURCE:-$0})  # path to the directory running the current script
 export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
-export ROS_WS=${ROS_WS:-/root/ros_ws} # location of ROS workspace
 
 # Travis' default timeout for open source projects is 50 mins
 # If your project has a larger timeout, specify this variable in your .travis.yml file!
@@ -50,7 +49,7 @@ function run_docker() {
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
     travis_run docker pull $DOCKER_IMAGE
 
-    # Start Docker container
+    # Run travis.sh again, but now within Docker container
     docker run \
         -e TRAVIS \
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
@@ -236,7 +235,7 @@ function prepare_ros_workspace() {
 function build_workspace() {
    echo -e $(colorize GREEN Building Workspace)
    # Configure catkin
-   travis_run --title "catkin config $CMAKE_ARGS" catkin config --extend /opt/ros/$ROS_DISTRO --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3" $CMAKE_ARGS --
+   travis_run --title "catkin config $CMAKE_ARGS" catkin config --extend "${ROS_UNDERLAY:-/opt/ros/$ROS_DISTRO}" --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3" $CMAKE_ARGS --
 
    # Console output fix for: "WARNING: Could not encode unicode characters"
    export PYTHONIOENCODING=UTF-8
@@ -292,6 +291,8 @@ if ! [ "$IN_DOCKER" ]; then run_docker; fi
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
+
+export ROS_WS=${ROS_WS:-/root/ros_ws} # default location of ROS workspace, if not defined differently in docker container
 
 # Prepend current dir if path is not yet absolute
 [[ "$MOVEIT_CI_DIR" != /* ]] && MOVEIT_CI_DIR=$PWD/$MOVEIT_CI_DIR
