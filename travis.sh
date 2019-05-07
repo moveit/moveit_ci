@@ -57,7 +57,7 @@ function run_docker() {
 
     # Start Docker container
     docker run \
-        --net=host \
+        --network=host \
         -e TRAVIS \
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
         -e ROS_REPO \
