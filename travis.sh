@@ -106,7 +106,7 @@ function update_system() {
    export PATH=/usr/lib/ccache:$PATH
 
    # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
-   travis_run rosdep update
+   travis_retry rosdep update
 
    travis_fold end update
 }
