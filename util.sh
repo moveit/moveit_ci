@@ -153,7 +153,7 @@ travis_run_impl() {
       timeout="${2}"
       shift
       ;;
-    --timeout)  # disable (a previously set) timeout
+    --no-timeout)  # disable (a previously set) timeout
       unset timeout
       ;;
     *) break ;;
