@@ -117,7 +117,7 @@ travis_fold() {
 # - on failure: 2 if --assert option was given, otherwise return value of process
 # - on timeout: 124 (return value of timeout command)
 travis_run_impl() {
-  local assert hide title display timing timeout cmd result
+  local assert hide title display timing timeout cmd result trial=1 trials=1
 
   while true; do
     case "${1}" in
@@ -149,12 +149,19 @@ travis_run_impl() {
     --no-timing)  # enable timing?
       unset timing
       ;;
-    --timeout)  # abore commands after a timeout
+    --timeout)  # abort commands after a timeout
       timeout="${2}"
       shift
       ;;
     --no-timeout)  # disable (a previously set) timeout
       unset timeout
+      ;;
+    --trials)
+      trials="${2}"
+      shift
+      ;;
+    --retry)
+      trials=3
       ;;
     *) break ;;
     esac
@@ -172,6 +179,7 @@ travis_run_impl() {
     echo -e "$(colorize BLUE THIN ${title}${display:-${cmds}})"
   fi
 
+while [ "${trial}" -le "${trials}" ] ; do
   # Actually run cmds
   if [ -n "${timeout}" ]; then
     (eval "${cmds}") & # run cmds in subshell in background
@@ -185,6 +193,15 @@ travis_run_impl() {
     eval "${cmds}"
     result="${?}"
   fi
+
+  if [ "${result}" -ne 0 ] && [ "${trials}" -ne 1 ] ; then
+     echo -e $(colorize YELLOW "The command \"${TRAVIS_CMD}\" failed [trial ${trial} of ${trials}].")
+     trial="$((trial + 1))"
+     sleep 1
+  else
+     break
+  fi
+done
 
   if [ -n "${timing}" ]; then
     travis_time_finish
