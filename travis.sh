@@ -87,26 +87,26 @@ function run_docker() {
 function update_system() {
    travis_fold start update "Updating system packages"
    # Update the sources
-   travis_run apt-get -qq update
+   travis_run --retry apt-get -qq update
 
    # Make sure the packages are up-to-date
-   travis_run apt-get -qq dist-upgrade
+   travis_run --retry apt-get -qq dist-upgrade
 
    # Install clang-tidy stuff if needed
-   [[ "$TEST" == *clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
+   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
    [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
    # Install catkin_lint if needed
    if [[ "$TEST" == *catkin_lint* ]]; then
-       travis_run apt-get -qq install -y python-pip
-       travis_run pip install catkin_lint
+       travis_run --retry apt-get -qq install -y python-pip
+       travis_run --retry pip install catkin_lint
    fi
    # Enable ccache
-   travis_run apt-get -qq install ccache
+   travis_run --retry apt-get -qq install ccache
    export PATH=/usr/lib/ccache:$PATH
 
    # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
-   travis_run rosdep update
+   travis_run --retry rosdep update
 
    travis_fold end update
 }
@@ -149,7 +149,7 @@ function prepare_or_run_early_tests() {
 # Install and run xvfb to allow for X11-based unittests on DISPLAY :99
 function run_xvfb() {
    travis_fold start xvfb "Starting virtual X11 server to allow for X11-based unit tests"
-   travis_run apt-get -qq install xvfb mesa-utils
+   travis_run --retry apt-get -qq install xvfb mesa-utils
    travis_run "Xvfb -screen 0 640x480x24 :99 &"
    export DISPLAY=:99.0
    travis_run_true glxinfo -B
@@ -223,7 +223,7 @@ function prepare_ros_workspace() {
    travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF
 
    # Install source-based package dependencies
-   travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
+   travis_run --retry rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
    # Change to base of workspace
    travis_run_simple cd $ROS_WS
