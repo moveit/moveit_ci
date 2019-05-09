@@ -11,7 +11,6 @@
 
 export MOVEIT_CI_DIR=$(dirname ${BASH_SOURCE:-$0})  # path to the directory running the current script
 export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally checked out
-export ROS_WS=${ROS_WS:-/root/ros_ws} # location of ROS workspace
 
 # Travis' default timeout for open source projects is 50 mins
 # If your project has a larger timeout, specify this variable in your .travis.yml file!
@@ -39,15 +38,20 @@ function run_docker() {
    run_script BEFORE_DOCKER_SCRIPT
 
     # Choose the docker container to use
-    case "${ROS_REPO:-ros}" in
-       ros) export DOCKER_IMAGE=moveit/moveit2:$ROS_DISTRO-ci ;;
-       *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros'"); exit 1 ;;
-    esac
+    if [ -n "$ROS_REPO" ] && [ -n "$DOCKER_IMAGE" ]; then
+       echo -e $(colorize YELLOW "$DOCKER_IMAGE overrides $ROS_REPO setting")
+    fi
+    if [ -z "$DOCKER_IMAGE" ]; then
+       case "${ROS_REPO:-ros}" in
+          ros) export DOCKER_IMAGE=moveit/moveit2:$ROS_DISTRO-ci ;;
+          *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros'"); exit 1 ;;
+       esac
+    fi
 
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
     travis_run docker pull $DOCKER_IMAGE
 
-    # Start Docker container
+    # Run travis.sh again, but now within Docker container
     docker run \
         -e TRAVIS \
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
@@ -66,7 +70,7 @@ function run_docker() {
         -e CFLAGS \
         -e CXXFLAGS \
         -v $(pwd):/root/$REPOSITORY_NAME \
-        -v $HOME/.ccache:/root/.ccache \
+        -v ${CCACHE_DIR:-$HOME/.ccache}:/root/.ccache \
         -t \
         -w /root/$REPOSITORY_NAME \
         $DOCKER_IMAGE /root/$REPOSITORY_NAME/.moveit_ci/travis.sh
@@ -84,23 +88,21 @@ function run_docker() {
 function update_system() {
    travis_fold start update "Updating system packages"
    # Update the sources
-   travis_run apt-get -qq update
+   travis_run --retry apt-get -qq update
 
    # Make sure the packages are up-to-date
-   travis_run apt-get -qq dist-upgrade
+   travis_run --retry apt-get -qq dist-upgrade
 
    # Install clang-tidy stuff if needed
-   [[ "$TEST" == *clang-tidy* ]] && travis_run apt-get -qq install -y clang-tidy
+   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
    [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
-   # Install abi-compliance-checker if needed
-   [[ "$TEST" == *abi* ]] && travis_run_true apt-get -qq install -y abi-dumper abi-compliance-checker links
    # Enable ccache
-   travis_run apt-get -qq install ccache
+   travis_run --retry apt-get -qq install ccache
    export PATH=/usr/lib/ccache:$PATH
 
    # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
-   travis_run rosdep update
+   travis_run --retry rosdep update
 
    travis_fold end update
 }
@@ -143,7 +145,7 @@ function prepare_or_run_early_tests() {
 # Install and run xvfb to allow for X11-based unittests on DISPLAY :99
 function run_xvfb() {
    travis_fold start xvfb "Starting virtual X11 server to allow for X11-based unit tests"
-   travis_run apt-get -qq install xvfb mesa-utils
+   travis_run --retry apt-get -qq install xvfb mesa-utils
    travis_run "Xvfb -screen 0 640x480x24 :99 &"
    export DISPLAY=:99.0
    travis_run_true glxinfo -B
@@ -217,7 +219,7 @@ function prepare_ros_workspace() {
    travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF
 
    # Install source-based package dependencies
-   travis_run rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
+   travis_run --retry rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
    # Change to base of workspace
    travis_run_simple cd $ROS_WS
@@ -282,6 +284,8 @@ if ! [ "$IN_DOCKER" ]; then run_docker; fi
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
+
+export ROS_WS=${ROS_WS:-/root/ros_ws} # default location of ROS workspace, if not defined differently in docker container
 
 # Prepend current dir if path is not yet absolute
 [[ "$MOVEIT_CI_DIR" != /* ]] && MOVEIT_CI_DIR=$PWD/$MOVEIT_CI_DIR

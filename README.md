@@ -65,7 +65,8 @@ script:
 ## Configurations
 
 - `ROS_DISTRO`: (required) which version of ROS, i.e. crystal, ...
-- `ROS_REPO`: (default: ros) install ROS debians from either regular release or from [shadow-fixed](http://packages.ros.org/ros-shadow-fixed/ubuntu)
+- `ROS_REPO`: (default: ros) install ROS debians from either regular release or from [shadow-fixed](http://packages.ros.org/ros-shadow-fixed/ubuntu).
+  This essentially determines the docker image to use. Alternatively, you can directly specify a docker image via the `DOCKER_IMAGE` variable, e.g. `DOCKER_IMAGE=moveit/moveit2:crystal-ci`.
 - `BEFORE_DOCKER_SCRIPT`: (default: none): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' ``before_script`` section, but the variable allows to dynamically switch scripts within the testing matrix.
 - `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the ROS workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
 - `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
