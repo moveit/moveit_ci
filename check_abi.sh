@@ -57,12 +57,21 @@ function abi_install() {
 	travis_fold end abi_check
 }
 
+function abi_dump() {
+	local name=$1
+	local lib=$2
+	local lib_dirs=$3
+	local include_dirs=$4
+	local dump=$5
+	travis_run abi-dumper "$lib" -ld-library-path "$lib_dirs" -lver $name -o "$dump" -public-headers "$include_dirs"
+}
+
 # abi_check new_lib_dir
 function abi_check() {
 	local new_lib_dir=$1
 	local new_include_dir=$2
-	local old_lib_dir=${3:-/opt/ros/$ROS_DISTRO/lib}
-	local old_include_dir=${4:-/opt/ros/$ROS_DISTRO/include}
+	local old_lib_dir=$3
+	local old_include_dir=$4
 	local broken=()
 
 	mkdir -p "${ABI_TMP_DIR}/new"
@@ -72,8 +81,7 @@ function abi_check() {
 		local lib_name=$(basename "$lib" .so)
 		# create new dump
 		new_dump=${ABI_TMP_DIR}/new/${lib_name}.dump
-		travis_run_simple abi-dumper "$lib" -ld-library-path "/opt/ros/$ROS_DISTRO/lib" -lver new \
-			-o "$new_dump" -public-headers "$new_include_dir"
+		abi_dump new "$lib" "$new_lib_dir:/opt/ros/$ROS_DISTRO/lib" "$new_include_dir" "$new_dump"
 
 		old_lib=$old_lib_dir/${lib_name}.so
 		! [ -f "$old_lib" ] && echo "missing $old_lib" && continue
@@ -82,11 +90,10 @@ function abi_check() {
 		if ! [ -f "$old_dump" ]; then
 			mkdir -p "${ABI_TMP_DIR}/old"
 			old_dump=${ABI_TMP_DIR}/old/${lib_name}.dump
-			travis_run_simple abi-dumper "$old_lib" -ld-library-path "/opt/ros/$ROS_DISTRO/lib" -lver old \
-				-o "$old_dump" -public-headers "$old_include_dir"
+			abi_dump old "$old_lib" "$old_lib_dir:/opt/ros/$ROS_DISTRO/lib" "$old_include_dir" "$old_dump"
 		fi
 
-		travis_run_simple --no-assert abi-compliance-checker -report-path "${ABI_TMP_DIR}/reports/$lib_name.html" \
+		travis_run_true abi-compliance-checker -report-path "${ABI_TMP_DIR}/reports/$lib_name.html" \
 			-l "$lib_name" -n "$new_dump" -o "$old_dump"
 		result=$?
 		case "$result" in
@@ -109,9 +116,13 @@ test -z "$ABI_BASE_URL" && echo -e $(colorize YELLOW "For ABI check, please spec
 
 if [ "$ABI_BASE_URL" == "generate" ] ; then
 	test "$TRAVIS" == true && abi_install
-	travis_run abi_check \
-			"${ROS_WS}/install/lib" "${ROS_WS}/install/include" \
-			"${ROS_WS}/install/lib" "${ROS_WS}/install/include"
+	mkdir -p "${ROS_WS}/install/dump"
+	for lib in ${ROS_WS}/install/lib/*.so; do
+		echo "$lib"
+		lib_name=$(basename "$lib" .so)
+		abi_dump old "$lib" "${ROS_WS}/install/lib:/opt/ros/$ROS_DISTRO/lib" "${ROS_WS}/install/include" \
+					"${ROS_WS}/install/dump/${lib_name}.dump"
+	done
 elif [ "$TRAVIS_PULL_REQUEST" != false ]; then
 	# For a pull request, actually perform the abi check
 	test "$TRAVIS" == true && abi_install
