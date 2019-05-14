@@ -209,7 +209,7 @@ function prepare_ros_workspace() {
       # Ensure a useful .clang-tidy config file is present in the to-be-tested repo ($CI_SOURCE_PATH)
       [ -f $CI_SOURCE_PATH/.clang-tidy ] || \
          travis_run --title "Fetching default clang-tidy config from MoveIt" \
-                    wget -nv https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy \
+                    wget -nv https://raw.githubusercontent.com/ros-planning/moveit/${ROS_DISTRO:-melodic}-devel/.clang-tidy \
                          -O $CI_SOURCE_PATH/.clang-tidy
       travis_run --display "Applying the following clang-tidy checks:" cat $CI_SOURCE_PATH/.clang-tidy
    fi
