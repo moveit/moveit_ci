@@ -31,7 +31,6 @@ function run_script() {
 }
 
 function run_docker() {
-   echo -e $(colorize YELLOW "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'")
    run_script BEFORE_DOCKER_SCRIPT
 
     # Choose the docker container to use
@@ -39,6 +38,7 @@ function run_docker() {
        echo -e $(colorize YELLOW "$DOCKER_IMAGE overrides $ROS_REPO setting")
     fi
     if [ -z "$DOCKER_IMAGE" ]; then
+       test -z "$ROS_DISTRO" && echo -e $(colorize RED "ROS_DISTRO not defined: cannot infer docker image") && exit 2
        case "${ROS_REPO:-ros}" in
           ros) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci ;;
           ros-shadow-fixed) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed ;;
@@ -53,8 +53,6 @@ function run_docker() {
     docker run \
         -e TRAVIS \
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
-        -e ROS_REPO \
-        -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
         -e CI_SOURCE_PATH=${CI_SOURCE_PATH:-/root/$REPOSITORY_NAME} \
         -e UPSTREAM_WORKSPACE \
@@ -209,7 +207,7 @@ function prepare_ros_workspace() {
       # Ensure a useful .clang-tidy config file is present in the to-be-tested repo ($CI_SOURCE_PATH)
       [ -f $CI_SOURCE_PATH/.clang-tidy ] || \
          travis_run --title "Fetching default clang-tidy config from MoveIt" \
-                    wget -nv https://raw.githubusercontent.com/ros-planning/moveit/${ROS_DISTRO:-melodic}-devel/.clang-tidy \
+                    wget -nv https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-tidy \
                          -O $CI_SOURCE_PATH/.clang-tidy
       travis_run --display "Applying the following clang-tidy checks:" cat $CI_SOURCE_PATH/.clang-tidy
    fi
@@ -288,6 +286,7 @@ test -z "$TEST_PKG" && touch ${MOVEIT_CI_DIR}/test_pkgs/CATKIN_IGNORE # not a un
 
 # Re-run the script in a Docker container
 if ! [ "$IN_DOCKER" ]; then run_docker; fi
+echo -e $(colorize YELLOW "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'")
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
