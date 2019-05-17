@@ -1,7 +1,7 @@
 # MoveIt Continous Integration
 Common Travis CI configuration for MoveIt! project
 
-Authors: Dave Coleman, Isaac I. Y. Saito, Robert Haschke
+Authors: Robert Haschke, Dave Coleman, Isaac I. Y. Saito
 
 - Uses [pre-build Docker containers](https://hub.docker.com/r/moveit/moveit) for all ROS distros to save setup time
 - Simple Travis configuration
