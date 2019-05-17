@@ -64,9 +64,11 @@ script:
 
 ## Configurations
 
-- `ROS_DISTRO`: (required) which version of ROS, i.e. kinetic, melodic, ...
-- `ROS_REPO`: (default: ros) install ROS debians from either regular release or from [shadow-fixed](http://packages.ros.org/ros-shadow-fixed/ubuntu).
-  This essentially determines the docker image to use. Alternatively, you can directly specify a docker image via the `DOCKER_IMAGE` variable, e.g. `DOCKER_IMAGE=moveit/moveit:melodic-ci-shadow-fixed`.
+- There are essentially two options two specify the underlying ROS docker container to use:
+  1. Using the two variables `ROS_DISTRO` and `ROS_REPO`, which automagically choose a suitable [MoveIt docker image](https://hub.docker.com/r/moveit/moveit/tags). 
+     - `ROS_DISTRO`: (required) determines which version of ROS to use, i.e. kinetic, melodic, ...
+     - `ROS_REPO`: (default: ros) determines which ROS package repository to use, either the regular release repo or, specifying `ros-shadow-fixed`, the [shadow prerelease repo](http://wiki.ros.org/ShadowRepository).
+  2. Directly specifying `DOCKER_IMAGE`, e.g. `DOCKER_IMAGE=moveit/moveit:master-source`. The docker image may define a `ROS_UNDERLAY` to build the catkin workspace against. By default, this is the root ROS folder in /opt/ros.
 - `BEFORE_DOCKER_SCRIPT`: (default: none): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' ``before_script`` section, but the variable allows to dynamically switch scripts within the testing matrix.
 - `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the ROS workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
 - `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
