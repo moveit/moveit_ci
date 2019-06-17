@@ -1,6 +1,6 @@
 # This is a clang-tidy config providing a well-defined rule-set for our unit tests only.
 # Packages which are check with moveit_ci, will be validated against their own rules, of
-# - if not provided - with those from MoveIt! as a default.
+# - if not provided - with those from MoveIt as a default.
 ---
 Checks:          '-*,
                   clang-analyzer-*,
