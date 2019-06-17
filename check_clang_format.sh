@@ -23,7 +23,7 @@ travis_have_fixes
 result=$?
 
 # Finish fold before printing result summary
-travis_fold end clang.format
+travis_fold end clang.format ""
 
 if [ $result -eq 1 ] ; then
   echo -e $(colorize GREEN "Passed clang-format check")

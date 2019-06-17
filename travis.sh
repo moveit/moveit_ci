@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eu
 # -*- indent-tabs-mode: nil  -*-
 
 # Software License Agreement - BSD License
@@ -57,6 +57,7 @@ function run_docker() {
         -e CI_SOURCE_PATH=${CI_SOURCE_PATH:-/root/$REPOSITORY_NAME} \
         -e UPSTREAM_WORKSPACE \
         -e TRAVIS_BRANCH \
+        -e TRAVIS_OS_NAME \
         -e TEST \
         -e TEST_BLACKLIST \
         -e WARNINGS_OK \
@@ -105,7 +106,7 @@ function update_system() {
    # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
    travis_run --retry rosdep update
 
-   travis_fold end update
+   travis_fold end update ""
 }
 
 function prepare_or_run_early_tests() {
@@ -150,7 +151,7 @@ function run_xvfb() {
    travis_run "Xvfb -screen 0 640x480x24 :99 &"
    export DISPLAY=:99.0
    travis_run_true glxinfo -B
-   travis_fold end xvfb
+   travis_fold end xvfb ""
 }
 
 function prepare_ros_workspace() {
@@ -227,7 +228,7 @@ function prepare_ros_workspace() {
 
    # Validate that we have some packages to build
    test -z "$(catkin list)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
-   travis_fold end ros.ws
+   travis_fold end ros.ws ""
 }
 
 function build_workspace() {
@@ -270,7 +271,7 @@ function test_workspace() {
    for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
       travis_run --display "Test log of $file" cat $file
    done
-   travis_fold end test.results
+   travis_fold end test.results ""
 
    # Show test results summary and throw error if necessary
    catkin_test_results || exit 2
@@ -282,10 +283,12 @@ function test_workspace() {
 # This repository has some dummy catkin packages in folder test_pkgs, which are needed for unit testing only.
 # To not clutter normal builds, we just create a CATKIN_IGNORE file in that folder.
 # A unit test can be recognized from the presence of the environment variable $TEST_PKG (see unit_tests.sh)
-test -z "$TEST_PKG" && touch ${MOVEIT_CI_DIR}/test_pkgs/CATKIN_IGNORE # not a unit test build
+if [ -z "${TEST_PKG-}" ]; then
+  touch ${MOVEIT_CI_DIR}/test_pkgs/CATKIN_IGNORE # not a unit test build
+fi
 
 # Re-run the script in a Docker container
-if ! [ "$IN_DOCKER" ]; then run_docker; fi
+if ! [ -z "${IN_DOCKER-}" ]; then run_docker; fi
 echo -e $(colorize YELLOW "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'")
 
 # If we are here, we can assume we are inside a Docker container
@@ -295,6 +298,10 @@ export ROS_WS=${ROS_WS:-/root/ros_ws} # default location of ROS workspace, if no
 
 # Prepend current dir if path is not yet absolute
 [[ "$MOVEIT_CI_DIR" != /* ]] && MOVEIT_CI_DIR=$PWD/$MOVEIT_CI_DIR
+# Ensure the env variable exists
+if [ -z "${CI_SOURCE_PATH-}" ]; then
+  CI_SOURCE_PATH=''
+fi
 if [[ "$CI_SOURCE_PATH" != /* ]] ; then
    # If CI_SOURCE_PATH is not yet absolute
    if [ -d "$PWD/$CI_SOURCE_PATH" ] ; then

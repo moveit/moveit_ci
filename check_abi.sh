@@ -54,7 +54,7 @@ function abi_install() {
 	perl /tmp/abi_installer.pl -install -prefix $ABI_TMP_DIR abi-compliance-checker
 	perl /tmp/abi_installer.pl -install -prefix $ABI_TMP_DIR abi-dumper
 
-	travis_fold end abi_check
+	travis_fold end abi_check ""
 }
 
 function abi_dump() {

@@ -130,7 +130,7 @@ function run_test() {
 	)
 	result=$?
 	travis_run_true --title "Remove ROS workspace" rm -r "$ROS_WS"
-	travis_fold end unittest # close fold before reporting error
+	travis_fold end unittest "" # close fold before reporting error
 
 	if [ $result -ne $expected ] ; then
 		let "FAILED += 1"
