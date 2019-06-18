@@ -1,5 +1,5 @@
 # MoveIt Continous Integration
-Common Travis CI configuration for MoveIt! project
+Common Travis CI configuration for MoveIt project
 
 Authors: Robert Haschke, Dave Coleman, Isaac I. Y. Saito
 
@@ -107,7 +107,7 @@ a summary in the end. If don't want to accept warnings, and make Travis fail you
 
 ## Running Locally For Testing
 
-It's also possible to run the moveit\_ci script locally, without Travis. We demonstrate this using MoveIt! as the example repository:
+It's also possible to run the moveit\_ci script locally, without Travis. We demonstrate this using MoveIt as the example repository:
 
 First clone the repo you want to test:
 
