@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -u
 # -*- indent-tabs-mode: nil  -*-
 
 # Software License Agreement - BSD License
