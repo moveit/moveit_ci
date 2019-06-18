@@ -288,7 +288,7 @@ if [ -z "${TEST_PKG:-}" ]; then
 fi
 
 # Re-run the script in a Docker container
-if ! [ -z "${IN_DOCKER:-}" ]; then run_docker; fi
+if [ "${IN_DOCKER:-0}" != "1" ]; then run_docker; fi
 echo -e $(colorize YELLOW "Testing branch '${TRAVIS_BRANCH:-}' of '${REPOSITORY_NAME:-}' on ROS '$ROS_DISTRO'")
 
 # If we are here, we can assume we are inside a Docker container
