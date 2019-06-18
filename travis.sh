@@ -34,10 +34,10 @@ function run_docker() {
    run_script BEFORE_DOCKER_SCRIPT
 
     # Choose the docker container to use
-    if [ -n "$ROS_REPO" ] && [ -n "$DOCKER_IMAGE" ]; then
+    if [ -n "$ROS_REPO" ] && [ -n "${DOCKER_IMAGE:=}" ]; then
        echo -e $(colorize YELLOW "$DOCKER_IMAGE overrides $ROS_REPO setting")
     fi
-    if [ -z "$DOCKER_IMAGE" ]; then
+    if [ -z "${DOCKER_IMAGE:=}" ]; then
        test -z "$ROS_DISTRO" && echo -e $(colorize RED "ROS_DISTRO not defined: cannot infer docker image") && exit 2
        case "${ROS_REPO:-ros}" in
           ros) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci ;;
