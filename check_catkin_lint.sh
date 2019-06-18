@@ -11,7 +11,7 @@ travis_run --title "Running catkin_lint in repository source: $CI_SOURCE_PATH" \
 result=$?
 
 # Finish fold before printing result summary
-travis_fold end check.catkin_lint ""
+travis_fold end check.catkin_lint
 
 if [ $result -eq 0 ] ; then
   echo -e $(colorize GREEN "No catkin_lint issues reported.")

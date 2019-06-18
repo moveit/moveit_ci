@@ -122,7 +122,6 @@ Next clone the CI script:
 Manually define the variables, Travis would otherwise define for you. These are required:
 
     export TRAVIS_BRANCH=melodic-devel
-    export TRAVIS_OS_NAME=ubuntu
     export ROS_DISTRO=melodic
     export ROS_REPO=ros-shadow-fixed
     export CC=gcc

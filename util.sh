@@ -85,14 +85,12 @@ travis_fold() {
   local action="$1"
   local name="${2:-moveit_ci}"  # name defaults to moveit_ci
   name="${name/ /.}"  # replace spaces with dots in name
-  if [ -z "${3-}" ]; then
-    local message=""
-  else
-    local message="$3"
-  fi
+  local message="${3:-}"
   test -n "$message" && message="$(colorize BLUE BOLD $3)\\n"  # print message in bold blue by default
 
-  local length=${_TRAVIS_FOLD_NAME_STACK[@]}
+  set +u  # disable checking for unbound variables for the next line
+  local length=${#_TRAVIS_FOLD_NAME_STACK[@]}
+  set -u
   if [ "$action" == "start" ] ; then
     # push name to stack
     _TRAVIS_FOLD_NAME_STACK[$length]=$name
@@ -122,7 +120,7 @@ travis_fold() {
 # - on timeout: 124 (return value of timeout command)
 travis_run_impl() {
   local assert hide title display timing timeout cmd result trial=1 trials=1
-  hide=false
+
   while true; do
     case "${1}" in
     --assert)  # terminate on failure?
@@ -135,16 +133,16 @@ travis_run_impl() {
       hide=true
       ;;
     --show)  # hide cmd/display?
-      hide=false
+      unset hide
       ;;
     --title)  # use custom message as title, but keep command output
       title="${2}\\n"  # add newline, such that command output will go to next line
-      hide=false  # implicitly enable output
+      unset hide  # implicitly enable output
       shift
       ;;
     --display)  # use custom message instead of command output
       display="${2}"
-      hide=false  # implicitly enable output
+      unset hide  # implicitly enable output
       shift
       ;;
     --timing)  # enable timing?
@@ -179,8 +177,8 @@ travis_run_impl() {
     travis_time_start
   fi
 
-  if [[ "${hide}" != "false" ]]; then
-    echo -e "$(colorize BLUE THIN ${title}${display:-${cmds}})"
+  if [ -z "${hide:-}" ]; then
+    echo -e "$(colorize BLUE THIN ${title:-}${display:-${cmds}})"
   fi
 
 while [ "${trial}" -le "${trials}" ] ; do
@@ -228,10 +226,10 @@ travis_run_simple() {
 
 # Run command(s) with folding and timing, ignoring failure
 travis_run_true() {
-  travis_fold start ""
+  travis_fold start
     travis_run_simple --no-assert "$@"
     local result=$?
-  travis_fold end ""
+  travis_fold end
   return $result
 }
 
