@@ -173,7 +173,7 @@ travis_run_impl() {
   cmds="$*"
   export TRAVIS_CMD="${cmds}"
 
-  if [ -n "${timing}" ]; then
+  if [ -n "${timing:-}" ]; then
     travis_time_start
   fi
 
@@ -183,7 +183,7 @@ travis_run_impl() {
 
 while [ "${trial}" -le "${trials}" ] ; do
   # Actually run cmds
-  if [ -n "${timeout}" ]; then
+  if [ -n "${timeout:-}" ]; then
     (eval "${cmds}") & # run cmds in subshell in background
     travis_wait $! $timeout "$cmds" # wait for the subshell process to finish
     result="${?}"
@@ -210,7 +210,7 @@ done
   fi
 
   # When asserting success, but we got a failure (and not a timeout (124)), terminate
-  if [ -n "${assert}" -a $result -ne 0 -a $result -ne 124 ]; then
+  if [ -n "${assert:-}" -a $result -ne 0 -a $result -ne 124 ]; then
     echo -e $(colorize RED "The command \"${TRAVIS_CMD}\" $(colorize BOLD failed with error code ${result}).\\n")
     exit  2
 #    travis_terminate 2
@@ -339,12 +339,12 @@ function colorize() {
          RED|GREEN|YELLOW|BLUE)
             color="ANSI_$1"; eval "color=\$$color"; reset="${ANSI_RESET}" ;;
          THIN)
-            color="${color}${ANSI_THIN}" ;;
+            color="${color:-}${ANSI_THIN}" ;;
          BOLD)
-            color="${color}${ANSI_BOLD}"; reset="${reset:-${ANSI_THIN}}" ;;
+            color="${color:-}${ANSI_BOLD}"; reset="${reset:-${ANSI_THIN}}" ;;
          *) break ;;
       esac
       shift
    done
-   echo -e "${color}$@${reset}"
+   echo -e "${color:-}$@${reset:-}"
 }

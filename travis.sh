@@ -22,7 +22,7 @@ source ${MOVEIT_CI_DIR}/util.sh
 # usage: run_script BEFORE_SCRIPT  or run_script BEFORE_DOCKER_SCRIPT
 function run_script() {
    local script
-   eval "script=\$$1"  # fetch value of variable passed in $1 (double indirection)
+   eval "script=\${$1:-}"  # fetch value of variable passed in $1 (double indirection)
    if [ "${script// }" != "" ]; then  # only run when non-empty
       travis_run --title "$(colorize BOLD Running $1)" $script
       result=$?
@@ -91,7 +91,7 @@ function update_system() {
    travis_run --retry apt-get -qq dist-upgrade
 
    # Install clang-tidy stuff if needed
-   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy
+   [[ "${TEST:=}" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
    [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
    # Install catkin_lint if needed
@@ -115,7 +115,7 @@ function prepare_or_run_early_tests() {
    if ! [ -d "$CI_SOURCE_PATH" ] ; then return 0; fi
 
    # EARLY_RESULT="" -> no early exit, EARLY_RESULT=0 -> early success, otherwise early failure
-   local EARLY_RESULT
+   local EARLY_RESULT=""
    for t in $(unify_list " ,;" "$TEST") ; do
       case "$t" in
          clang-format)
@@ -289,12 +289,13 @@ fi
 
 # Re-run the script in a Docker container
 if ! [ -z "${IN_DOCKER:-}" ]; then run_docker; fi
-echo -e $(colorize YELLOW "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'")
+echo -e $(colorize YELLOW "Testing branch '${TRAVIS_BRANCH:-}' of '${REPOSITORY_NAME:-}' on ROS '$ROS_DISTRO'")
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
 
 export ROS_WS=${ROS_WS:-/root/ros_ws} # default location of ROS workspace, if not defined differently in docker container
+CMAKE_ARGS=""
 
 # Prepend current dir if path is not yet absolute
 [[ "$MOVEIT_CI_DIR" != /* ]] && MOVEIT_CI_DIR=$PWD/$MOVEIT_CI_DIR

@@ -64,7 +64,7 @@ all_groups="sanity warnings catkin_lint clang-format clang-tidy-fix clang-tidy-c
 skip_groups="${SKIP:-}"
 # process options
 while true ; do
-	case "$1" in
+	case "${1:-}" in
 		--quiet|-q) QUIET=/dev/null ;;  # suppress bulk of test's stdout
 		--no-docker) export IN_DOCKER=1 ;; # run without docker
 		--no-updates) export -f apt-get; export -f rosdep ;;
