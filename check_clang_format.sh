@@ -14,6 +14,11 @@ if [ ! -f .clang-format ]; then
         wget -nv "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-format"
 fi
 
+# Git LFS can cause issues when we run git diff. This is fixed if we commit the current state before running clang
+git config --global user.email "dummy@example.com"
+git config --global user.name "Dummy Name"
+git add . && git commit -m"Dummy Commit"
+
 # Run clang-format
 cmd="find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format-3.9 -i -style=file"
 travis_run --display "Running clang-format${ANSI_RESET}\\n$cmd" "$cmd"
