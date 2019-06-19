@@ -35,7 +35,7 @@ function run_docker() {
 
     # Choose the docker container to use
     if [ -n "$ROS_REPO" ] && [ -n "$DOCKER_IMAGE" ]; then
-       echo -e $(colorize YELLOW "$DOCKER_IMAGE overrides $ROS_REPO setting")
+       echo -e $(colorize YELLOW "DOCKER_IMAGE=$DOCKER_IMAGE overrides ROS_REPO=$ROS_REPO setting")
     fi
     if [ -z "$DOCKER_IMAGE" ]; then
        test -z "$ROS_DISTRO" && echo -e $(colorize RED "ROS_DISTRO not defined: cannot infer docker image") && exit 2
