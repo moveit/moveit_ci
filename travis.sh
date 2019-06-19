@@ -251,7 +251,7 @@ function test_workspace() {
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
 
    # Consider TEST_BLACKLIST
-   TEST_BLACKLIST=$(unify_list " ,;" $TEST_BLACKLIST)
+   TEST_BLACKLIST=$(unify_list " ,;" ${TEST_BLACKLIST:-})
    echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
    test -n "$TEST_BLACKLIST" && catkin config --blacklist $TEST_BLACKLIST &> /dev/null
 
@@ -259,7 +259,7 @@ function test_workspace() {
    all_pkgs=$(catkin_topological_order $ROS_WS --only-names 2> /dev/null)
    source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null)
    blacklist_pkgs=$(filter_out "$source_pkgs" "$all_pkgs")
-   test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist &> /dev/null
+   test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist_pkgs &> /dev/null
 
    # Build tests
    travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests --

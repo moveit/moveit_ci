@@ -335,7 +335,7 @@ unify_list() {
 function colorize() {
    local color reset
    while true ; do
-      case "$1" in
+      case "${1:-}" in
          RED|GREEN|YELLOW|BLUE)
             color="ANSI_$1"; eval "color=\$$color"; reset="${ANSI_RESET}" ;;
          THIN)
