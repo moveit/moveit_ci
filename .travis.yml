@@ -19,7 +19,7 @@ env:
     - SCRIPT=travis.sh
   matrix:
     # Run docker with custom image
-    - SCRIPT=unit_tests.sh   ROS_REPO=               DOCKER_IMAGE=moveit/moveit:master-ci
+    - SCRIPT=unit_tests.sh   ROS_REPO=               DOCKER_IMAGE=ros:melodic-ros-base
     # Skip clang-tidy-check on Xenial. It's only supported for cmake >= 3.6. clang-tidy-fix is tested.
     - SCRIPT=unit_tests.sh   SKIP=clang-tidy-check   ROS_DISTRO=kinetic
 
