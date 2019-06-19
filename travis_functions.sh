@@ -27,7 +27,7 @@ travis_nanoseconds() {
 
   if hash gdate >/dev/null 2>&1; then
     cmd='gdate'
-  elif [[ "${TRAVIS_OS_NAME}" == osx ]]; then
+  elif [[ "${TRAVIS_OS_NAME:-}" == osx ]]; then
     format='+%s000000000'
   fi
 
