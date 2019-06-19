@@ -90,7 +90,7 @@ function update_system() {
    travis_run --retry apt-get -qq dist-upgrade
 
    # Install clang-tidy stuff if needed
-   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy
+   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy-6.0
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
    [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
    # Install catkin_lint if needed
