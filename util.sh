@@ -85,10 +85,12 @@ travis_fold() {
   local action="$1"
   local name="${2:-moveit_ci}"  # name defaults to moveit_ci
   name="${name/ /.}"  # replace spaces with dots in name
-  local message="$3"
+  local message="${3:-}"
   test -n "$message" && message="$(colorize BLUE BOLD $3)\\n"  # print message in bold blue by default
 
+  set +u  # disable checking for unbound variables for the next line
   local length=${#_TRAVIS_FOLD_NAME_STACK[@]}
+  set -u
   if [ "$action" == "start" ] ; then
     # push name to stack
     _TRAVIS_FOLD_NAME_STACK[$length]=$name
@@ -171,17 +173,17 @@ travis_run_impl() {
   cmds="$*"
   export TRAVIS_CMD="${cmds}"
 
-  if [ -n "${timing}" ]; then
+  if [ -n "${timing:-}" ]; then
     travis_time_start
   fi
 
-  if [ -z "${hide}" ]; then
-    echo -e "$(colorize BLUE THIN ${title}${display:-${cmds}})"
+  if [ -z "${hide:-}" ]; then
+    echo -e "$(colorize BLUE THIN ${title:-}${display:-${cmds}})"
   fi
 
 while [ "${trial}" -le "${trials}" ] ; do
   # Actually run cmds
-  if [ -n "${timeout}" ]; then
+  if [ -n "${timeout:-}" ]; then
     (eval "${cmds}") & # run cmds in subshell in background
     travis_wait $! $timeout "$cmds" # wait for the subshell process to finish
     result="${?}"
@@ -208,7 +210,7 @@ done
   fi
 
   # When asserting success, but we got a failure (and not a timeout (124)), terminate
-  if [ -n "${assert}" -a $result -ne 0 -a $result -ne 124 ]; then
+  if [ -n "${assert:-}" -a $result -ne 0 -a $result -ne 124 ]; then
     echo -e $(colorize RED "The command \"${TRAVIS_CMD}\" $(colorize BOLD failed with error code ${result}).\\n")
     exit  2
 #    travis_terminate 2
@@ -333,16 +335,16 @@ unify_list() {
 function colorize() {
    local color reset
    while true ; do
-      case "$1" in
+      case "${1:-}" in
          RED|GREEN|YELLOW|BLUE)
             color="ANSI_$1"; eval "color=\$$color"; reset="${ANSI_RESET}" ;;
          THIN)
-            color="${color}${ANSI_THIN}" ;;
+            color="${color:-}${ANSI_THIN}" ;;
          BOLD)
-            color="${color}${ANSI_BOLD}"; reset="${reset:-${ANSI_THIN}}" ;;
+            color="${color:-}${ANSI_BOLD}"; reset="${reset:-${ANSI_THIN}}" ;;
          *) break ;;
       esac
       shift
    done
-   echo -e "${color}$@${reset}"
+   echo -e "${color:-}$@${reset:-}"
 }
