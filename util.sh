@@ -290,9 +290,9 @@ travis_monitor() {
 
 # Check repository for changes, return success(0) if there are changes
 travis_have_fixes() {
-  if ! git diff-index --quiet HEAD -- . ; then  # check for changes in current dir
+  if ! git diff --quiet . ; then  # check for changes in current dir
     echo -e $(colorize RED "\\nThe following issues were detected:")
-    git --no-pager diff
+    git --no-pager diff .
     git checkout . # undo changes in current dir
     return 0
   fi
