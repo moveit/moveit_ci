@@ -14,7 +14,7 @@ _travis_run_clang_tidy_fix() {
     done
 
     for pkg in ${SOURCE_PKGS[@]} ; do  # process files in topological order
-        test -z "${PKGS[$pkg]}" && continue  # skip pkgs without compile_commands.json
+        test -z "${PKGS[$pkg]:-}" && continue  # skip pkgs without compile_commands.json
         travis_fold start clang.tidy "  - $(colorize BLUE Processing $pkg)"
         travis_run_wait "$RUN_CLANG_TIDY_EXECUTABLE -fix -p ${PKGS[$pkg]} 2> /dev/null"
         # if there are workspace changes, print broken pkg to file descriptor 3
