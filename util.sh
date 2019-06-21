@@ -348,3 +348,20 @@ function colorize() {
    done
    echo -e "${color:-}$@${reset:-}"
 }
+
+# collect files that are modified since commit
+function collect_modified_files() {
+  local -n __modified_files=$1     # -n to modify argument by reference
+  local filter=$2
+  local src_dir=${3:-$PWD}
+  local base=${4:-$TRAVIS_BRANCH}
+
+  # Find top-level git folder of src_dir
+  local strip_prefix=$(cd "$src_dir"; git rev-parse --show-toplevel)
+  # Strip git folder from src_dir to keep relative path from git root to source files as stip_prefix
+  strip_prefix="${src_dir#$strip_prefix/}"
+  while IFS='' read -r line ; do
+    # Add modified or added files to array - only using the relative path from src_dir, i.e. removing strip_prefix
+    __modified_files+=("${line#$strip_prefix/}")
+  done < <(git diff --name-only --diff-filter=MA "$base"..HEAD "$src_dir" | grep "$filter")
+}
