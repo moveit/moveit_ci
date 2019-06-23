@@ -61,7 +61,7 @@ MOVEIT_CI_START_TIME=${MOVEIT_CI_START_TIME:-$(travis_nanoseconds)}
 #   timeout=$(travis_timeout "$1") && shift
 travis_timeout() {
   local timeout result remaining
-  if [[ "${timeout:=$1}" =~ ^[0-9]+$ ]] ; then
+  if [[ "${timeout:=${1:-}}" =~ ^[0-9]+$ ]] ; then
     result=0  # $1 looks like integer that should be consumed as a parameter
   else
     result=1  # parameter shouldn't be consumed
