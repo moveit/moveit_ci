@@ -52,12 +52,13 @@ function run_docker() {
     # Run travis.sh again, but now within Docker container
     docker run \
         -e IN_DOCKER=1 \
-        -e TRAVIS \
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
         -e BEFORE_SCRIPT \
         -e CI_SOURCE_PATH=${CI_SOURCE_PATH:-/root/$REPOSITORY_NAME} \
         -e UPSTREAM_WORKSPACE \
+        -e TRAVIS \
         -e TRAVIS_BRANCH \
+        -e TRAVIS_PULL_REQUEST \
         -e TRAVIS_OS_NAME \
         -e TEST \
         -e TEST_BLACKLIST \

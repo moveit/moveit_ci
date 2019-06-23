@@ -21,7 +21,7 @@ _travis_run_clang_tidy_fix() {
         # If we are not processing a Travis pull request, check all files
         # To enable unit-testing, check all files when $TEST_PKG is defined
         modified_files=()
-        if [ "${TRAVIS_PULL_REQUEST:-false}" != false ] && [ -z "$TEST_PKG" ] ; then
+        if [ "${TRAVIS_PULL_REQUEST:-false}" != false ] && [ -z "${TEST_PKG:-}" ] ; then
             src_dir=$(grep "^CMAKE_HOME_DIRECTORY:INTERNAL=" "${PKGS[$pkg]}/CMakeCache.txt")
             collect_modified_files modified_files "\.cpp$" $(realpath "${src_dir#*=}") $TRAVIS_BRANCH
             if [ ${#modified_files[@]} -eq 0 ]; then
