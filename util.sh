@@ -88,9 +88,11 @@ travis_fold() {
   local message="${3:-}"
   test -n "$message" && message="$(colorize BLUE BOLD $3)\\n"  # print message in bold blue by default
 
+  local old_ustatus=${-//[^u]/}
   set +u  # disable checking for unbound variables for the next line
   local length=${#_TRAVIS_FOLD_NAME_STACK[@]}
-  set -u
+  test -n "$old_ustatus" && set -u  # restore variable checking option
+
   if [ "$action" == "start" ] ; then
     # push name to stack
     _TRAVIS_FOLD_NAME_STACK[$length]=$name
