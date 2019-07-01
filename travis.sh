@@ -31,6 +31,7 @@ function run_script() {
 }
 
 function run_docker() {
+  pushd .
   run_script BEFORE_DOCKER_SCRIPT
 
   # Choose the docker container to use
@@ -81,6 +82,7 @@ function run_docker() {
     124) echo -e $(colorize YELLOW "Timed out, but try again! Having saved cache results, Travis will probably succeed next time.") ;;
     *) echo -e $(colorize RED "Travis script finished with errors.") ;;
   esac
+  popd
   exit $result
 }
 
@@ -158,8 +160,10 @@ function run_xvfb() {
   travis_fold end xvfb
 }
 
+# sets up $ROS_WS/src, runs clang tidy and runs rosdep install. Will move the cwd to $ROS_WS
 function prepare_ros_workspace() {
   travis_fold start ros.ws "Setting up ROS workspace"
+  pushd .
   travis_run_simple mkdir -p $ROS_WS/src
   travis_run_simple cd $ROS_WS/src
 
@@ -221,21 +225,24 @@ function prepare_ros_workspace() {
   run_script BEFORE_SCRIPT
 
   # For debugging: list the files in workspace's source folder
+  # Double check that we are in $ROS_WS/src after BEFORE_SCRIPt
   travis_run_simple cd $ROS_WS/src
   travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF
 
   # Install source-based package dependencies
   travis_run --retry rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
-  # Change to base of workspace
-  travis_run_simple cd $ROS_WS
-
   # Validate that we have some packages to build
   test -z "$(catkin list)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
   travis_fold end ros.ws
+  popd
+  # Change to base of workspace
+  travis_run_simple cd $ROS_WS
 }
 
 function build_workspace() {
+  pushd .
+  travis_run_simple cd $ROS_WS
   echo -e $(colorize GREEN Building Workspace)
   # Configure catkin
   travis_run --title "catkin config $CMAKE_ARGS" catkin config --extend "${ROS_UNDERLAY:-/opt/ros/$ROS_DISTRO}" --install --cmake-args -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3" $CMAKE_ARGS --
@@ -248,9 +255,12 @@ function build_workspace() {
 
   # Allow to verify ccache usage
   travis_run --title "ccache statistics" ccache -s
+  popd
 }
 
 function test_workspace() {
+  pushd .
+  travis_run_simple cd $ROS_WS
   echo -e $(colorize GREEN Testing Workspace)
   travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
 
@@ -279,6 +289,7 @@ function test_workspace() {
 
   # Show test results summary and throw error if necessary
   catkin_test_results || exit 2
+  popd
 }
 
 ###########################################################################################################
