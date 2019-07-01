@@ -10,8 +10,8 @@ travis_run apt-get -qq install -y clang-format-3.9
 
 # Ensure that a .clang-format config file is present, if not download from MoveIt
 if [ ! -f .clang-format ]; then
-    travis_run --title "Fetching default clang-format config from MoveIt" \
-        wget -nv "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-format"
+  travis_run --title "Fetching default clang-format config from MoveIt" \
+    wget -nv "https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/.clang-format"
 fi
 
 # To ignore current workspace changes (e.g. from Git LFS files), stage all current changes

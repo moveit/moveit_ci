@@ -104,9 +104,9 @@ travis_fold() {
     # pop name from stack
     let "length -= 1"
     test $length -lt 0 && \
-       echo -e "Missing travis_fold start before travis_fold end $name" && exit 1
+      echo -e "Missing travis_fold start before travis_fold end $name" && exit 1
     test "${_TRAVIS_FOLD_NAME_STACK[$length]}" != "$name" && \
-       echo "'travis_fold end $name' not matching to previous travis_fold start ${_TRAVIS_FOLD_NAME_STACK[$length]}" && exit 1
+      echo "'travis_fold end $name' not matching to previous travis_fold start ${_TRAVIS_FOLD_NAME_STACK[$length]}" && exit 1
     unset '_TRAVIS_FOLD_NAME_STACK[$length]'
   fi
   # actually generate the fold tag for travis
@@ -125,49 +125,49 @@ travis_run_impl() {
 
   while true; do
     case "${1}" in
-    --assert)  # terminate on failure?
-      assert=true
-      ;;
-    --no-assert)  # terminate on failure?
-      unset assert
-      ;;
-    --hide)  # hide cmd/display?
-      hide=true
-      ;;
-    --show)  # hide cmd/display?
-      unset hide
-      ;;
-    --title)  # use custom message as title, but keep command output
-      title="${2}\\n"  # add newline, such that command output will go to next line
-      unset hide  # implicitly enable output
-      shift
-      ;;
-    --display)  # use custom message instead of command output
-      display="${2}"
-      unset hide  # implicitly enable output
-      shift
-      ;;
-    --timing)  # enable timing?
-      timing=true
-      ;;
-    --no-timing)  # enable timing?
-      unset timing
-      ;;
-    --timeout)  # abort commands after a timeout
-      timeout="${2}"
-      shift
-      ;;
-    --no-timeout)  # disable (a previously set) timeout
-      unset timeout
-      ;;
-    --trials)
-      trials="${2}"
-      shift
-      ;;
-    --retry)
-      trials=3
-      ;;
-    *) break ;;
+      --assert)  # terminate on failure?
+        assert=true
+        ;;
+      --no-assert)  # terminate on failure?
+        unset assert
+        ;;
+      --hide)  # hide cmd/display?
+        hide=true
+        ;;
+      --show)  # hide cmd/display?
+        unset hide
+        ;;
+      --title)  # use custom message as title, but keep command output
+        title="${2}\\n"  # add newline, such that command output will go to next line
+        unset hide  # implicitly enable output
+        shift
+        ;;
+      --display)  # use custom message instead of command output
+        display="${2}"
+        unset hide  # implicitly enable output
+        shift
+        ;;
+      --timing)  # enable timing?
+        timing=true
+        ;;
+      --no-timing)  # enable timing?
+        unset timing
+        ;;
+      --timeout)  # abort commands after a timeout
+        timeout="${2}"
+        shift
+        ;;
+      --no-timeout)  # disable (a previously set) timeout
+        unset timeout
+        ;;
+      --trials)
+        trials="${2}"
+        shift
+        ;;
+      --retry)
+        trials=3
+        ;;
+      *) break ;;
     esac
     shift
   done
@@ -183,29 +183,29 @@ travis_run_impl() {
     echo -e "$(colorize BLUE THIN ${title:-}${display:-${cmds}})"
   fi
 
-while [ "${trial}" -le "${trials}" ] ; do
-  # Actually run cmds
-  if [ -n "${timeout:-}" ]; then
-    (eval "${cmds}") & # run cmds in subshell in background
-    travis_wait $! $timeout "$cmds" # wait for the subshell process to finish
-    result="${?}"
-    if [ $result -eq 124 ] ; then
-       echo -e "The command \"${TRAVIS_CMD}\" reached the $(colorize YELLOW internal $(colorize BOLD timeout) of ${timeout} minutes. Aborting.)\\n"
-       exit 124
+  while [ "${trial}" -le "${trials}" ] ; do
+    # Actually run cmds
+    if [ -n "${timeout:-}" ]; then
+      (eval "${cmds}") & # run cmds in subshell in background
+      travis_wait $! $timeout "$cmds" # wait for the subshell process to finish
+      result="${?}"
+      if [ $result -eq 124 ] ; then
+        echo -e "The command \"${TRAVIS_CMD}\" reached the $(colorize YELLOW internal $(colorize BOLD timeout) of ${timeout} minutes. Aborting.)\\n"
+        exit 124
+      fi
+    else
+      eval "${cmds}"
+      result="${?}"
     fi
-  else
-    eval "${cmds}"
-    result="${?}"
-  fi
 
-  if [ "${result}" -ne 0 ] && [ "${trials}" -ne 1 ] ; then
-     echo -e $(colorize YELLOW "The command \"${TRAVIS_CMD}\" failed [trial ${trial} of ${trials}].")
-     trial="$((trial + 1))"
-     sleep 1
-  else
-     break
-  fi
-done
+    if [ "${result}" -ne 0 ] && [ "${trials}" -ne 1 ] ; then
+      echo -e $(colorize YELLOW "The command \"${TRAVIS_CMD}\" failed [trial ${trial} of ${trials}].")
+      trial="$((trial + 1))"
+      sleep 1
+    else
+      break
+    fi
+  done
 
   if [ -n "${timing}" ]; then
     travis_time_finish
@@ -215,7 +215,7 @@ done
   if [ -n "${assert:-}" -a $result -ne 0 -a $result -ne 124 ]; then
     echo -e $(colorize RED "The command \"${TRAVIS_CMD}\" $(colorize BOLD failed with error code ${result}).\\n")
     exit  2
-#    travis_terminate 2
+    #    travis_terminate 2
   fi
 
   return "${result}"
@@ -229,8 +229,8 @@ travis_run_simple() {
 # Run command(s) with folding and timing, ignoring failure
 travis_run_true() {
   travis_fold start
-    travis_run_simple --no-assert "$@"
-    local result=$?
+  travis_run_simple --no-assert "$@"
+  local result=$?
   travis_fold end
   return $result
 }
@@ -280,11 +280,11 @@ travis_monitor() {
   local timeout=$(($2 * 60))  # timeout in secs
   local elapsed=0   # elapsed time in secs
   while [ "${elapsed}" -lt "${timeout}" ]; do
-     for s in "/" "-" "\\" "|"; do
-        echo -ne "$s \\r"
-        let "elapsed += 1"
-        sleep 1 # wait 1s
-     done
+    for s in "/" "-" "\\" "|"; do
+      echo -ne "$s \\r"
+      let "elapsed += 1"
+      sleep 1 # wait 1s
+    done
   done
 
   kill -9 $cmd_pid  # kill monitored process
@@ -335,20 +335,20 @@ unify_list() {
 
 # usage: echo -e $(colorize RED Some ${fancy} text.)
 function colorize() {
-   local color reset
-   while true ; do
-      case "${1:-}" in
-         RED|GREEN|YELLOW|BLUE)
-            color="ANSI_$1"; eval "color=\$$color"; reset="${ANSI_RESET}" ;;
-         THIN)
-            color="${color:-}${ANSI_THIN}" ;;
-         BOLD)
-            color="${color:-}${ANSI_BOLD}"; reset="${reset:-${ANSI_THIN}}" ;;
-         *) break ;;
-      esac
-      shift
-   done
-   echo -e "${color:-}$@${reset:-}"
+  local color reset
+  while true ; do
+    case "${1:-}" in
+      RED|GREEN|YELLOW|BLUE)
+        color="ANSI_$1"; eval "color=\$$color"; reset="${ANSI_RESET}" ;;
+      THIN)
+        color="${color:-}${ANSI_THIN}" ;;
+      BOLD)
+        color="${color:-}${ANSI_BOLD}"; reset="${reset:-${ANSI_THIN}}" ;;
+      *) break ;;
+    esac
+    shift
+  done
+  echo -e "${color:-}$@${reset:-}"
 }
 
 # collect files that are modified since commit
