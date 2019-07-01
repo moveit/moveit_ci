@@ -46,8 +46,8 @@ echo -e $(colorize YELLOW THIN "Testing basic travis functions")
 exec 3>&1  1>/dev/null
 
 function restore_stdout() {
-	exec 1>&${STDOUT:-1}
-	STDOUT=1
+  exec 1>&${STDOUT:-1}
+  STDOUT=1
 }
 trap restore_stdout EXIT # automatically restore output when exiting
 
