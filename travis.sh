@@ -252,7 +252,11 @@ function build_workspace() {
 
 function test_workspace() {
    echo -e $(colorize GREEN Testing Workspace)
+
+   local old_ustatus=${-//[^u]/}
+   set +u  # disable checking for unbound variables for the next line
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
+   test -n "$old_ustatus" && set -u  # restore variable checking option
 
    # Consider TEST_BLACKLIST
    TEST_BLACKLIST=$(unify_list " ,;" ${TEST_BLACKLIST:-})
