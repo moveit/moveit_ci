@@ -3,7 +3,7 @@
 
 # Software License Agreement - BSD License
 #
-# Inspired by MoveIt travis https://github.com/ros-planning/moveit_core/blob/09bbc196dd4388ac8d81171620c239673b624cc4/.travis.yml
+# Inspired by MoveIt! travis https://github.com/ros-planning/moveit_core/blob/09bbc196dd4388ac8d81171620c239673b624cc4/.travis.yml
 # Inspired by JSK travis https://github.com/jsk-ros-pkg/jsk_travis
 # Inspired by ROS Industrial https://github.com/ros-industrial/industrial_ci
 #
