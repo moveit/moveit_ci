@@ -114,11 +114,8 @@ function update_system() {
    travis_fold end update
 }
 
-function prepare_or_run_early_tests() {
+function run_early_tests() {
    # Check for different tests. clang-format and catkin_lint will trigger an early exit
-   # However, they can only run when $CI_SOURCE_PATH is already available. If not try later again.
-   if ! [ -d "$CI_SOURCE_PATH" ] ; then return 0; fi
-
    # EARLY_RESULT="" -> no early exit, EARLY_RESULT=0 -> early success, otherwise early failure
    local EARLY_RESULT=""
    for t in $(unify_list " ,;" "$TEST") ; do
@@ -324,10 +321,9 @@ test ${WARNINGS_OK:=true} == true -o "$WARNINGS_OK" == 1 -o "$WARNINGS_OK" == ye
 travis_run --title "CXX compiler info" $CXX --version
 
 update_system
-prepare_or_run_early_tests
 run_xvfb
 prepare_ros_workspace
-prepare_or_run_early_tests
+run_early_tests
 
 build_workspace
 test_workspace
