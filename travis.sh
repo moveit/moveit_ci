@@ -60,6 +60,7 @@ function run_docker() {
         -e TRAVIS_BRANCH \
         -e TRAVIS_PULL_REQUEST \
         -e TRAVIS_OS_NAME \
+        -e TEST_PKG \
         -e TEST \
         -e TEST_BLACKLIST \
         -e WARNINGS_OK \
