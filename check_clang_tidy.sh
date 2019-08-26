@@ -41,6 +41,12 @@ _travis_run_clang_tidy_fix() {
 travis_fold start clang.tidy "Running clang-tidy check"
 travis_run_simple --display "- cd to repository source: $CI_SOURCE_PATH" cd $CI_SOURCE_PATH
 
+# Ensure the base branch ($TRAVIS_BRANCH) is available
+if [ "$(git rev-parse --abbrev-ref HEAD)" != "$TRAVIS_BRANCH" ] ; then
+    travis_run_simple --display "- ensure base branch ($TRAVIS_BRANCH) is available" git fetch origin "$TRAVIS_BRANCH"
+    git branch -f "$TRAVIS_BRANCH" FETCH_HEAD
+fi
+
 # Find run-clang-tidy script: Xenial and Bionic install them with different names
 RUN_CLANG_TIDY_EXECUTABLE=$(ls -1 /usr/bin/run-clang-tidy* | head -1)
 test -z "$RUN_CLANG_TIDY_EXECUTABLE" && \
