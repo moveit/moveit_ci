@@ -136,7 +136,7 @@ function run_early_tests() {
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
             ;;
          abi)  # abi-checker requires debug symbols
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG=\"-g -Og\""
             ;;
          *)
             echo -e $(colorize RED "Unknown TEST: $t")
