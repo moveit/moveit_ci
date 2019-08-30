@@ -172,8 +172,8 @@ travis_run_impl() {
     shift
   done
 
-  cmds="$*"
-  export TRAVIS_CMD="${cmds}"
+  local cmds="$*"
+  export TRAVIS_CMD="${cmds}"  # export for external use
 
   if [ -n "${timing:-}" ]; then
     travis_time_start
@@ -190,7 +190,7 @@ while [ "${trial}" -le "${trials}" ] ; do
     travis_wait $! $timeout "$cmds" # wait for the subshell process to finish
     result="${?}"
     if [ $result -eq 124 ] ; then
-       echo -e "The command \"${TRAVIS_CMD}\" reached the $(colorize YELLOW internal $(colorize BOLD timeout) of ${timeout} minutes. Aborting.)\\n"
+       echo -e "The command \"${cmds}\" reached the $(colorize YELLOW internal $(colorize BOLD timeout) of ${timeout} minutes. Aborting.)\\n"
        exit 124
     fi
   else
@@ -199,7 +199,7 @@ while [ "${trial}" -le "${trials}" ] ; do
   fi
 
   if [ "${result}" -ne 0 ] && [ "${trials}" -ne 1 ] ; then
-     echo -e $(colorize YELLOW "The command \"${TRAVIS_CMD}\" failed [trial ${trial} of ${trials}].")
+     echo -e $(colorize YELLOW "The command \"${cmds}\" failed [trial ${trial} of ${trials}].")
      trial="$((trial + 1))"
      sleep 1
   else
@@ -213,7 +213,7 @@ done
 
   # When asserting success, but we got a failure (and not a timeout (124)), terminate
   if [ -n "${assert:-}" -a $result -ne 0 -a $result -ne 124 ]; then
-    echo -e $(colorize RED "The command \"${TRAVIS_CMD}\" $(colorize BOLD failed with error code ${result}).\\n")
+    echo -e $(colorize RED "The command \"${cmds}\" $(colorize BOLD failed with error code ${result}).\\n")
     exit  2
 #    travis_terminate 2
   fi

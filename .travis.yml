@@ -23,7 +23,7 @@ env:
     # Skip clang-tidy-check on Xenial. It's only supported for cmake >= 3.6. clang-tidy-fix is tested.
     - SCRIPT=unit_tests.sh   SKIP=clang-tidy-check   ROS_DISTRO=kinetic
 
-    # Build MoveIt! repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
+    # Build MoveIt repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
     - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
       TEST="clang-format, catkin_lint"
       CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
@@ -39,7 +39,7 @@ env:
 
 matrix:
   allow_failures: # While the above tests are proper unit tests, testing external workspaces has the risk of external issues
-    # Build MoveIt! repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
+    # Build MoveIt repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
     - env: UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit/$ROS_DISTRO-devel/moveit.rosinstall
            TEST="clang-format, catkin_lint"
            CI_SOURCE_PATH=moveit # manually specify main source repo (not coincides with moveit_ci)
