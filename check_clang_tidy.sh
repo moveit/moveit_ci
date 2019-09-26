@@ -3,7 +3,7 @@
 # Author:  Robert Haschke
 
 _travis_run_clang_tidy_fix() {
-    local SOURCE_PKGS COMPILED_PKGS counter pkg file
+    local SOURCE_PKGS COMPILED_PKGS counter pkg file src_dir
     SOURCE_PKGS=($(colcon list --topological-order --names-only --base-paths $CI_SOURCE_PATH 2> /dev/null))
 
     # filter repository packages for those which have a compile_commands.json file in their build folder
@@ -14,9 +14,24 @@ _travis_run_clang_tidy_fix() {
     done
 
     for pkg in ${SOURCE_PKGS[@]} ; do  # process files in topological order
-        test -z "${PKGS[$pkg]}" && continue  # skip pkgs without compile_commands.json
+        test -z "${PKGS[$pkg]:-}" && continue  # skip pkgs without compile_commands.json
         travis_fold start clang.tidy "  - $(colorize BLUE Processing $pkg)"
-        travis_run_wait "$RUN_CLANG_TIDY_EXECUTABLE -fix -p ${PKGS[$pkg]} 2> /dev/null"
+
+        # Find all .cpp files in pkg's src_dir that were added or modified in this pull request
+        # If we are not processing a Travis pull request, check all files
+        # To enable unit-testing, check all files when $TEST_PKG is defined
+        modified_files=()
+        if [ "${TRAVIS_PULL_REQUEST:-false}" != false ] && [ -z "${TEST_PKG:-}" ] ; then
+            src_dir=$(grep "^CMAKE_HOME_DIRECTORY:INTERNAL=" "${PKGS[$pkg]}/CMakeCache.txt")
+            collect_modified_files modified_files "\.cpp$" $(realpath "${src_dir#*=}") $TRAVIS_BRANCH
+            if [ ${#modified_files[@]} -eq 0 ]; then
+                echo "No modified .cpp files"
+                travis_fold end clang.tidy
+                continue
+            fi
+        fi
+
+        travis_run_simple --timeout $(travis_timeout) "$RUN_CLANG_TIDY_EXECUTABLE" -fix -p "${PKGS[$pkg]}" ${modified_files[@]:-} 2> /dev/null
         # if there are workspace changes, print broken pkg to file descriptor 3
         travis_have_fixes && 1>&3 echo $pkg || true  # should always succeed ;-)
         travis_fold end clang.tidy
@@ -26,12 +41,18 @@ _travis_run_clang_tidy_fix() {
 travis_fold start clang.tidy "Running clang-tidy check"
 travis_run_simple --display "- cd to repository source: $CI_SOURCE_PATH" cd $CI_SOURCE_PATH
 
+# Ensure the base branch ($TRAVIS_BRANCH) is available
+if [ "$(git rev-parse --abbrev-ref HEAD)" != "$TRAVIS_BRANCH" ] ; then
+    travis_run_simple --display "- ensure base branch ($TRAVIS_BRANCH) is available" git fetch origin "$TRAVIS_BRANCH"
+    git branch -f "$TRAVIS_BRANCH" FETCH_HEAD
+fi
+
 # Find run-clang-tidy script: Xenial and Bionic install them with different names
 RUN_CLANG_TIDY_EXECUTABLE=$(ls -1 /usr/bin/run-clang-tidy* | head -1)
 test -z "$RUN_CLANG_TIDY_EXECUTABLE" && \
    echo -e $(colorize YELLOW $(colorize THIN "Missing run-clang-tidy. Aborting.")) && \
    exit 2
-# Check whether -quiet options is supported
+# Check whether -quiet option is supported
 test ! $RUN_CLANG_TIDY_EXECUTABLE -quiet 2>&1 | grep -- "-quiet" > /dev/null && RUN_CLANG_TIDY_EXECUTABLE="$RUN_CLANG_TIDY_EXECUTABLE -quiet"
 
 # Run _travis_run_clang_tidy_fix() and redirect file descriptor 3 to /tmp/clang-tidy.tainted to collect tainted pkgs

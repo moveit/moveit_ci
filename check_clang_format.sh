@@ -14,6 +14,9 @@ if [ ! -f .clang-format ]; then
         wget -nv "https://raw.githubusercontent.com/ros-planning/moveit2/master/.clang-format"
 fi
 
+# To ignore current workspace changes (e.g. from Git LFS files), stage all current changes
+git add -u .
+
 # Run clang-format
 cmd="find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format-3.9 -i -style=file"
 travis_run --display "Running clang-format${ANSI_RESET}\\n$cmd" "$cmd"

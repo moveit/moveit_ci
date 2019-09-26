@@ -61,7 +61,7 @@ MOVEIT_CI_START_TIME=${MOVEIT_CI_START_TIME:-$(travis_nanoseconds)}
 #   timeout=$(travis_timeout "$1") && shift
 travis_timeout() {
   local timeout result remaining
-  if [[ "${timeout:=$1}" =~ ^[0-9]+$ ]] ; then
+  if [[ "${timeout:=${1:-}}" =~ ^[0-9]+$ ]] ; then
     result=0  # $1 looks like integer that should be consumed as a parameter
   else
     result=1  # parameter shouldn't be consumed
@@ -85,10 +85,14 @@ travis_fold() {
   local action="$1"
   local name="${2:-moveit_ci}"  # name defaults to moveit_ci
   name="${name/ /.}"  # replace spaces with dots in name
-  local message="$3"
+  local message="${3:-}"
   test -n "$message" && message="$(colorize BLUE BOLD $3)\\n"  # print message in bold blue by default
 
+  local old_ustatus=${-//[^u]/}
+  set +u  # disable checking for unbound variables for the next line
   local length=${#_TRAVIS_FOLD_NAME_STACK[@]}
+  test -n "$old_ustatus" && set -u  # restore variable checking option
+
   if [ "$action" == "start" ] ; then
     # push name to stack
     _TRAVIS_FOLD_NAME_STACK[$length]=$name
@@ -168,25 +172,25 @@ travis_run_impl() {
     shift
   done
 
-  cmds="$*"
-  export TRAVIS_CMD="${cmds}"
+  local cmds="$*"
+  export TRAVIS_CMD="${cmds}"  # export for external use
 
-  if [ -n "${timing}" ]; then
+  if [ -n "${timing:-}" ]; then
     travis_time_start
   fi
 
-  if [ -z "${hide}" ]; then
-    echo -e "$(colorize BLUE THIN ${title}${display:-${cmds}})"
+  if [ -z "${hide:-}" ]; then
+    echo -e "$(colorize BLUE THIN ${title:-}${display:-${cmds}})"
   fi
 
 while [ "${trial}" -le "${trials}" ] ; do
   # Actually run cmds
-  if [ -n "${timeout}" ]; then
+  if [ -n "${timeout:-}" ]; then
     (eval "${cmds}") & # run cmds in subshell in background
     travis_wait $! $timeout "$cmds" # wait for the subshell process to finish
     result="${?}"
     if [ $result -eq 124 ] ; then
-       echo -e "The command \"${TRAVIS_CMD}\" reached the $(colorize YELLOW internal $(colorize BOLD timeout) of ${timeout} minutes. Aborting.)\\n"
+       echo -e "The command \"${cmds}\" reached the $(colorize YELLOW internal $(colorize BOLD timeout) of ${timeout} minutes. Aborting.)\\n"
        exit 124
     fi
   else
@@ -195,7 +199,7 @@ while [ "${trial}" -le "${trials}" ] ; do
   fi
 
   if [ "${result}" -ne 0 ] && [ "${trials}" -ne 1 ] ; then
-     echo -e $(colorize YELLOW "The command \"${TRAVIS_CMD}\" failed [trial ${trial} of ${trials}].")
+     echo -e $(colorize YELLOW "The command \"${cmds}\" failed [trial ${trial} of ${trials}].")
      trial="$((trial + 1))"
      sleep 1
   else
@@ -208,8 +212,8 @@ done
   fi
 
   # When asserting success, but we got a failure (and not a timeout (124)), terminate
-  if [ -n "${assert}" -a $result -ne 0 -a $result -ne 124 ]; then
-    echo -e $(colorize RED "The command \"${TRAVIS_CMD}\" $(colorize BOLD failed with error code ${result}).\\n")
+  if [ -n "${assert:-}" -a $result -ne 0 -a $result -ne 124 ]; then
+    echo -e $(colorize RED "The command \"${cmds}\" $(colorize BOLD failed with error code ${result}).\\n")
     exit  2
 #    travis_terminate 2
   fi
@@ -288,9 +292,9 @@ travis_monitor() {
 
 # Check repository for changes, return success(0) if there are changes
 travis_have_fixes() {
-  if ! git diff-index --quiet HEAD -- . ; then  # check for changes in current dir
+  if ! git diff --quiet . ; then  # check for changes in current dir
     echo -e $(colorize RED "\\nThe following issues were detected:")
-    git --no-pager diff
+    git --no-pager diff .
     git checkout . # undo changes in current dir
     return 0
   fi
@@ -333,16 +337,33 @@ unify_list() {
 function colorize() {
    local color reset
    while true ; do
-      case "$1" in
+      case "${1:-}" in
          RED|GREEN|YELLOW|BLUE)
             color="ANSI_$1"; eval "color=\$$color"; reset="${ANSI_RESET}" ;;
          THIN)
-            color="${color}${ANSI_THIN}" ;;
+            color="${color:-}${ANSI_THIN}" ;;
          BOLD)
-            color="${color}${ANSI_BOLD}"; reset="${reset:-${ANSI_THIN}}" ;;
+            color="${color:-}${ANSI_BOLD}"; reset="${reset:-${ANSI_THIN}}" ;;
          *) break ;;
       esac
       shift
    done
-   echo -e "${color}$@${reset}"
+   echo -e "${color:-}$@${reset:-}"
+}
+
+# collect files that are modified since commit
+function collect_modified_files() {
+  local -n __modified_files=$1     # -n to modify argument by reference
+  local filter=$2
+  local src_dir=${3:-$PWD}
+  local base=${4:-$TRAVIS_BRANCH}
+
+  # Find top-level git folder of src_dir
+  local strip_prefix=$(cd "$src_dir"; git rev-parse --show-toplevel)
+  # Strip git folder from src_dir to keep relative path from git root to source files as stip_prefix
+  strip_prefix="${src_dir#$strip_prefix/}"
+  while IFS='' read -r line ; do
+    # Add modified or added files to array - only using the relative path from src_dir, i.e. removing strip_prefix
+    __modified_files+=("${line#$strip_prefix/}")
+  done < <(git diff --name-only --diff-filter=MA "$base"..HEAD "$src_dir" | grep "$filter")
 }

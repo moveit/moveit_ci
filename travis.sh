@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/bash -u
 # -*- indent-tabs-mode: nil  -*-
 
 # Software License Agreement - BSD License
 #
-# Inspired by MoveIt! travis https://github.com/ros-planning/moveit_core/blob/09bbc196dd4388ac8d81171620c239673b624cc4/.travis.yml
+# Inspired by MoveIt travis https://github.com/ros-planning/moveit_core/blob/09bbc196dd4388ac8d81171620c239673b624cc4/.travis.yml
 # Inspired by JSK travis https://github.com/jsk-ros-pkg/jsk_travis
 # Inspired by ROS Industrial https://github.com/ros-industrial/industrial_ci
 #
@@ -25,7 +25,7 @@ COLCON_EVENT_HANDLING="--event-handlers desktop_notification- status-"
 # usage: run_script BEFORE_SCRIPT  or run_script BEFORE_DOCKER_SCRIPT
 function run_script() {
    local script
-   eval "script=\$$1"  # fetch value of variable passed in $1 (double indirection)
+   eval "script=\${$1:-}"  # fetch value of variable passed in $1 (double indirection)
    if [ "${script// }" != "" ]; then  # only run when non-empty
       travis_run --title "$(colorize BOLD Running $1)" $script
       result=$?
@@ -34,17 +34,18 @@ function run_script() {
 }
 
 function run_docker() {
-   echo -e $(colorize YELLOW "Testing branch '$TRAVIS_BRANCH' of '$REPOSITORY_NAME' on ROS '$ROS_DISTRO'")
    run_script BEFORE_DOCKER_SCRIPT
 
     # Choose the docker container to use
-    if [ -n "$ROS_REPO" ] && [ -n "$DOCKER_IMAGE" ]; then
-       echo -e $(colorize YELLOW "$DOCKER_IMAGE overrides $ROS_REPO setting")
+    if [ -n "${ROS_REPO:=}" ] && [ -n "${DOCKER_IMAGE:=}" ]; then
+       echo -e $(colorize YELLOW "DOCKER_IMAGE=$DOCKER_IMAGE overrides ROS_REPO=$ROS_REPO setting")
     fi
-    if [ -z "$DOCKER_IMAGE" ]; then
+    if [ -z "${DOCKER_IMAGE:=}" ]; then
+       test -z "${ROS_DISTRO:-}" && echo -e $(colorize RED "ROS_DISTRO not defined: cannot infer docker image") && exit 2
        case "${ROS_REPO:-ros}" in
           ros) export DOCKER_IMAGE=moveit/moveit2:$ROS_DISTRO-ci ;;
-          *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros'"); exit 1 ;;
+          ros-shadow-fixed) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed ;;
+          *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros' or 'ros-shadow-fixed'"); exit 1 ;;
        esac
     fi
 
@@ -53,14 +54,16 @@ function run_docker() {
 
     # Run travis.sh again, but now within Docker container
     docker run \
-        -e TRAVIS \
+        -e IN_DOCKER=1 \
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
-        -e ROS_REPO \
-        -e ROS_DISTRO \
         -e BEFORE_SCRIPT \
         -e CI_SOURCE_PATH=${CI_SOURCE_PATH:-/root/$REPOSITORY_NAME} \
         -e UPSTREAM_WORKSPACE \
+        -e TRAVIS \
         -e TRAVIS_BRANCH \
+        -e TRAVIS_PULL_REQUEST \
+        -e TRAVIS_OS_NAME \
+        -e TEST_PKG \
         -e TEST \
         -e TEST_BLACKLIST \
         -e WARNINGS_OK \
@@ -92,13 +95,16 @@ function update_system() {
 
    # Make sure the packages are up-to-date
    travis_run --retry apt-get -qq dist-upgrade
+   # Install required packages (if not yet provided by docker container)
+   travis_run --retry apt-get -qq install -y wget sudo xvfb mesa-utils ccache
 
+   # Install clang-format if needed
+   [[ "${TEST:=}" == *clang-format* ]] && travis_run --retry apt-get -qq install -y clang-format-3.9
    # Install clang-tidy stuff if needed
-   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy
+   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy-6.0 clang-6.0
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
-   [ "$TEST" == *clang-tidy-fix* ] && travis_run_true apt-get -qq install -y clang-tools
+   [[ "$TEST" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools-6.0
    # Enable ccache
-   travis_run --retry apt-get -qq install ccache
    export PATH=/usr/lib/ccache:$PATH
 
    # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
@@ -107,13 +113,11 @@ function update_system() {
    travis_fold end update
 }
 
-function prepare_or_run_early_tests() {
+function run_early_tests() {
    # Check for different tests. clang-format and ament_lint will trigger an early exit
-   # However, they can only run when $CI_SOURCE_PATH is already available. If not try later again.
-   if ! [ -d "$CI_SOURCE_PATH" ] ; then return 0; fi
 
    # EARLY_RESULT="" -> no early exit, EARLY_RESULT=0 -> early success, otherwise early failure
-   local EARLY_RESULT
+   local EARLY_RESULT=""
    for t in $(unify_list " ,;" "$TEST") ; do
       case "$t" in
          clang-format)
@@ -125,13 +129,13 @@ function prepare_or_run_early_tests() {
             EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
             ;;
          clang-tidy-check)  # run clang-tidy along with compiler and report warning
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy"
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy-6.0"
             ;;
          clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
             ;;
          abi)  # abi-checker requires debug symbols
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG=\"-g -Og\""
             ;;
          *)
             echo -e $(colorize RED "Unknown TEST: $t")
@@ -145,7 +149,6 @@ function prepare_or_run_early_tests() {
 # Install and run xvfb to allow for X11-based unittests on DISPLAY :99
 function run_xvfb() {
    travis_fold start xvfb "Starting virtual X11 server to allow for X11-based unit tests"
-   travis_run --retry apt-get -qq install xvfb mesa-utils
    travis_run "Xvfb -screen 0 640x480x24 :99 &"
    export DISPLAY=:99.0
    travis_run_true glxinfo -B
@@ -225,8 +228,7 @@ function prepare_ros_workspace() {
    travis_run_simple cd $ROS_WS
 
    # Validate that we have some packages to build
-   test -z "$(colcon list --names-only)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
-
+   test -z "$(colcon list)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
    travis_fold end ros.ws
 }
 
@@ -246,10 +248,14 @@ function build_workspace() {
 
 function test_workspace() {
    echo -e $(colorize GREEN Testing Workspace)
+
+   local old_ustatus=${-//[^u]/}
+   set +u  # disable checking for unbound variables for the next line
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
+   test -n "$old_ustatus" && set -u  # restore variable checking option
 
    # Consider TEST_BLACKLIST
-   TEST_BLACKLIST=$(unify_list " ,;" $TEST_BLACKLIST)
+   TEST_BLACKLIST=$(unify_list " ,;" ${TEST_BLACKLIST:-})
    echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
 
    # Also blacklist external packages
@@ -277,19 +283,23 @@ function test_workspace() {
 # This repository has some dummy ROS packages in folder test_pkgs, which are needed for unit testing only.
 # To not clutter normal builds, we just create a COLCON_IGNORE file in that folder.
 # A unit test can be recognized from the presence of the environment variable $TEST_PKG (see unit_tests.sh)
-test -z "$TEST_PKG" && touch ${MOVEIT_CI_DIR}/test_pkgs/COLCON_IGNORE # not a unit test build
+if [ -z "${TEST_PKG:-}" ]; then
+ touch ${MOVEIT_CI_DIR}/test_pkgs/COLCON_IGNORE # not a unit test build
+fi
 
 # Re-run the script in a Docker container
-if ! [ "$IN_DOCKER" ]; then run_docker; fi
+if [ "${IN_DOCKER:-0}" != "1" ]; then run_docker; fi
+echo -e $(colorize YELLOW "Testing branch '${TRAVIS_BRANCH:-}' of '${REPOSITORY_NAME:-}' on ROS '$ROS_DISTRO'")
 
 # If we are here, we can assume we are inside a Docker container
 echo "Inside Docker container"
 
 export ROS_WS=${ROS_WS:-/root/ros_ws} # default location of ROS workspace, if not defined differently in docker container
+CMAKE_ARGS=""
 
 # Prepend current dir if path is not yet absolute
 [[ "$MOVEIT_CI_DIR" != /* ]] && MOVEIT_CI_DIR=$PWD/$MOVEIT_CI_DIR
-if [[ "$CI_SOURCE_PATH" != /* ]] ; then
+if [[ "${CI_SOURCE_PATH:=}" != /* ]] ; then
    # If CI_SOURCE_PATH is not yet absolute
    if [ -d "$PWD/$CI_SOURCE_PATH" ] ; then
       CI_SOURCE_PATH=$PWD/$CI_SOURCE_PATH  # prepend with current dir, if that's feasible
@@ -306,10 +316,9 @@ test ${WARNINGS_OK:=true} == true -o "$WARNINGS_OK" == 1 -o "$WARNINGS_OK" == ye
 travis_run --title "CXX compiler info" $CXX --version
 
 update_system
-prepare_or_run_early_tests
 run_xvfb
 prepare_ros_workspace
-prepare_or_run_early_tests
+run_early_tests
 
 build_workspace
 test_workspace

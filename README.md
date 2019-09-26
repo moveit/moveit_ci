@@ -1,7 +1,7 @@
 # MoveIt Continous Integration
-Common Travis CI configuration for MoveIt! project
+Common Travis CI configuration for MoveIt project
 
-Authors: Dave Coleman, Isaac I. Y. Saito, Robert Haschke
+Authors: Robert Haschke, Dave Coleman, Isaac I. Y. Saito
 
 - Uses [pre-build Docker containers](https://hub.docker.com/r/moveit/moveit2) for all ROS distros to save setup time
 - Simple Travis configuration
@@ -64,16 +64,18 @@ script:
 
 ## Configurations
 
-- `ROS_DISTRO`: (required) which version of ROS, i.e. crystal, ...
-- `ROS_REPO`: (default: ros) install ROS debians from either regular release or from [shadow-fixed](http://packages.ros.org/ros-shadow-fixed/ubuntu).
-  This essentially determines the docker image to use. Alternatively, you can directly specify a docker image via the `DOCKER_IMAGE` variable, e.g. `DOCKER_IMAGE=moveit/moveit2:crystal-ci`.
+- There are essentially two options two specify the underlying ROS docker container to use:
+  1. Using the two variables `ROS_DISTRO` and `ROS_REPO`, which automagically choose a suitable [MoveIt docker image](https://hub.docker.com/r/moveit/moveit/tags).
+     - `ROS_DISTRO`: (required) determines which version of ROS to use, i.e. crystal, dashing, ...
+     - `ROS_REPO`: (default: ros) determines which ROS package repository to use, either the regular release repo or, specifying `ros-shadow-fixed`, the [shadow prerelease repo](http://wiki.ros.org/ShadowRepository).
+  2. Directly specifying `DOCKER_IMAGE`, e.g. `DOCKER_IMAGE=moveit/moveit2:crystal-ci`. The docker image may define a `ROS_UNDERLAY` to build the catkin workspace against. By default, this is the root ROS folder in /opt/ros.
 - `BEFORE_DOCKER_SCRIPT`: (default: none): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' ``before_script`` section, but the variable allows to dynamically switch scripts within the testing matrix.
 - `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the ROS workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
 - `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
   By default, all dependent packages will be downloaded as binary packages from `$ROS_REPO`.
   Setting this variable to a `http://github.com/user/repo#branch` repository url, will clone the corresponding repository into the workspace.
   Setting this variable to a `http://` url, or a local file in your repository, will merge the corresponding `.rosinstall` file with [`wstool`](http://wiki.ros.org/wstool) into your workspace.
-When set as "file", the dependended packages that need to be built from source are downloaded based on a .rosinstall file in your repository. Multiple sources can be given as a comma-, or semicolon-separated lists. Note: their order matters -- if the same resource is defined twice, only the first one is considered.
+Multiple sources can be given as a comma-, or semicolon-separated lists. Note: their order matters -- if the same resource is defined twice, only the first one is considered.
 - `TEST_BLACKLIST`: Allow certain tests to be skipped if necessary (not recommended).
 - `TEST`: list of additional tests to perform: clang-format, clang-tidy-check, clang-tidy-fix, catkin\_lint
 
@@ -105,7 +107,7 @@ a summary in the end. If don't want to accept warnings, and make Travis fail you
 
 ## Running Locally For Testing
 
-It's also possible to run the moveit\_ci script locally, without Travis. We demonstrate this using MoveIt! as the example repository:
+It's also possible to run the moveit\_ci script locally, without Travis. We demonstrate this using MoveIt as the example repository:
 
 First clone the repo you want to test:
 
