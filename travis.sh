@@ -259,12 +259,13 @@ function test_workspace() {
    echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
 
    # Also blacklist external packages
+   local all_pkgs source_pkgs blacklist_pkgs
    all_pkgs=$(colcon list --topological-order --names-only --base-paths $ROS_WS 2> /dev/null)
    source_pkgs=$(colcon list --topological-order --names-only --base-paths $CI_SOURCE_PATH 2> /dev/null)
    blacklist_pkgs=$(filter_out "$source_pkgs" "$all_pkgs")
 
    # Run tests, suppressing the error output (confuses Travis display?)
-   travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist $COLCON_EVENT_HANDLING 2>/dev/null"
+   travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist_pkgs $COLCON_EVENT_HANDLING 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "colcon test-results"
