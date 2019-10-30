@@ -191,9 +191,13 @@ function prepare_ros_workspace() {
 
    # Download upstream packages into workspace
    if [ -e $UPSTREAM_WORKSPACE_FILE ]; then
-      travis_run cat $UPSTREAM_WORKSPACE_FILE
-      # skip the to-be-tested repo if it is specified inside the repos/rosinstall file
-      travis_run vcs import --skip-existing < $UPSTREAM_WORKSPACE_FILE
+      travis_run mkdir upstream
+      # clone all package dependencies
+      travis_run vcs import --repos --skip-existing --input $UPSTREAM_WORKSPACE_FILE upstream
+      # remove to-be-tested package if it has been cloned from a different repository
+      if [ -d "upstream/$REPOSITORY_NAME" ]; then
+         travis_run rm -r "upstream/$REPOSITORY_NAME"
+      fi
    fi
 
    # Fetch clang-tidy configs
