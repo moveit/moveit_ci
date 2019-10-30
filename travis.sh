@@ -159,9 +159,10 @@ function prepare_ros_workspace() {
    travis_fold start ros.ws "Setting up ROS workspace"
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
+   # This is allowed to be a repos or rosinstall file, both supported by vcstool
+   UPSTREAM_WORKSPACE_FILE=upstream_workspace_file
 
    # Pull additional packages into the ros workspace
-   travis_run wstool init .
    for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
       echo "Adding $item"
       case "$item" in
@@ -179,23 +180,20 @@ function prepare_ros_workspace() {
          http://* | https://* | file://*) ;; # use url as is
          *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
       esac
-      travis_run_true wstool merge -k $item
+      travis_run_true wget -q -O $UPSTREAM_WORKSPACE_FILE $item
       test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
    done
-
-   # Download upstream packages into workspace
-   if [ -e .rosinstall ]; then
-      # ensure that the to-be-tested package is not in .rosinstall
-      travis_run_true wstool rm $REPOSITORY_NAME
-      # perform shallow checkout: only possible with wstool init
-      travis_run_simple mv .rosinstall rosinstall
-      travis_run cat rosinstall
-      travis_run wstool init --shallow . rosinstall
-   fi
 
    # Link in the repo we are testing
    if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then
       travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into ROS workspace" ln -s $CI_SOURCE_PATH .
+   fi
+
+   # Download upstream packages into workspace
+   if [ -e $UPSTREAM_WORKSPACE_FILE ]; then
+      travis_run cat $UPSTREAM_WORKSPACE_FILE
+      # skip the to-be-tested repo if it is specified inside the repos/rosinstall file
+      travis_run vcs import --skip-existing < $UPSTREAM_WORKSPACE_FILE
    fi
 
    # Fetch clang-tidy configs
