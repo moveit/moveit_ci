@@ -192,8 +192,9 @@ function prepare_ros_workspace() {
    # Download upstream packages into workspace
    if [ -e $UPSTREAM_WORKSPACE_FILE ]; then
       travis_run mkdir upstream
+      travis_run cat $UPSTREAM_WORKSPACE_FILE
       # clone all package dependencies
-      travis_run vcs import --repos --skip-existing --input $UPSTREAM_WORKSPACE_FILE upstream
+      travis_run vcs import --skip-existing --input $UPSTREAM_WORKSPACE_FILE upstream
       # remove to-be-tested package if it has been cloned from a different repository
       if [ -d "upstream/$REPOSITORY_NAME" ]; then
          travis_run rm -r "upstream/$REPOSITORY_NAME"
