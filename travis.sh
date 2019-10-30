@@ -160,7 +160,8 @@ function prepare_ros_workspace() {
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
    # This is allowed to be a repos or rosinstall file, both supported by vcstool
-   UPSTREAM_WORKSPACE_FILE=upstream_workspace_file
+   upstream_workspace_file=./upstream_workspace_file
+   source_folders="."
 
    # Pull additional packages into the ros workspace
    for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
@@ -180,7 +181,7 @@ function prepare_ros_workspace() {
          http://* | https://* | file://*) ;; # use url as is
          *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
       esac
-      travis_run_true curl -s -o $UPSTREAM_WORKSPACE_FILE $item
+      travis_run_true curl -s -o $upstream_workspace_file $item
       test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
    done
 
@@ -190,15 +191,20 @@ function prepare_ros_workspace() {
    fi
 
    # Download upstream packages into workspace
-   if [ -e $UPSTREAM_WORKSPACE_FILE ]; then
-      travis_run mkdir upstream
-      travis_run cat $UPSTREAM_WORKSPACE_FILE
-      # clone all package dependencies
-      travis_run vcs import --skip-existing --input $UPSTREAM_WORKSPACE_FILE upstream
-      # remove to-be-tested package if it has been cloned from a different repository
-      if [ -d "upstream/$REPOSITORY_NAME" ]; then
-         travis_run rm -r "upstream/$REPOSITORY_NAME"
+   if [ -e $upstream_workspace_file ]; then
+      travis_run cat $upstream_workspace_file
+      # Clone all package dependencies into subfolder ./upstream/ to prevent name conflicts.
+      # The flag '--skip-existing' whill ignore packages with the same repo url as the test package.
+      upstream_folder=upstream
+      travis_run mkdir $upstream_folder
+      travis_run vcs import --skip-existing --input $upstream_workspace_file $upstream_folder
+      # Remove to-be-tested package if it has been cloned from a different repository
+      if [ -d "$upstream_folder/$REPOSITORY_NAME" ]; then
+         travis_run rm -rf "$upstream_folder/$REPOSITORY_NAME"
       fi
+      # Append upstream folder to list in travis output and remove workspace file
+      source_folders="$source_folders $upstream_folder"
+      rm $upstream_workspace_file
    fi
 
    # Fetch clang-tidy configs
@@ -222,7 +228,7 @@ function prepare_ros_workspace() {
 
    # For debugging: list the files in workspace's source folder
    travis_run_simple cd $ROS_WS/src
-   travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF
+   travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF $source_folders
 
    # Install source-based package dependencies
    travis_run --retry rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
