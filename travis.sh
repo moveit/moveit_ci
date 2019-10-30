@@ -96,7 +96,7 @@ function update_system() {
    # Make sure the packages are up-to-date
    travis_run --retry apt-get -qq dist-upgrade
    # Install required packages (if not yet provided by docker container)
-   travis_run --retry apt-get -qq install -y wget sudo xvfb mesa-utils ccache
+   travis_run --retry apt-get -qq install -y wget curl sudo xvfb mesa-utils ccache
 
    # Install clang-format if needed
    [[ "${TEST:=}" == *clang-format* ]] && travis_run --retry apt-get -qq install -y clang-format-3.9
@@ -180,7 +180,7 @@ function prepare_ros_workspace() {
          http://* | https://* | file://*) ;; # use url as is
          *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
       esac
-      travis_run_true wget -q -O $UPSTREAM_WORKSPACE_FILE $item
+      travis_run_true curl -s -o $UPSTREAM_WORKSPACE_FILE $item
       test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
    done
 
