@@ -40,6 +40,7 @@ env:
     - TEST=clang-format    # check code formatting for compliance to .clang-format rules
     - TEST=clang-tidy-fix  # perform static code analysis and compliance check against .clang-tidy rules
     - TEST=catkin_lint     # perform catkin_lint checks
+    - TEST=code-coverage   # perform code coverage report
     # pull in packages from a local .rosinstall file
     - UPSTREAM_WORKSPACE=moveit.rosinstall
     # pull in packages from a remote .rosinstall file and run for a non-default ROS_DISTRO
@@ -60,6 +61,10 @@ before_script:
 script:
   # Run the test script
   - .moveit_ci/travis.sh
+
+after_success:
+  # Report code coverage
+  - .travis/after_success.sh
 ```
 
 ## Configurations
@@ -143,3 +148,39 @@ It's also possible to run the script without using docker. To this end, issue th
     export ROS_WS=/tmp/ros_ws        # define a new ROS workspace location
     mkdir $ROS_WS                    # and create it
     .moveit_ci/travis.sh
+
+## Enabling codecov.io reporting
+
+To enable codecov enabling you'll need to add this to your CMakeLists.txt file:
+
+    option(CMAKE_CODE_COVERAGE_CONFIG
+      "Generate code coverage reporting for codecov.io"
+      OFF
+    )
+
+    # Code coverage build settings
+    add_library(coverage_config INTERFACE)
+    if(CMAKE_CODE_COVERAGE_CONFIG)
+      # Add required flags (GCC & LLVM/Clang)
+      target_compile_options(coverage_config INTERFACE
+        -O0        # no optimization
+        -g         # generate debug info
+        --coverage # sets all required flags
+      )
+      target_link_libraries(coverage_config INTERFACE --coverage)
+    endif()
+
+Then you'll need to change the `target_link_libraries` command to turn on code coverage specifically for your project without propigating these settings to external dependencies:
+
+    target_link_libraries(
+      ${PROJECT_NAME}
+      PUBLIC
+      ${catkin_LIBRARIES}
+      ${Boost_LIBRARIES}
+    )
+
+    target_link_libraries(
+      ${PROJECT_NAME}
+      PRIVATE
+      coverage_config
+    )
