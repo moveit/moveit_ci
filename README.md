@@ -151,7 +151,7 @@ It's also possible to run the script without using docker. To this end, issue th
 
 ## Enabling codecov.io reporting
 
-To enable codecov enabling you'll need to add this to your CMakeLists.txt file:
+For codecov to work you need to build and link your libraries with the coverage flag.  Here is how you can add this to your CMakeLists.txt file:
 
     option(CMAKE_CODE_COVERAGE_CONFIG
       "Generate code coverage reporting for codecov.io"
@@ -170,7 +170,7 @@ To enable codecov enabling you'll need to add this to your CMakeLists.txt file:
       target_link_libraries(coverage_config INTERFACE --coverage)
     endif()
 
-Then you'll need to change the `target_link_libraries` command to turn on code coverage specifically for your project without propigating these settings to external dependencies:
+Then you'll need to change the `target_link_libraries` command to turn on code coverage specifically for your project without propagating these settings to external dependencies:
 
     target_link_libraries(
       ${PROJECT_NAME}
