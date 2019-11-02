@@ -48,6 +48,16 @@ function docker_cp {
 function run_docker() {
    run_script BEFORE_DOCKER_SCRIPT
 
+    # get ci enviroment parameters to pass into docker for codecov
+    # this is a list of docker parameters to include enviroment variables
+    export CI_ENV_PARAMS=`bash <(curl -s https://codecov.io/env)`
+    # these two varaibles are needed for codecov to work locally
+    set +u  # stop variable checking
+    # test if they are set before setting as travis sets them
+    [[ -z ${VCS_BRANCH_NAME} ]] && export VCS_BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+    [[ -z ${VCS_COMMIT_ID} ]] && export VCS_COMMIT_ID=$(git rev-parse HEAD)
+    set -u  # resume variable checking
+
     # Choose the docker container to use
     if [ -n "${ROS_REPO:=}" ] && [ -n "${DOCKER_IMAGE:=}" ]; then
        echo -e $(colorize YELLOW "DOCKER_IMAGE=$DOCKER_IMAGE overrides ROS_REPO=$ROS_REPO setting")
@@ -60,9 +70,6 @@ function run_docker() {
           *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros' or 'ros-shadow-fixed'"); exit 1 ;;
        esac
     fi
-
-    # make build directory to copy build products into for code coverage reporting
-    [[ "${TEST:=}" == *code-coverage* ]] && mkdir -p $(pwd)/build
 
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
     travis_run docker pull $DOCKER_IMAGE
@@ -88,6 +95,7 @@ function run_docker() {
         -e CXX=${CXX_FOR_BUILD:-${CXX:-c++}} \
         -e CFLAGS \
         -e CXXFLAGS \
+        $CI_ENV_PARAMS \
         -v $(pwd):/root/$REPOSITORY_NAME \
         -v ${CCACHE_DIR:-$HOME/.ccache}:/root/.ccache \
         -t \
@@ -170,8 +178,8 @@ function run_early_tests() {
          abi)  # abi-checker requires debug symbols
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG=\"-g -Og\""
             ;;
-         code-coverage) # code coverage test requres special build instructions
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CODE_COVERAGE_CONFIG=ON"
+         code-coverage) # code coverage test requres specific compiler and linker arguments
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Coverage"
             ;;
          *)
             echo -e $(colorize RED "Unknown TEST: $t")
@@ -317,9 +325,10 @@ function test_workspace() {
 
    # Show test results summary and throw error if necessary
    catkin_test_results || exit 2
+ }
 
-   # Copy build products for code coverage reporting
-   [[ "${TEST:=}" == *code-coverage* ]] && travis_run_simple cp -r $ROS_WS/build /root/$REPOSITORY_NAME
+function send_codecov_report() {
+  travis_run --title "codecov.io report upload" bash <(curl -s https://codecov.io/bash) -s $ROS_WS -R $ROS_WS/src/$REPOSITORY_NAME
 }
 
 ###########################################################################################################
@@ -379,6 +388,9 @@ for t in $(unify_list " ,;" "$TEST") ; do
       abi)
          (source ${MOVEIT_CI_DIR}/check_abi.sh)
          test $? -eq 0 || result=$(( ${result:-0} + 1 ))
+         ;;
+      code-coverage)
+         send_codecov_report
          ;;
    esac
 done

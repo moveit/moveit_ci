@@ -61,10 +61,6 @@ before_script:
 script:
   # Run the test script
   - .moveit_ci/travis.sh
-
-after_success:
-  # Report code coverage
-  - .travis/after_success.sh
 ```
 
 ## Configurations
@@ -151,36 +147,23 @@ It's also possible to run the script without using docker. To this end, issue th
 
 ## Enabling codecov.io reporting
 
-For codecov to work you need to build and link your libraries with the coverage flag.  Here is how you can add this to your CMakeLists.txt file:
+For codecov to work you need to build and link your c++ code with the `--coverage` flag.  We do this with a custom `Coverage` build type for cmake.  To add support for Coverage build type add this [Coverage.cmake](https://raw.githubusercontent.com/Lectem/cpp-boilerplate/master/cmake/Coverage.cmake) file from the [cpp-boilerplate](https://github.com/Lectem/cpp-boilerplate/blob/master/CTestConfig.cmake) project to a `cmake` directory.  Then update the minimum required version of cmake to `3.3` or higher to support features from that file:
 
-    option(CMAKE_CODE_COVERAGE_CONFIG
-      "Generate code coverage reporting for codecov.io"
-      OFF
-    )
+    cmake_minimum_required(VERSION 3.3)
 
-    # Code coverage build settings
-    add_library(coverage_config INTERFACE)
-    if(CMAKE_CODE_COVERAGE_CONFIG)
-      # Add required flags (GCC & LLVM/Clang)
-      target_compile_options(coverage_config INTERFACE
-        -O0        # no optimization
-        -g         # generate debug info
-        --coverage # sets all required flags
-      )
-      target_link_libraries(coverage_config INTERFACE --coverage)
-    endif()
+Add These lines to your cmake file to include `Coverage`:
 
-Then you'll need to change the `target_link_libraries` command to turn on code coverage specifically for your project without propagating these settings to external dependencies:
+    # Custom modules and scripts
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
+    include(Coverage)
 
-    target_link_libraries(
-      ${PROJECT_NAME}
-      PUBLIC
-      ${catkin_LIBRARIES}
-      ${Boost_LIBRARIES}
-    )
+Lastly, Add a `.codecov.yml` file to your project to exclude test, external, main files, and anything else you don't want in your coverage report:
 
-    target_link_libraries(
-      ${PROJECT_NAME}
-      PRIVATE
-      coverage_config
-    )
+    ignore:
+      - "test"          # test directory
+      - "external"      # external directory
+      - "**/*_main.cpp" # any file ending in _main.cpp
+
+Then you can use the `code-coverage` test and it will run the script provided by [codecov.io](codecov.io) which runs `gcov` to generate the reports and then compiles them into a report and uploads them to their servers.
+
+If you are using this on a private github repo you will need to define the `CODECOV_TOKEN` enviroment variable in the `global` section of your `.travis.yml` file to the value you can find on the settings page of your project on codecov.io.
