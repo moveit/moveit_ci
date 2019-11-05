@@ -50,7 +50,7 @@ function run_docker() {
 
     # get ci enviroment parameters to pass into docker for codecov
     # this is a list of docker parameters to include enviroment variables
-    export CI_ENV_PARAMS=`bash <(curl -s https://codecov.io/env)`
+    CI_ENV_PARAMS=`bash <(curl -s https://codecov.io/env)`
     # these two varaibles are needed for codecov to work locally
     set +u  # stop variable checking
     # test if they are set before setting as travis sets them
@@ -327,10 +327,6 @@ function test_workspace() {
    catkin_test_results || exit 2
  }
 
-function send_codecov_report() {
-  travis_run --title "codecov.io report upload" bash <(curl -s https://codecov.io/bash) -s $ROS_WS -R $ROS_WS/src/$REPOSITORY_NAME
-}
-
 ###########################################################################################################
 # main program
 
@@ -390,7 +386,7 @@ for t in $(unify_list " ,;" "$TEST") ; do
          test $? -eq 0 || result=$(( ${result:-0} + 1 ))
          ;;
       code-coverage)
-         send_codecov_report
+         travis_run --title "codecov.io report upload" bash <(curl -s https://codecov.io/bash) -s $ROS_WS -R $ROS_WS/src/$REPOSITORY_NAME
          ;;
    esac
 done
