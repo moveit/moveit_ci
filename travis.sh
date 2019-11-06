@@ -105,11 +105,9 @@ function run_docker() {
     docker_uid=$(docker run --rm "${run_opts[@]}" "$docker_image" id -u)
     docker_gid=$(docker run --rm "${run_opts[@]}" "$docker_image" id -g)
     # pass common credentials to container
-    for d in .docker .ssh .subversion; do
-      if [ -d "$HOME/$d" ]; then
-        docker_cp "$HOME/$d" "$cid:/root/"
-      fi
-    done
+    if [ -d "$HOME/.ssh" ]; then
+      docker_cp "$HOME/.ssh" "$cid:/root/"
+    fi
 
     docker start -a "$cid"
 
