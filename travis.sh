@@ -19,6 +19,13 @@ MOVEIT_CI_TRAVIS_TIMEOUT=${MOVEIT_CI_TRAVIS_TIMEOUT:-47}  # 50min minus safety m
 # Helper functions
 source ${MOVEIT_CI_DIR}/util.sh
 
+# Adding the SSH key to the ssh-agent
+setup_ssh_keys()
+{
+  eval "$(ssh-agent -s)"
+  ssh-add ~/.ssh/id_rsa
+}
+
 # usage: run_script BEFORE_SCRIPT  or run_script BEFORE_DOCKER_SCRIPT
 function run_script() {
    local script
@@ -57,14 +64,13 @@ function run_docker() {
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
     travis_run docker pull $DOCKER_IMAGE
 
+    setup_ssh_keys
     # Forward ssh agents
     local -a run_opts
-    if [ "$SSH_AUTH_SOCK" ]; then
-      local auth_dir
-      auth_dir=$(dirname "$SSH_AUTH_SOCK")
-      run_opts+=(-v "$auth_dir:$auth_dir" -e "SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
-    fi
-    
+    local auth_dir
+    auth_dir=$(dirname "$SSH_AUTH_SOCK")
+    run_opts+=(-v "$auth_dir:$auth_dir" -e "SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
+
     local cid
     # Run travis.sh again, but now within Docker container
     cid=$(docker create \
@@ -353,6 +359,7 @@ test ${WARNINGS_OK:=true} == true -o "$WARNINGS_OK" == 1 -o "$WARNINGS_OK" == ye
 travis_run --title "CXX compiler info" $CXX --version
 
 update_system
+setup_ssh_keys
 run_xvfb
 prepare_ros_workspace
 run_early_tests
