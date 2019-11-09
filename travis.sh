@@ -51,12 +51,9 @@ function run_docker() {
     # get ci enviroment parameters to pass into docker for codecov
     # this is a list of docker parameters to include enviroment variables
     CI_ENV_PARAMS=`bash <(curl -s https://codecov.io/env)`
-    # these two varaibles are needed for codecov to work locally
-    set +u  # stop variable checking
-    # test if they are set before setting as travis sets them
-    [[ -z ${VCS_BRANCH_NAME} ]] && export VCS_BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-    [[ -z ${VCS_COMMIT_ID} ]] && export VCS_COMMIT_ID=$(git rev-parse HEAD)
-    set -u  # resume variable checking
+    # The following two varaibles are needed for codecov to work locally
+    export ${VCS_BRANCH_NAME:=$(git rev-parse --abbrev-ref HEAD)}
+    export ${VCS_COMMIT_ID:=$(git rev-parse HEAD)}
 
     # Choose the docker container to use
     if [ -n "${ROS_REPO:=}" ] && [ -n "${DOCKER_IMAGE:=}" ]; then
@@ -325,7 +322,7 @@ function test_workspace() {
 
    # Show test results summary and throw error if necessary
    catkin_test_results || exit 2
- }
+}
 
 ###########################################################################################################
 # main program
