@@ -64,13 +64,6 @@ function run_docker() {
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
     travis_run docker pull $DOCKER_IMAGE
 
-    setup_ssh_keys
-    # Forward ssh agents
-    local -a run_opts
-    local auth_dir
-    auth_dir=$(dirname "$SSH_AUTH_SOCK")
-    run_opts+=(-v "$auth_dir:$auth_dir" -e "SSH_AUTH_SOCK=$SSH_AUTH_SOCK")
-
     local cid
     # Run travis.sh again, but now within Docker container
     cid=$(docker create \
@@ -96,14 +89,13 @@ function run_docker() {
         -v ${CCACHE_DIR:-$HOME/.ccache}:/root/.ccache \
         -t \
         -w /root/$REPOSITORY_NAME \
-        "${run_opts[@]}" \
         $DOCKER_IMAGE /root/$REPOSITORY_NAME/.moveit_ci/travis.sh)
 
     # detect user inside container
     local docker_image
     docker_image=$(docker inspect --format='{{.Config.Image}}' "$cid")
-    docker_uid=$(docker run --rm "${run_opts[@]}" "$docker_image" id -u)
-    docker_gid=$(docker run --rm "${run_opts[@]}" "$docker_image" id -g)
+    docker_uid=$(docker run --rm "$docker_image" id -u)
+    docker_gid=$(docker run --rm "$docker_image" id -g)
     # pass common credentials to container
     if [ -d "$HOME/.ssh" ]; then
       docker_cp "$HOME/.ssh" "$cid:/root/"
