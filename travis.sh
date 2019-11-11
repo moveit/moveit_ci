@@ -262,8 +262,8 @@ function test_workspace() {
    test -n "$TEST_BLACKLIST" && catkin config --blacklist $TEST_BLACKLIST &> /dev/null
 
    # Also blacklist external packages
-   all_pkgs=$(catkin_topological_order $ROS_WS --only-names 2> /dev/null)
-   source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names 2> /dev/null)
+   all_pkgs=$(catkin_topological_order $ROS_WS/src --only-names)
+   source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
    blacklist_pkgs=$(filter_out "$source_pkgs" "$all_pkgs")
    test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist_pkgs &> /dev/null
 
