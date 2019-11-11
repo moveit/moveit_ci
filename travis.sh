@@ -19,6 +19,13 @@ MOVEIT_CI_TRAVIS_TIMEOUT=${MOVEIT_CI_TRAVIS_TIMEOUT:-47}  # 50min minus safety m
 # Helper functions
 source ${MOVEIT_CI_DIR}/util.sh
 
+# Adding the SSH key to the ssh-agent
+setup_ssh_keys()
+{
+  eval "$(ssh-agent -s)"
+  ssh-add ~/.ssh/id_rsa
+}
+
 # usage: run_script BEFORE_SCRIPT  or run_script BEFORE_DOCKER_SCRIPT
 function run_script() {
    local script
@@ -28,6 +35,14 @@ function run_script() {
       result=$?
       test $result -ne 0 && echo -e $(colorize RED "$1 failed with return value: $result. Aborting.") && exit 2
    fi
+}
+
+# work-around for https://github.com/moby/moby/issues/34096
+# ensures that copied files are owned by the target user
+function docker_cp {
+  set -o pipefail
+  tar --numeric-owner --owner="${docker_uid:-root}" --group="${docker_gid:-root}" -c -f - -C "$(dirname "$1")" "$(basename "$1")" | docker cp - "$2"
+  set +o pipefail
 }
 
 function run_docker() {
@@ -49,8 +64,9 @@ function run_docker() {
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
     travis_run docker pull $DOCKER_IMAGE
 
+    local cid
     # Run travis.sh again, but now within Docker container
-    docker run \
+    cid=$(docker create \
         -e IN_DOCKER=1 \
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
         -e BEFORE_SCRIPT \
@@ -73,7 +89,20 @@ function run_docker() {
         -v ${CCACHE_DIR:-$HOME/.ccache}:/root/.ccache \
         -t \
         -w /root/$REPOSITORY_NAME \
-        $DOCKER_IMAGE /root/$REPOSITORY_NAME/.moveit_ci/travis.sh
+        $DOCKER_IMAGE /root/$REPOSITORY_NAME/.moveit_ci/travis.sh)
+
+    # detect user inside container
+    local docker_image
+    docker_image=$(docker inspect --format='{{.Config.Image}}' "$cid")
+    docker_uid=$(docker run --rm "$docker_image" id -u)
+    docker_gid=$(docker run --rm "$docker_image" id -g)
+    # pass common credentials to container
+    if [ -d "$HOME/.ssh" ]; then
+      docker_cp "$HOME/.ssh" "$cid:/root/"
+    fi
+
+    docker start -a "$cid"
+
     result=$?
 
     echo
@@ -93,7 +122,7 @@ function update_system() {
    # Make sure the packages are up-to-date
    travis_run --retry apt-get -qq dist-upgrade
    # Install required packages (if not yet provided by docker container)
-   travis_run --retry apt-get -qq install -y wget sudo python-catkin-tools xvfb mesa-utils ccache
+   travis_run --retry apt-get -qq install -y wget sudo python-catkin-tools xvfb mesa-utils ccache ssh
 
    # Install clang-format if needed
    [[ "${TEST:=}" == *clang-format* ]] && travis_run --retry apt-get -qq install -y clang-format-3.9
@@ -322,6 +351,7 @@ test ${WARNINGS_OK:=true} == true -o "$WARNINGS_OK" == 1 -o "$WARNINGS_OK" == ye
 travis_run --title "CXX compiler info" $CXX --version
 
 update_system
+setup_ssh_keys
 run_xvfb
 prepare_ros_workspace
 run_early_tests
