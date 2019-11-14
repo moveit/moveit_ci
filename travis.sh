@@ -160,8 +160,12 @@ function prepare_ros_workspace() {
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
    # This is allowed to be a repos or rosinstall file, both supported by vcstool
-   upstream_workspace_file=./upstream_workspace_file
    source_folders="."
+
+   # Link in the repo we are testing
+   if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then
+      travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into ROS workspace" ln -s $CI_SOURCE_PATH .
+   fi
 
    # Pull additional packages into the ros workspace
    for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
@@ -181,17 +185,9 @@ function prepare_ros_workspace() {
          http://* | https://* | file://*) ;; # use url as is
          *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
       esac
+      upstream_workspace_file=$(mktemp)
       travis_run_true curl -s -o $upstream_workspace_file $item
       test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
-   done
-
-   # Link in the repo we are testing
-   if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then
-      travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into ROS workspace" ln -s $CI_SOURCE_PATH .
-   fi
-
-   # Download upstream packages into workspace
-   if [ -e $upstream_workspace_file ]; then
       travis_run cat $upstream_workspace_file
       # Clone all package dependencies into subfolder ./upstream/ to prevent name conflicts.
       # The flag '--skip-existing' whill ignore packages with the same repo url as the test package.
@@ -203,9 +199,9 @@ function prepare_ros_workspace() {
          travis_run rm -rf "$upstream_folder/$REPOSITORY_NAME"
       fi
       # Append upstream folder to list in travis output and remove workspace file
-      source_folders="$source_folders $upstream_folder"
+      source_folders=". $upstream_folder"
       rm $upstream_workspace_file
-   fi
+   done
 
    # Fetch clang-tidy configs
    if [ "$TEST" == clang-tidy-check ] ; then
