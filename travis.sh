@@ -96,7 +96,7 @@ function update_system() {
    # Make sure the packages are up-to-date
    travis_run --retry apt-get -qq dist-upgrade
    # Install required packages (if not yet provided by docker container)
-   travis_run --retry apt-get -qq install -y wget curl sudo xvfb mesa-utils ccache
+   travis_run --retry apt-get -qq install -y curl sudo xvfb mesa-utils ccache
 
    # Install clang-format if needed
    [[ "${TEST:=}" == *clang-format* ]] && travis_run --retry apt-get -qq install -y clang-format-3.9
@@ -159,13 +159,15 @@ function prepare_ros_workspace() {
    travis_fold start ros.ws "Setting up ROS workspace"
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
-   # This is allowed to be a repos or rosinstall file, both supported by vcstool
-   source_folders="."
 
    # Link in the repo we are testing
    if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then
       travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into ROS workspace" ln -s $CI_SOURCE_PATH .
    fi
+
+   # Download all upstream packages into folder upstream to prevent name conflicts
+   local upstream_folder="upstream"
+   mkdir "$upstream_folder"
 
    # Pull additional packages into the ros workspace
    for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
@@ -173,33 +175,30 @@ function prepare_ros_workspace() {
       case "$item" in
          debian)
             echo "Obtaining debian packages for all upstream dependencies."
-            break ;;
+            continue ;;
          https://github.com/*) # clone from github
             # extract url and optional branch from item=<url>#<branch>
             item="${item}#"
             url=${item%%#*}
             branch=${item#*#}; branch=${branch%#}; branch=${branch:+--branch ${branch}}
             travis_run_true git clone -q --depth 1 $branch $url
-            test $? -ne 0 && echo -e "$(colorize RED Failed clone repository. Aborting.)" && exit 2
+            test $? -ne 0 && echo -e "$(colorize RED Failed to clone repository $url. Aborting.)" && exit 2
             continue ;;
          http://* | https://* | file://*) ;; # use url as is
          *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
       esac
-      upstream_workspace_file=$(mktemp)
+
+      # Handle a .repos or .rosinstall file, both supported by vcstool
+      local upstream_workspace_file=$(mktemp)
       travis_run_true curl -s -o $upstream_workspace_file $item
-      test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
+      test $? -ne 0 && echo -e "$(colorize RED Failed to download $item. Aborting.)" && exit 2
       travis_run cat $upstream_workspace_file
-      # Clone all package dependencies into subfolder ./upstream/ to prevent name conflicts.
       # The flag '--skip-existing' whill ignore packages with the same repo url as the test package.
-      upstream_folder=upstream
-      travis_run mkdir $upstream_folder
       travis_run vcs import --skip-existing --input $upstream_workspace_file $upstream_folder
       # Remove to-be-tested package if it has been cloned from a different repository
       if [ -d "$upstream_folder/$REPOSITORY_NAME" ]; then
          travis_run rm -rf "$upstream_folder/$REPOSITORY_NAME"
       fi
-      # Append upstream folder to list in travis output and remove workspace file
-      source_folders=". $upstream_folder"
       rm $upstream_workspace_file
    done
 
@@ -214,8 +213,7 @@ function prepare_ros_workspace() {
       # Ensure a useful .clang-tidy config file is present in the to-be-tested repo ($CI_SOURCE_PATH)
       [ -f $CI_SOURCE_PATH/.clang-tidy ] || \
          travis_run --title "Fetching default clang-tidy config from MoveIt" \
-                    wget -nv https://raw.githubusercontent.com/ros-planning/moveit2/moveit2-ci/.clang-tidy \
-                         -O $CI_SOURCE_PATH/.clang-tidy
+                    curl -s -o $CI_SOURCE_PATH/.clang-tidy https://raw.githubusercontent.com/ros-planning/moveit2/moveit2-ci/.clang-tidy
       travis_run --display "Applying the following clang-tidy checks:" cat $CI_SOURCE_PATH/.clang-tidy
    fi
 
@@ -224,7 +222,7 @@ function prepare_ros_workspace() {
 
    # For debugging: list the files in workspace's source folder
    travis_run_simple cd $ROS_WS/src
-   travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF $source_folders
+   travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF . "$upstream_folder"
 
    # Install source-based package dependencies
    travis_run --retry rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
