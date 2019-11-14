@@ -74,7 +74,7 @@ script:
 - `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
   By default, all dependent packages will be downloaded as binary packages from `$ROS_REPO`.
   Setting this variable to a `http://github.com/user/repo#branch` repository url, will clone the corresponding repository into the workspace.
-  Setting this variable to a `http://` url, or a local file in your repository, will merge the corresponding `.rosinstall` file with [`wstool`](http://wiki.ros.org/wstool) into your workspace.
+  Setting this variable to a `http://` url, or a local file in your repository, will merge the corresponding `.rosinstall` or `.repos` file with [`vcstool`](https://github.com/dirk-thomas/vcstool) into your workspace.
 Multiple sources can be given as a comma-, or semicolon-separated lists. Note: their order matters -- if the same resource is defined twice, only the first one is considered.
 - `TEST_BLACKLIST`: Allow certain tests to be skipped if necessary (not recommended).
 - `TEST`: list of additional tests to perform: clang-format, clang-tidy-check, clang-tidy-fix, catkin\_lint

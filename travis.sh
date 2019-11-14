@@ -96,7 +96,7 @@ function update_system() {
    # Make sure the packages are up-to-date
    travis_run --retry apt-get -qq dist-upgrade
    # Install required packages (if not yet provided by docker container)
-   travis_run --retry apt-get -qq install -y wget sudo xvfb mesa-utils ccache
+   travis_run --retry apt-get -qq install -y wget curl sudo xvfb mesa-utils ccache
 
    # Install clang-format if needed
    [[ "${TEST:=}" == *clang-format* ]] && travis_run --retry apt-get -qq install -y clang-format-3.9
@@ -159,9 +159,15 @@ function prepare_ros_workspace() {
    travis_fold start ros.ws "Setting up ROS workspace"
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
+   # This is allowed to be a repos or rosinstall file, both supported by vcstool
+   source_folders="."
+
+   # Link in the repo we are testing
+   if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then
+      travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into ROS workspace" ln -s $CI_SOURCE_PATH .
+   fi
 
    # Pull additional packages into the ros workspace
-   travis_run wstool init .
    for item in $(unify_list " ,;" ${UPSTREAM_WORKSPACE:-debian}) ; do
       echo "Adding $item"
       case "$item" in
@@ -179,24 +185,23 @@ function prepare_ros_workspace() {
          http://* | https://* | file://*) ;; # use url as is
          *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
       esac
-      travis_run_true wstool merge -k $item
+      upstream_workspace_file=$(mktemp)
+      travis_run_true curl -s -o $upstream_workspace_file $item
       test $? -ne 0 && echo -e "$(colorize RED Failed to find rosinstall file. Aborting.)" && exit 2
+      travis_run cat $upstream_workspace_file
+      # Clone all package dependencies into subfolder ./upstream/ to prevent name conflicts.
+      # The flag '--skip-existing' whill ignore packages with the same repo url as the test package.
+      upstream_folder=upstream
+      travis_run mkdir $upstream_folder
+      travis_run vcs import --skip-existing --input $upstream_workspace_file $upstream_folder
+      # Remove to-be-tested package if it has been cloned from a different repository
+      if [ -d "$upstream_folder/$REPOSITORY_NAME" ]; then
+         travis_run rm -rf "$upstream_folder/$REPOSITORY_NAME"
+      fi
+      # Append upstream folder to list in travis output and remove workspace file
+      source_folders=". $upstream_folder"
+      rm $upstream_workspace_file
    done
-
-   # Download upstream packages into workspace
-   if [ -e .rosinstall ]; then
-      # ensure that the to-be-tested package is not in .rosinstall
-      travis_run_true wstool rm $REPOSITORY_NAME
-      # perform shallow checkout: only possible with wstool init
-      travis_run_simple mv .rosinstall rosinstall
-      travis_run cat rosinstall
-      travis_run wstool init --shallow . rosinstall
-   fi
-
-   # Link in the repo we are testing
-   if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then
-      travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into ROS workspace" ln -s $CI_SOURCE_PATH .
-   fi
 
    # Fetch clang-tidy configs
    if [ "$TEST" == clang-tidy-check ] ; then
@@ -219,7 +224,7 @@ function prepare_ros_workspace() {
 
    # For debugging: list the files in workspace's source folder
    travis_run_simple cd $ROS_WS/src
-   travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF
+   travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF $source_folders
 
    # Install source-based package dependencies
    travis_run --retry rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
