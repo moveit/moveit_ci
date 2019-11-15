@@ -120,6 +120,10 @@ for group in $test_groups ; do
 			run_test 0 $0:$LINENO "clang-tidy-check on 'valid' package, warnings forbidden" TEST_PKG=valid TEST=clang-tidy-check WARNINGS_OK=false
 			run_test 1 $0:$LINENO "clang-tidy-check on 'clang_tidy' package, warnings forbidden" TEST_PKG=clang_tidy TEST=clang-tidy-check WARNINGS_OK=false
 			;;
+		code-coverage)
+			run_test 0 $0:$LINENO "code-coverage on 'valid' package, warnings forbidden" TEST_PKG=valid TEST=code-coverage WARNINGS_OK=false
+			run_test 1 $0:$LINENO "code-coverage on 'warnings' package, warnings forbidden" TEST_PKG=warnings TEST=code-coverage WARNINGS_OK=false
+			;;
 		*) echo -e $(colorize YELLOW "Unknown test group '$group'.")
 			echo "Known groups are: $all_groups" ;;
 	esac

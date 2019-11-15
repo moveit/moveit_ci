@@ -11,6 +11,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <test_depend>rosunit</test_depend>
+  <test_depend>code_coverage</test_depend>
 
   <export>
   </export>

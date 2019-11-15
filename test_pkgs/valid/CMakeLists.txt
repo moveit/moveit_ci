@@ -10,6 +10,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-if(CATKIN_ENABLE_TESTING)
+if (CATKIN_ENABLE_TESTING)
+  find_package(code_coverage REQUIRED)
+
+  if(ENABLE_COVERAGE_TESTING)
+    include(CodeCoverage)
+    APPEND_COVERAGE_COMPILER_FLAGS()
+  endif()
+
   catkin_add_gtest(${PROJECT_NAME} test.cpp)
 endif()
