@@ -55,9 +55,16 @@ function run_docker() {
     if [ -z "${DOCKER_IMAGE:=}" ]; then
        test -z "${ROS_DISTRO:-}" && echo -e $(colorize RED "ROS_DISTRO not defined: cannot infer docker image") && exit 2
        case "${ROS_REPO:-ros}" in
-          ros) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci ;;
-          ros-shadow-fixed) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed ;;
-          *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros' or 'ros-shadow-fixed'"); exit 1 ;;
+          ros|main)
+             export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci
+             ;;
+          ros-shadow-fixed|ros-testing)
+             export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed
+             ;;
+          *)
+             echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros' or 'ros-shadow-fixed'");
+             exit 1
+             ;;
        esac
     fi
 
