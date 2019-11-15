@@ -147,34 +147,22 @@ It's also possible to run the script without using docker. To this end, issue th
 
 ## Enabling codecov.io reporting
 
-For codecov to work you need to build and link your c++ code with the `--coverage`.  We do this using the ros package [code_coverage](https://github.com/mikeferguson/code_coverage).
+For codecov to work you need to build and link your c++ code with specific parameters.  To enable this we use the ros package [code_coverage](https://github.com/mikeferguson/code_coverage).  To to use the `code-coverage` test in your repo make these two changes:
 
-To to use the `code-coverage` do these two things (coppied from the linked repo's README.md):
-
-1. Add code_coverage as a test depend in your package.xml
-1. Update your CMakeLists.txt, in the testing section add:
+1. Add `<test_depend>code_coverage</test_depend>` to your package.xml
+1. Add this to your `CMakeLists.txt`:
 
 ```cmake
-if (CATKIN_ENABLE_TESTING)
-  find_package(code_coverage REQUIRED)
-
-  if(ENABLE_COVERAGE_TESTING)
-    include(CodeCoverage)
-    APPEND_COVERAGE_COMPILER_FLAGS()
-  endif()
-
-  # Add your tests here
-
-  if(ENABLE_COVERAGE_TESTING)
-    set(COVERAGE_EXCLUDES "*/${PROJECT_NAME}/test*" "*/${PROJECT_NAME}/other_dir_i_dont_care_about*")
-    add_code_coverage(
-      NAME ${PROJECT_NAME}_coverage
-      DEPENDENCIES tests
-    )
-  endif()
+# to run: catkin_make -DENABLE_COVERAGE_TESTING=ON package_name_coverage
+if(CATKIN_ENABLE_TESTING AND ENABLE_COVERAGE_TESTING)
+  find_package(code_coverage REQUIRED)   # catkin package ros-*-code-coverage
+  include(CodeCoverage)
+  APPEND_COVERAGE_COMPILER_FLAGS()
+  set(COVERAGE_EXCLUDES "*/test/*")
+  add_code_coverage(NAME ${PROJECT_NAME}_coverage)
 endif()
 ```
 
 Then you can use the `code-coverage` test and it will run the script provided by [codecov.io](codecov.io) which runs `gcov` to generate the reports and then compiles them into a report and uploads them to their servers.
 
-If you are using this on a private github repo you will need to define the `CODECOV_TOKEN` enviroment variable in the `global` section of your `.travis.yml` file to the value you can find on the settings page of your project on codecov.io.
+If you are using this on a private github repo you will need to set the `CODECOV_TOKEN` enviroment variable in the `global` section of your `.travis.yml` file to the value you can find on the settings page of your project on codecov.io.
