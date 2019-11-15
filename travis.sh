@@ -176,7 +176,7 @@ function run_early_tests() {
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG=\"-g -Og\""
             ;;
          code-coverage) # code coverage test requres specific compiler and linker arguments
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Coverage"
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug -DENABLE_COVERAGE_TESTING=ON"
             ;;
          *)
             echo -e $(colorize RED "Unknown TEST: $t")

@@ -147,22 +147,33 @@ It's also possible to run the script without using docker. To this end, issue th
 
 ## Enabling codecov.io reporting
 
-For codecov to work you need to build and link your c++ code with the `--coverage` flag.  We do this with a custom `Coverage` build type for cmake.  To add support for Coverage build type add this [Coverage.cmake](https://raw.githubusercontent.com/Lectem/cpp-boilerplate/master/cmake/Coverage.cmake) file from the [cpp-boilerplate](https://github.com/Lectem/cpp-boilerplate/blob/master/CTestConfig.cmake) project to a `cmake` directory.  Then update the minimum required version of cmake to `3.3` or higher to support features from that file:
+For codecov to work you need to build and link your c++ code with the `--coverage`.  We do this using the ros package [code_coverage](https://github.com/mikeferguson/code_coverage).
 
-    cmake_minimum_required(VERSION 3.3)
+To to use the `code-coverage` do these two things (coppied from the linked repo's README.md):
 
-Add These lines to your cmake file to include `Coverage`:
+1. Add code_coverage as a test depend in your package.xml
+1. Update your CMakeLists.txt, in the testing section add:
 
-    # Custom modules and scripts
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
-    include(Coverage)
+```cmake
+if (CATKIN_ENABLE_TESTING)
+  find_package(code_coverage REQUIRED)
 
-Lastly, Add a `.codecov.yml` file to your project to exclude test, external, main files, and anything else you don't want in your coverage report:
+  if(ENABLE_COVERAGE_TESTING)
+    include(CodeCoverage)
+    APPEND_COVERAGE_COMPILER_FLAGS()
+  endif()
 
-    ignore:
-      - "test"          # test directory
-      - "external"      # external directory
-      - "**/*_main.cpp" # any file ending in _main.cpp
+  # Add your tests here
+
+  if(ENABLE_COVERAGE_TESTING)
+    set(COVERAGE_EXCLUDES "*/${PROJECT_NAME}/test*" "*/${PROJECT_NAME}/other_dir_i_dont_care_about*")
+    add_code_coverage(
+      NAME ${PROJECT_NAME}_coverage
+      DEPENDENCIES tests
+    )
+  endif()
+endif()
+```
 
 Then you can use the `code-coverage` test and it will run the script provided by [codecov.io](codecov.io) which runs `gcov` to generate the reports and then compiles them into a report and uploads them to their servers.
 
