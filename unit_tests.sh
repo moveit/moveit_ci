@@ -60,7 +60,7 @@ rosdep() {
 	echo "Dummy rosdep $*"
 }
 
-all_groups="sanity warnings catkin_lint clang-format clang-tidy-fix clang-tidy-check"
+all_groups="sanity warnings catkin_lint clang-format clang-tidy-fix clang-tidy-check code-coverage"
 skip_groups="${SKIP:-}"
 # process options
 while true ; do
