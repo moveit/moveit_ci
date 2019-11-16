@@ -303,11 +303,10 @@ function test_workspace() {
    test -n "$TEST_BLACKLIST" && catkin config --blacklist $TEST_BLACKLIST &> /dev/null
 
    # Consider TEST_WHITELIST
-   if [ -z "${TEST_WHITELIST:-}" ]; then
-      TEST_WHITELIST=$(unify_list " ,;" ${TEST_WHITELIST:-})
-      echo -e $(colorize GREEN Test whitelist: $(colorize THIN $TEST_WHITELIST))
-      test -n "$TEST_WHITELIST" && catkin config --whitelist $TEST_WHITELIST &> /dev/null
-   fi
+   TEST_WHITELIST=$(unify_list " ,;" ${TEST_WHITELIST:-})
+   echo -e $(colorize GREEN Test whitelist: $(colorize THIN $TEST_WHITELIST))
+   test -n "$TEST_WHITELIST" && catkin config --whitelist $TEST_WHITELIST &> /dev/null
+
 
    # Also blacklist external packages
    local all_pkgs source_pkgs blacklist_pkgs
