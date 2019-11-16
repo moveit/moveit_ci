@@ -86,6 +86,7 @@ function run_docker() {
         -e TEST_PKG \
         -e TEST \
         -e TEST_BLACKLIST \
+        -e TEST_WHITELIST \
         -e WARNINGS_OK \
         -e ABI_BASE_URL \
         -e CC=${CC_FOR_BUILD:-${CC:-cc}} \
@@ -300,6 +301,13 @@ function test_workspace() {
    TEST_BLACKLIST=$(unify_list " ,;" ${TEST_BLACKLIST:-})
    echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
    test -n "$TEST_BLACKLIST" && catkin config --blacklist $TEST_BLACKLIST &> /dev/null
+
+   # Consider TEST_WHITELIST
+   if [ -z "${TEST_WHITELIST:-}" ]; then
+     TEST_WHITELIST=$(unify_list " ,;" ${TEST_WHITELIST:-})
+     echo -e $(colorize GREEN Test blacklist: $(colorize THIN $TEST_WHITELIST))
+     test -n "$TEST_WHITELIST" && catkin config --whitelist $TEST_WHITELIST &> /dev/null
+   fi
 
    # Also blacklist external packages
    local all_pkgs source_pkgs blacklist_pkgs
