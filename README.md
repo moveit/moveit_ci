@@ -150,7 +150,7 @@ It's also possible to run the script without using docker. To this end, issue th
 For codecov to work you need to build and link your C++ code with specific parameters.  To enable this we use the ROS package [code_coverage](https://github.com/mikeferguson/code_coverage).  Using the `code-coverage` test in your repo requires the following two changes:
 
 1. Add `<test_depend>code_coverage</test_depend>` to your package.xml
-1. Add this to your `CMakeLists.txt`:
+2. Add this to your `CMakeLists.txt`:
 
 ```cmake
 # to run: catkin_make -DENABLE_COVERAGE_TESTING=ON package_name_coverage
