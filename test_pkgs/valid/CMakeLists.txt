@@ -11,12 +11,13 @@ include_directories(
 )
 
 if (CATKIN_ENABLE_TESTING)
-  find_package(code_coverage REQUIRED)
-
-  if(ENABLE_COVERAGE_TESTING)
-    include(CodeCoverage)
-    APPEND_COVERAGE_COMPILER_FLAGS()
-  endif()
-
   catkin_add_gtest(${PROJECT_NAME} test.cpp)
+endif()
+
+# to run: catkin_make -DENABLE_COVERAGE_TESTING=ON package_name_coverage
+if(CATKIN_ENABLE_TESTING AND ENABLE_COVERAGE_TESTING)
+	find_package(code_coverage REQUIRED)   # catkin package ros-*-code-coverage
+  include(CodeCoverage)
+  APPEND_COVERAGE_COMPILER_FLAGS()
+  add_code_coverage(NAME ${PROJECT_NAME}_coverage)
 endif()
