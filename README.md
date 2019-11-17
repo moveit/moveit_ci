@@ -159,7 +159,6 @@ if(CATKIN_ENABLE_TESTING AND ENABLE_COVERAGE_TESTING)
   include(CodeCoverage)
   APPEND_COVERAGE_COMPILER_FLAGS()
   set(COVERAGE_EXCLUDES "*/test/*")
-  add_code_coverage(NAME ${PROJECT_NAME}_coverage)
 endif()
 ```
 
