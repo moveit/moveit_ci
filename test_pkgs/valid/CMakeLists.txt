@@ -14,7 +14,6 @@ if(CATKIN_ENABLE_TESTING)
   catkin_add_gtest(${PROJECT_NAME} test.cpp)
 endif()
 
-# to run: catkin_make -DENABLE_COVERAGE_TESTING=ON package_name_coverage
 if(CATKIN_ENABLE_TESTING AND ENABLE_COVERAGE_TESTING)
   find_package(code_coverage REQUIRED)   # catkin package ros-*-code-coverage
   include(CodeCoverage)
