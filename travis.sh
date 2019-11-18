@@ -299,7 +299,7 @@ echo -e $(colorize YELLOW "Testing branch '${TRAVIS_BRANCH:-}' of '${REPOSITORY_
 echo "Inside Docker container"
 
 export ROS_WS=${ROS_WS:-/root/ros_ws} # default location of ROS workspace, if not defined differently in docker container
-CMAKE_ARGS=""
+CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE=-O3"
 
 # Prepend current dir if path is not yet absolute
 [[ "$MOVEIT_CI_DIR" != /* ]] && MOVEIT_CI_DIR=$PWD/$MOVEIT_CI_DIR
