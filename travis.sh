@@ -22,6 +22,7 @@ source ${MOVEIT_CI_DIR}/util.sh
 # Adding the SSH key to the ssh-agent
 setup_ssh_keys()
 {
+  test -f ~/.ssh/id_rsa || return 0
   eval "$(ssh-agent -s)"
   ssh-add ~/.ssh/id_rsa
 }
