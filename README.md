@@ -147,7 +147,7 @@ It's also possible to run the script without using docker. To this end, issue th
 
 ## Enabling codecov.io reporting
 
-For codecov to work you need to build and link your C++ code with specific parameters.  To enable this we use the ROS package [code_coverage](https://github.com/mikeferguson/code_coverage).  Using the `code-coverage` test in your repo requires the following three changes:
+For codecov to work you need to build and link your C++ code with specific parameters.  To enable this we use the ROS package [code_coverage](https://github.com/mikeferguson/code_coverage).  Using the `code-coverage` test in your repo requires the following two changes:
 
 1. Add `<test_depend>code_coverage</test_depend>` to your package.xml
 2. Add this to your `CMakeLists.txt`:
@@ -159,13 +159,6 @@ if(CATKIN_ENABLE_TESTING AND ENABLE_COVERAGE_TESTING)
   include(CodeCoverage)
   APPEND_COVERAGE_COMPILER_FLAGS()
 endif()
-```
-
-3. Add a `.codecov.yml` file to your project root to specifiy what codecov.io's script should ignore:
-
-```yaml
-ignore:
-  - "**/test/.*"
 ```
 
 Then you can use the `code-coverage` test and it will run the script provided by [codecov.io](codecov.io) which runs `gcov` to generate the reports and then compiles them into a report and uploads them to their servers.
