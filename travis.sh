@@ -390,7 +390,8 @@ for t in $(unify_list " ,;" "$TEST") ; do
          test $? -eq 0 || result=$(( ${result:-0} + 1 ))
          ;;
       code-coverage)
-         travis_run --title "codecov.io report upload" bash <(curl -s https://codecov.io/bash) -s $ROS_WS -R $ROS_WS/src/$REPOSITORY_NAME
+         travis_run --title "codecov.io report upload" bash <(curl -s https://codecov.io/bash) \
+            -s $ROS_WS -R $ROS_WS/src/$REPOSITORY_NAME -g '*/test/*'
          ;;
    esac
 done
