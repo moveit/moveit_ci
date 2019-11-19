@@ -283,7 +283,7 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # If test whitelist is set, explicitly build that project
-   if [ "${TEST_WHITELIST:-:-}" ]; then
+   if [ "${TEST_WHITELIST:-}" ]; then
       # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
       travis_run_wait 60 --title "catkin build ${TEST_WHITELIST}" catkin build $TEST_WHITELIST --no-status --summarize
    else
