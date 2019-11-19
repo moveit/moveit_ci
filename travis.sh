@@ -282,8 +282,14 @@ function build_workspace() {
    # Console output fix for: "WARNING: Could not encode unicode characters"
    export PYTHONIOENCODING=UTF-8
 
-   # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize
+   # If test whitelist is set, explicitly build that project
+   if [ "${TEST_WHITELIST:-:-}" ]; then
+      # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
+      travis_run_wait 60 --title "catkin build ${TEST_WHITELIST}" catkin build $TEST_WHITELIST --no-status --summarize
+   else
+      # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
+      travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize
+   fi
 
    # Allow to verify ccache usage
    travis_run --title "ccache statistics" ccache -s
