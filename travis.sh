@@ -399,7 +399,7 @@ for t in $(unify_list " ,;" "$TEST") ; do
          # redirect output to avoid failures due to filling up logs
          travis_run --title "codeco1v.io report upload" \
             bash <(curl -s https://codecov.io/bash) -s $ROS_WS \
-            -R $ROS_WS/src/$REPOSITORY_NAME -g '*/test/*' 2> dev/null
+            -R $ROS_WS/src/$REPOSITORY_NAME -g '*/test/*' 2> /dev/null
          ;;
    esac
 done
