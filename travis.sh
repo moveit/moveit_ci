@@ -285,17 +285,12 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # Set compile flag to improve ccache hit rate
-   export CXXFLAGS="$CXXFLAGS -fdebug-prefix-map=$(pwd)=."
+   export CXXFLAGS="${CXXFLAGS:-} -fdebug-prefix-map=$(pwd)=."
    echo "CXXFLAGS = $CXXFLAGS"
 
    # If test whitelist is set, explicitly build that project
-   if [ "${TEST_WHITELIST:-}" ]; then
-      # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-      travis_run_wait 60 --title "catkin build ${TEST_WHITELIST}" catkin build $TEST_WHITELIST --no-status --summarize
-   else
-      # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-      travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize
-   fi
+   # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
+   travis_run_wait 60 --title "catkin build ${TEST_WHITELIST:-}" catkin build ${TEST_WHITELIST:-} --no-status --summarize
 
    # Allow to verify ccache usage
    travis_run --title "ccache statistics" ccache -s
