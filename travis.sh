@@ -286,7 +286,7 @@ function build_workspace() {
 
    # Set compile flag to improve ccache hit rate
    export CXXFLAGS="${CXXFLAGS:-} -fdebug-prefix-map=$(pwd)=."
-   echo "CXXFLAGS = $CXXFLAGS"
+   export CCACHE_BASEDIR=$(pwd)
 
    # If test whitelist is set, explicitly build that project
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
