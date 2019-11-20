@@ -282,6 +282,10 @@ function build_workspace() {
    # Console output fix for: "WARNING: Could not encode unicode characters"
    export PYTHONIOENCODING=UTF-8
 
+   # Set compile flag to improve ccache hit rate
+   export CXXFLAGS="$CXXFLAGS -fdebug-prefix-map=$(pwd)=."
+   echo "CXXFLAGS = $CXXFLAGS"
+
    # If test whitelist is set, explicitly build that project
    if [ "${TEST_WHITELIST:-}" ]; then
       # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
