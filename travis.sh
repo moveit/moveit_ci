@@ -396,14 +396,18 @@ for t in $(unify_list " ,;" "$TEST") ; do
          test $? -eq 0 || result=$(( ${result:-0} + 1 ))
          ;;
       code-coverage)
-         # Run gcov manually to redirect its output to /dev/null
-         gcov_ignore="-not -path '*/test/*'"
-         travis_run --title "Running gcov" \
-            find $ROS_WS -type f -name '*.gcno' $gcov_ignore -execdir gcov -pb {} + > /dev/null
-         # Run codecov.io's script to collect and upload reports
-         travis_run --title "Collect and upload reports to codecov.io" \
-            bash <(curl -s https://codecov.io/bash) -Z -X gcov -s $ROS_WS \
-            -R $ROS_WS/src/$REPOSITORY_NAME | grep -ve "\w+\+"
+         travis_fold start codecov.io "Generate and upload code coverage report"
+         # Capture coverage info
+         travis_run "lcov --capture --directory $ROS_WS --output-file coverage.info | grep -ve '^Processing'"
+         # Extract repository files
+         travis_run "lcov --extract coverage.info \"$ROS_WS/src/$REPOSITORY_NAME/*\" --output-file coverage.info | grep -ve '^Extracting'"
+         # Filter out test files
+         travis_run "lcov --remove coverage.info '*/test/*' --output-file coverage.info | grep -ve '^Removing'"
+         # Output coverage data for debugging
+         travis_run "lcov --list coverage.info"
+         # Upload to codecov.io: -f specifies file(s) to upload and disables manual coverage gathering
+         travis_run --title "Upload report" bash <(curl -s https://codecov.io/bash) -f coverage.info
+         travis_fold end codecov.io
          ;;
    esac
 done
