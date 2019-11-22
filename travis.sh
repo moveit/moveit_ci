@@ -86,6 +86,7 @@ function run_docker() {
         -e TRAVIS_OS_NAME \
         -e TEST_PKG \
         -e TEST \
+        -e PKG_WHITELIST \
         -e TEST_BLACKLIST \
         -e WARNINGS_OK \
         -e ABI_BASE_URL \
@@ -279,7 +280,7 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize
+   travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize ${PKG_WHITELIST:-}
 
    # Allow to verify ccache usage
    travis_run --title "ccache statistics" ccache -s
@@ -306,9 +307,9 @@ function test_workspace() {
    test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist_pkgs &> /dev/null
 
    # Build tests
-   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests --
+   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests -- ${PKG_WHITELIST:-}
    # Run tests, suppressing the output (confuses Travis display?)
-   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize 2>/dev/null"
+   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize ${PKG_WHITELIST:-} 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "catkin_test_results"
