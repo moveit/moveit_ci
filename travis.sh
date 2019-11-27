@@ -406,7 +406,7 @@ for t in $(unify_list " ,;" "$TEST") ; do
          # Output coverage data for debugging
          travis_run "lcov --list coverage.info"
          # Upload to codecov.io: -f specifies file(s) to upload and disables manual coverage gathering
-         travis_run --title "Upload report" bash <(curl -s https://codecov.io/bash) -f coverage.info
+         travis_run --title "Upload report" bash <(curl -s https://codecov.io/bash) -f coverage.info -R $ROS_WS/src/$REPOSITORY_NAME
          travis_fold end codecov.io
          ;;
    esac
