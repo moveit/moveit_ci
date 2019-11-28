@@ -49,6 +49,9 @@ function docker_cp {
 function run_docker() {
    run_script BEFORE_DOCKER_SCRIPT
 
+    # Get CI enviroment parameters to pass into docker for codecov
+    [[ "${TEST:=}" == *code-coverage* ]] && CI_ENV_PARAMS=`bash <(curl -s https://codecov.io/env)`
+
     # Choose the docker container to use
     if [ -n "${ROS_REPO:=}" ] && [ -n "${DOCKER_IMAGE:=}" ]; then
        echo -e $(colorize YELLOW "DOCKER_IMAGE=$DOCKER_IMAGE overrides ROS_REPO=$ROS_REPO setting")
@@ -86,6 +89,7 @@ function run_docker() {
         -e TRAVIS_OS_NAME \
         -e TEST_PKG \
         -e TEST \
+        -e PKG_WHITELIST \
         -e TEST_BLACKLIST \
         -e WARNINGS_OK \
         -e ABI_BASE_URL \
@@ -93,6 +97,8 @@ function run_docker() {
         -e CXX=${CXX_FOR_BUILD:-${CXX:-c++}} \
         -e CFLAGS \
         -e CXXFLAGS \
+        -e CCACHE_MAXSIZE \
+        ${CI_ENV_PARAMS:-} \
         -v $(pwd):/root/$REPOSITORY_NAME \
         -v ${CCACHE_DIR:-$HOME/.ccache}:/root/.ccache \
         -t \
@@ -143,8 +149,13 @@ function update_system() {
        travis_run --retry apt-get -qq install -y python-pip
        travis_run --retry pip install catkin_lint
    fi
+   # Install curl/lcov if needed
+   [[ "${TEST:=}" == *code-coverage* ]] && travis_run --retry apt-get -qq install -y curl lcov
+
    # Enable ccache
    export PATH=/usr/lib/ccache:$PATH
+   # Reset statistics
+   ccache -z
 
    # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
    travis_run --retry rosdep update
@@ -174,6 +185,10 @@ function run_early_tests() {
             ;;
          abi)  # abi-checker requires debug symbols
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG=\"-g -Og\""
+            ;;
+         code-coverage) # code coverage test requres specific compiler and linker arguments
+            CFLAGS="${CFLAGS:-} --coverage"
+            CXXFLAGS="${CXXFLAGS:-} --coverage"
             ;;
          *)
             echo -e $(colorize RED "Unknown TEST: $t")
@@ -279,10 +294,7 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize
-
-   # Allow to verify ccache usage
-   travis_run --title "ccache statistics" ccache -s
+   travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize ${PKG_WHITELIST:-}
 }
 
 function test_workspace() {
@@ -306,9 +318,9 @@ function test_workspace() {
    test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist_pkgs &> /dev/null
 
    # Build tests
-   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests --
+   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests -- ${PKG_WHITELIST:-}
    # Run tests, suppressing the output (confuses Travis display?)
-   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize 2>/dev/null"
+   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize ${PKG_WHITELIST:-} 2>/dev/null"
 
    # Show failed tests
    travis_fold start test.results "catkin_test_results"
@@ -358,6 +370,8 @@ test ${WARNINGS_OK:=true} == true -o "$WARNINGS_OK" == 1 -o "$WARNINGS_OK" == ye
 
 # Define CC/CXX defaults and print compiler version info
 travis_run --title "CXX compiler info" $CXX --version
+export CFLAGS
+export CXXFLAGS
 
 update_system
 setup_ssh_keys
@@ -367,6 +381,8 @@ run_early_tests
 
 build_workspace
 test_workspace
+# Allow to verify ccache usage
+travis_run --title "ccache statistics" ccache -s
 
 # Run all remaining tests
 for t in $(unify_list " ,;" "$TEST") ; do
@@ -378,6 +394,20 @@ for t in $(unify_list " ,;" "$TEST") ; do
       abi)
          (source ${MOVEIT_CI_DIR}/check_abi.sh)
          test $? -eq 0 || result=$(( ${result:-0} + 1 ))
+         ;;
+      code-coverage)
+         travis_fold start codecov.io "Generate and upload code coverage report"
+         # Capture coverage info
+         travis_run "lcov --capture --directory $ROS_WS --output-file coverage.info | grep -ve '^Processing'"
+         # Extract repository files
+         travis_run "lcov --extract coverage.info \"$ROS_WS/src/$REPOSITORY_NAME/*\" --output-file coverage.info | grep -ve '^Extracting'"
+         # Filter out test files
+         travis_run "lcov --remove coverage.info '*/test/*' --output-file coverage.info | grep -ve '^Removing'"
+         # Output coverage data for debugging
+         travis_run "lcov --list coverage.info"
+         # Upload to codecov.io: -f specifies file(s) to upload and disables manual coverage gathering
+         travis_run --title "Upload report" bash <(curl -s https://codecov.io/bash) -f coverage.info -R $ROS_WS/src/$REPOSITORY_NAME
+         travis_fold end codecov.io
          ;;
    esac
 done
