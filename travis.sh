@@ -19,6 +19,14 @@ MOVEIT_CI_TRAVIS_TIMEOUT=${MOVEIT_CI_TRAVIS_TIMEOUT:-47}  # 50min minus safety m
 # Helper functions
 source ${MOVEIT_CI_DIR}/util.sh
 
+# Adding the SSH key to the ssh-agent
+setup_ssh_keys()
+{
+  test -f ~/.ssh/id_rsa || return 0
+  eval "$(ssh-agent -s)"
+  ssh-add ~/.ssh/id_rsa
+}
+
 # colcon output handling
 COLCON_EVENT_HANDLING="--event-handlers desktop_notification- status-"
 
@@ -33,8 +41,19 @@ function run_script() {
    fi
 }
 
+# work-around for https://github.com/moby/moby/issues/34096
+# ensures that copied files are owned by the target user
+function docker_cp {
+  set -o pipefail
+  tar --numeric-owner --owner="${docker_uid:-root}" --group="${docker_gid:-root}" -c -f - -C "$(dirname "$1")" "$(basename "$1")" | docker cp - "$2"
+  set +o pipefail
+}
+
 function run_docker() {
    run_script BEFORE_DOCKER_SCRIPT
+
+    # Get CI enviroment parameters to pass into docker for codecov
+    [[ "${TEST:=}" == *code-coverage* ]] && CI_ENV_PARAMS=`bash <(curl -s https://codecov.io/env)`
 
     # Choose the docker container to use
     if [ -n "${ROS_REPO:=}" ] && [ -n "${DOCKER_IMAGE:=}" ]; then
@@ -43,17 +62,25 @@ function run_docker() {
     if [ -z "${DOCKER_IMAGE:=}" ]; then
        test -z "${ROS_DISTRO:-}" && echo -e $(colorize RED "ROS_DISTRO not defined: cannot infer docker image") && exit 2
        case "${ROS_REPO:-ros}" in
-          ros) export DOCKER_IMAGE=moveit/moveit2:$ROS_DISTRO-ci ;;
-          ros-shadow-fixed) export DOCKER_IMAGE=moveit/moveit:$ROS_DISTRO-ci-shadow-fixed ;;
-          *) echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros' or 'ros-shadow-fixed'"); exit 1 ;;
+          ros|main)
+             export DOCKER_IMAGE=moveit/moveit2:$ROS_DISTRO-ci
+             ;;
+          ros-shadow-fixed|ros-testing)
+             export DOCKER_IMAGE=moveit/moveit2:$ROS_DISTRO-ci-shadow-fixed
+             ;;
+          *)
+             echo -e $(colorize RED "Unsupported ROS_REPO=$ROS_REPO. Use 'ros' or 'ros-shadow-fixed'");
+             exit 1
+             ;;
        esac
     fi
 
     echo -e $(colorize BOLD "Starting Docker image: $DOCKER_IMAGE")
     travis_run docker pull $DOCKER_IMAGE
 
+    local cid
     # Run travis.sh again, but now within Docker container
-    docker run \
+    cid=$(docker create \
         -e IN_DOCKER=1 \
         -e MOVEIT_CI_TRAVIS_TIMEOUT=$(travis_timeout $MOVEIT_CI_TRAVIS_TIMEOUT) \
         -e BEFORE_SCRIPT \
@@ -65,6 +92,7 @@ function run_docker() {
         -e TRAVIS_OS_NAME \
         -e TEST_PKG \
         -e TEST \
+        -e PKG_WHITELIST \
         -e TEST_BLACKLIST \
         -e WARNINGS_OK \
         -e ABI_BASE_URL \
@@ -72,11 +100,26 @@ function run_docker() {
         -e CXX=${CXX_FOR_BUILD:-${CXX:-c++}} \
         -e CFLAGS \
         -e CXXFLAGS \
+        -e CCACHE_MAXSIZE \
+        ${CI_ENV_PARAMS:-} \
         -v $(pwd):/root/$REPOSITORY_NAME \
         -v ${CCACHE_DIR:-$HOME/.ccache}:/root/.ccache \
         -t \
         -w /root/$REPOSITORY_NAME \
-        $DOCKER_IMAGE /root/$REPOSITORY_NAME/.moveit_ci/travis.sh
+        $DOCKER_IMAGE /root/$REPOSITORY_NAME/.moveit_ci/travis.sh)
+
+    # detect user inside container
+    local docker_image
+    docker_image=$(docker inspect --format='{{.Config.Image}}' "$cid")
+    docker_uid=$(docker run --rm "$docker_image" id -u)
+    docker_gid=$(docker run --rm "$docker_image" id -g)
+    # pass common credentials to container
+    if [ -d "$HOME/.ssh" ]; then
+      docker_cp "$HOME/.ssh" "$cid:/root/"
+    fi
+
+    docker start -a "$cid"
+
     result=$?
 
     echo
@@ -96,7 +139,7 @@ function update_system() {
    # Make sure the packages are up-to-date
    travis_run --retry apt-get -qq dist-upgrade
    # Install required packages (if not yet provided by docker container)
-   travis_run --retry apt-get -qq install -y curl sudo xvfb mesa-utils ccache
+   travis_run --retry apt-get -qq install -y curl sudo xvfb mesa-utils ccache ssh
 
    # Install clang-format if needed
    [[ "${TEST:=}" == *clang-format* ]] && travis_run --retry apt-get -qq install -y clang-format-3.9
@@ -104,8 +147,13 @@ function update_system() {
    [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy-6.0 clang-6.0
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
    [[ "$TEST" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools-6.0
+   # Install curl/lcov if needed
+   [[ "${TEST:=}" == *code-coverage* ]] && travis_run --retry apt-get -qq install -y curl lcov
+
    # Enable ccache
    export PATH=/usr/lib/ccache:$PATH
+   # Reset statistics
+   ccache -z
 
    # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
    travis_run --retry rosdep update
@@ -136,6 +184,10 @@ function run_early_tests() {
             ;;
          abi)  # abi-checker requires debug symbols
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG=\"-g -Og\""
+            ;;
+         code-coverage) # code coverage test requres specific compiler and linker arguments
+            CFLAGS="${CFLAGS:-} --coverage"
+            CXXFLAGS="${CXXFLAGS:-} --coverage"
             ;;
          *)
             echo -e $(colorize RED "Unknown TEST: $t")
@@ -244,9 +296,6 @@ function build_workspace() {
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
    COLCON_CMAKE_ARGS="--cmake-args $CMAKE_ARGS --catkin-cmake-args $CMAKE_ARGS --ament-cmake-args $CMAKE_ARGS"
    travis_run_wait 60 --title "colcon build" colcon build $COLCON_CMAKE_ARGS $COLCON_EVENT_HANDLING
-
-   # Allow to verify ccache usage
-   travis_run --title "ccache statistics" ccache -s
 }
 
 function test_workspace() {
@@ -318,14 +367,19 @@ test ${WARNINGS_OK:=true} == true -o "$WARNINGS_OK" == 1 -o "$WARNINGS_OK" == ye
 
 # Define CC/CXX defaults and print compiler version info
 travis_run --title "CXX compiler info" $CXX --version
+export CFLAGS
+export CXXFLAGS
 
 update_system
+setup_ssh_keys
 run_xvfb
 prepare_ros_workspace
 run_early_tests
 
 build_workspace
 test_workspace
+# Allow to verify ccache usage
+travis_run --title "ccache statistics" ccache -s
 
 # Run all remaining tests
 for t in $(unify_list " ,;" "$TEST") ; do
@@ -337,6 +391,20 @@ for t in $(unify_list " ,;" "$TEST") ; do
       abi)
          (source ${MOVEIT_CI_DIR}/check_abi.sh)
          test $? -eq 0 || result=$(( ${result:-0} + 1 ))
+         ;;
+      code-coverage)
+         travis_fold start codecov.io "Generate and upload code coverage report"
+         # Capture coverage info
+         travis_run "lcov --capture --directory $ROS_WS --output-file coverage.info | grep -ve '^Processing'"
+         # Extract repository files
+         travis_run "lcov --extract coverage.info \"$ROS_WS/src/$REPOSITORY_NAME/*\" --output-file coverage.info | grep -ve '^Extracting'"
+         # Filter out test files
+         travis_run "lcov --remove coverage.info '*/test/*' --output-file coverage.info | grep -ve '^Removing'"
+         # Output coverage data for debugging
+         travis_run "lcov --list coverage.info"
+         # Upload to codecov.io: -f specifies file(s) to upload and disables manual coverage gathering
+         travis_run --title "Upload report" bash <(curl -s https://codecov.io/bash) -f coverage.info -R $ROS_WS/src/$REPOSITORY_NAME
+         travis_fold end codecov.io
          ;;
    esac
 done
