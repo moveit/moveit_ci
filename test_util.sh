@@ -73,10 +73,10 @@ TIMING_START="travis_time:start:[[:xdigit:]]+"
 TIMING_END="travis_time:end:[[:xdigit:]]+:start=[[:digit:]]+,finish=[[:digit:]]+,duration=[[:digit:]]+"
 # signatures of start / end folding tag given a specific fold name
 function FOLDING_START() {
-	echo "ci_fold:start:${1:-moveit_ci}\."
+	echo "travis_fold:start:${1:-moveit_ci}\."
 }
 function FOLDING_END() {
-	echo "ci_fold:end:${1:-moveit_ci}\."
+	echo "travis_fold:end:${1:-moveit_ci}\."
 }
 
 function test_summary() {
