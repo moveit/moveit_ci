@@ -76,6 +76,12 @@ travis_timeout() {
   return $result
 }
 
+# ci_fold (start|end) [name] [message]
+ci_fold() {
+  # TODO(tylerjw): test what CI system we are on and run the appropriate fold
+  gitlab_fold $1 $2 $3
+}
+
 # travis_fold (start|end) [name] [message]
 travis_fold() {
   # option -g declares those arrays globally!
@@ -111,6 +117,43 @@ travis_fold() {
   fi
   # actually generate the fold tag for travis
   echo -en "travis_fold:${action}:${name}.${_TRAVIS_FOLD_COUNTERS[$name]}\\r${ANSI_CLEAR}${message}"
+}
+
+# gitlab_fold (start|end) [name] [message]
+gitlab_fold() {
+  # option -g declares those arrays globally!
+  declare -ag _FOLD_NAME_STACK  # "stack" array to hold name hierarchy
+  declare -Ag _TRAVIS_FOLD_COUNTERS  # associated array to hold global counters
+
+  local action="$1"
+  local name="${2:-moveit_ci}"  # name defaults to moveit_ci
+  name="${name/ /.}"  # replace spaces with dots in name
+  local message="${3:-}"
+  test -n "$message" && message="$(colorize BLUE BOLD $3)\\n"  # print message in bold blue by default
+
+  local old_ustatus=${-//[^u]/}
+  set +u  # disable checking for unbound variables for the next line
+  local length=${#_FOLD_NAME_STACK[@]}
+  test -n "$old_ustatus" && set -u  # restore variable checking option
+
+  if [ "$action" == "start" ] ; then
+    # push name to stack
+    _FOLD_NAME_STACK[$length]=$name
+    # increment (or initialize) matching counter
+    let "_TRAVIS_FOLD_COUNTERS[$name]=${_TRAVIS_FOLD_COUNTERS[$name]:=0} + 1"
+  else
+    action="end"
+    message=""  # only start action may have a message
+    # pop name from stack
+    let "length -= 1"
+    test $length -lt 0 && \
+       echo -e "Missing gitlab_fold start before gitlab_fold end $name" && exit 1
+    test "${_FOLD_NAME_STACK[$length]}" != "$name" && \
+       echo "'gitlab_fold end $name' not matching to previous gitlab_fold start ${_FOLD_NAME_STACK[$length]}" && exit 1
+    unset '_FOLD_NAME_STACK[$length]'
+  fi
+  # actually generate the fold tag for travis
+  echo -en "section_${action}:$(date +%s):${message}\r\e[0K"
 }
 
 
@@ -228,10 +271,10 @@ travis_run_simple() {
 
 # Run command(s) with folding and timing, ignoring failure
 travis_run_true() {
-  travis_fold start
+  ci_fold start
     travis_run_simple --no-assert "$@"
     local result=$?
-  travis_fold end
+  ci_fold end
   return $result
 }
 

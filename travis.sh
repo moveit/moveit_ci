@@ -129,7 +129,7 @@ function run_docker() {
 }
 
 function update_system() {
-   travis_fold start update "Updating system packages"
+   ci_fold start update "Updating system packages"
    # Update the sources
    travis_run --retry apt-get -qq update
 
@@ -160,7 +160,7 @@ function update_system() {
    # Setup rosdep - note: "rosdep init" is already setup in base ROS Docker image
    travis_run --retry rosdep update
 
-   travis_fold end update
+   ci_fold end update
 }
 
 function run_early_tests() {
@@ -201,15 +201,15 @@ function run_early_tests() {
 
 # Install and run xvfb to allow for X11-based unittests on DISPLAY :99
 function run_xvfb() {
-   travis_fold start xvfb "Starting virtual X11 server to allow for X11-based unit tests"
+   ci_fold start xvfb "Starting virtual X11 server to allow for X11-based unit tests"
    travis_run "Xvfb -screen 0 640x480x24 :99 &"
    export DISPLAY=:99.0
    travis_run_true glxinfo -B
-   travis_fold end xvfb
+   ci_fold end xvfb
 }
 
 function prepare_ros_workspace() {
-   travis_fold start ros.ws "Setting up ROS workspace"
+   ci_fold start ros.ws "Setting up ROS workspace"
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
 
@@ -282,7 +282,7 @@ function prepare_ros_workspace() {
 
    # Validate that we have some packages to build
    test -z "$(catkin list)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
-   travis_fold end ros.ws
+   ci_fold end ros.ws
 }
 
 function build_workspace() {
@@ -323,11 +323,11 @@ function test_workspace() {
    travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize ${PKG_WHITELIST:-} 2>/dev/null"
 
    # Show failed tests
-   travis_fold start test.results "catkin_test_results"
+   ci_fold start test.results "catkin_test_results"
    for file in $(catkin_test_results | grep "\.xml:" | cut -d ":" -f1); do
       travis_run --display "Test log of $file" cat $file
    done
-   travis_fold end test.results
+   ci_fold end test.results
 
    # Show test results summary and throw error if necessary
    catkin_test_results || exit 2
@@ -396,7 +396,7 @@ for t in $(unify_list " ,;" "$TEST") ; do
          test $? -eq 0 || result=$(( ${result:-0} + 1 ))
          ;;
       code-coverage)
-         travis_fold start codecov.io "Generate and upload code coverage report"
+         ci_fold start codecov.io "Generate and upload code coverage report"
          # Capture coverage info
          travis_run "lcov --capture --directory $ROS_WS --output-file coverage.info | grep -ve '^Processing'"
          # Extract repository files
@@ -407,7 +407,7 @@ for t in $(unify_list " ,;" "$TEST") ; do
          travis_run "lcov --list coverage.info"
          # Upload to codecov.io: -f specifies file(s) to upload and disables manual coverage gathering
          travis_run --title "Upload report" bash <(curl -s https://codecov.io/bash) -f coverage.info -R $ROS_WS/src/$REPOSITORY_NAME
-         travis_fold end codecov.io
+         ci_fold end codecov.io
          ;;
    esac
 done

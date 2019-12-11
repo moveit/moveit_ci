@@ -73,10 +73,10 @@ TIMING_START="travis_time:start:[[:xdigit:]]+"
 TIMING_END="travis_time:end:[[:xdigit:]]+:start=[[:digit:]]+,finish=[[:digit:]]+,duration=[[:digit:]]+"
 # signatures of start / end folding tag given a specific fold name
 function FOLDING_START() {
-	echo "travis_fold:start:${1:-moveit_ci}\."
+	echo "ci_fold:start:${1:-moveit_ci}\."
 }
 function FOLDING_END() {
-	echo "travis_fold:end:${1:-moveit_ci}\."
+	echo "ci_fold:end:${1:-moveit_ci}\."
 }
 
 function test_summary() {
@@ -104,7 +104,7 @@ function run_test() {
 	local escape=$(colorize YELLOW BOLD \\\")
 	local comment
 
-	travis_fold start unittest "$(colorize YELLOW Running test:) $description"
+	ci_fold start unittest "$(colorize YELLOW Running test:) $description"
 	travis_run_true --title "Create ROS workspace" mkdir "$ROS_WS"
 	( # Run actual test in sub shell
 		echo -e $(colorize BOLD "Test environment:")
@@ -130,7 +130,7 @@ function run_test() {
 	)
 	result=$?
 	travis_run_true --title "Remove ROS workspace" rm -r "$ROS_WS"
-	travis_fold end unittest # close fold before reporting error
+	ci_fold end unittest # close fold before reporting error
 
 	if [ $result -ne $expected ] ; then
 		let "FAILED += 1"

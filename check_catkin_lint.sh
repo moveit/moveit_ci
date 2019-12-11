@@ -3,7 +3,7 @@
 # Author:  Robert Haschke
 # Desc: Check for warnings during build process of repo $CI_SOURCE_PATH
 
-travis_fold start check.catkin_lint "Checking for issues reported by catkin_lint"
+ci_fold start check.catkin_lint "Checking for issues reported by catkin_lint"
 
 # Skip external packages
 all_pkgs=$(catkin_topological_order $ROS_WS --only-names 2> /dev/null)
@@ -16,7 +16,7 @@ travis_run --title "Running catkin_lint" catkin_lint $skip_args $ROS_WS
 result=$?
 
 # Finish fold before printing result summary
-travis_fold end check.catkin_lint
+ci_fold end check.catkin_lint
 
 if [ $result -eq 0 ] ; then
   echo -e $(colorize GREEN "No catkin_lint issues reported.")
