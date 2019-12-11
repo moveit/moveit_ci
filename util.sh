@@ -76,12 +76,6 @@ travis_timeout() {
   return $result
 }
 
-# ci_fold (start|end) [name] [message]
-ci_fold() {
-  # TODO(tylerjw): test what CI system we are on and run the appropriate fold
-  gitlab_fold $1 $2 $3
-}
-
 # travis_fold (start|end) [name] [message]
 travis_fold() {
   # option -g declares those arrays globally!
@@ -153,7 +147,7 @@ gitlab_fold() {
     unset '_FOLD_NAME_STACK[$length]'
   fi
   # actually generate the fold tag for travis
-  echo -en "section_${action}:$(date +%s):${message}\r\e[0K"
+  echo -en "section_${action}:$(date +%s):${message} (${name})\r\e[0K"
 }
 
 
@@ -271,10 +265,10 @@ travis_run_simple() {
 
 # Run command(s) with folding and timing, ignoring failure
 travis_run_true() {
-  ci_fold start
+  gitlab_fold start
     travis_run_simple --no-assert "$@"
     local result=$?
-  ci_fold end
+  gitlab_fold end
   return $result
 }
 

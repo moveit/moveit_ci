@@ -104,7 +104,7 @@ function run_test() {
 	local escape=$(colorize YELLOW BOLD \\\")
 	local comment
 
-	ci_fold start unittest "$(colorize YELLOW Running test:) $description"
+	gitlab_fold start unittest "$(colorize YELLOW Running test:) $description"
 	travis_run_true --title "Create ROS workspace" mkdir "$ROS_WS"
 	( # Run actual test in sub shell
 		echo -e $(colorize BOLD "Test environment:")
@@ -130,7 +130,7 @@ function run_test() {
 	)
 	result=$?
 	travis_run_true --title "Remove ROS workspace" rm -r "$ROS_WS"
-	ci_fold end unittest # close fold before reporting error
+	gitlab_fold end unittest # close fold before reporting error
 
 	if [ $result -ne $expected ] ; then
 		let "FAILED += 1"

@@ -88,7 +88,7 @@ EOF
 }
 
 function abi_install() {
-	ci_fold start abi_check "Installing ABI checker and dependencies"
+	gitlab_fold start abi_check "Installing ABI checker and dependencies"
 	travis_run sudo apt-get install -y -qq wget elfutils perl links vtable-dumper
 
 	mkdir -p "${ABI_TMP_DIR}"
@@ -107,7 +107,7 @@ function abi_install() {
 
 	# make installed binaries available
 	export PATH=$ABI_TMP_DIR/bin:$PATH
-	ci_fold end abi_check
+	gitlab_fold end abi_check
 }
 
 function abi_dump() {

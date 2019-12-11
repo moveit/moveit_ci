@@ -2,7 +2,7 @@
 #
 # Author:  Dave Coleman
 
-ci_fold start clang.format "Running clang-format check"
+gitlab_fold start clang.format "Running clang-format check"
 travis_run_simple --display "cd to repository source: $CI_SOURCE_PATH" cd $CI_SOURCE_PATH
 
 # Install Dependencies
@@ -26,7 +26,7 @@ travis_have_fixes
 result=$?
 
 # Finish fold before printing result summary
-ci_fold end clang.format
+gitlab_fold end clang.format
 
 if [ $result -eq 1 ] ; then
   echo -e $(colorize GREEN "Passed clang-format check")

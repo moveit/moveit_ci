@@ -15,7 +15,7 @@ _travis_run_clang_tidy_fix() {
 
     for pkg in ${SOURCE_PKGS[@]} ; do  # process files in topological order
         test -z "${PKGS[$pkg]:-}" && continue  # skip pkgs without compile_commands.json
-        ci_fold start clang.tidy "  - $(colorize BLUE Processing $pkg)"
+        gitlab_fold start clang.tidy "  - $(colorize BLUE Processing $pkg)"
 
         # Find all .cpp files in pkg's src_dir that were added or modified in this pull request
         # If we are not processing a Travis pull request, check all files
@@ -26,7 +26,7 @@ _travis_run_clang_tidy_fix() {
             collect_modified_files modified_files "\.cpp$" $(realpath "${src_dir#*=}") $TRAVIS_BRANCH
             if [ ${#modified_files[@]} -eq 0 ]; then
                 echo "No modified .cpp files"
-                ci_fold end clang.tidy
+                gitlab_fold end clang.tidy
                 continue
             fi
         fi
@@ -34,11 +34,11 @@ _travis_run_clang_tidy_fix() {
         travis_run_simple --timeout $(travis_timeout) "$RUN_CLANG_TIDY_EXECUTABLE" -fix -p "${PKGS[$pkg]}" ${modified_files[@]:-} 2> /dev/null
         # if there are workspace changes, print broken pkg to file descriptor 3
         travis_have_fixes && 1>&3 echo $pkg || true  # should always succeed ;-)
-        ci_fold end clang.tidy
+        gitlab_fold end clang.tidy
     done
 }
 
-ci_fold start clang.tidy "Running clang-tidy check"
+gitlab_fold start clang.tidy "Running clang-tidy check"
 travis_run_simple --display "- cd to repository source: $CI_SOURCE_PATH" cd $CI_SOURCE_PATH
 
 # Ensure the base branch ($TRAVIS_BRANCH) is available
@@ -64,7 +64,7 @@ test $result -ne 0 && exit $result
 TAINTED_PKGS=$(< /tmp/clang-tidy.tainted)
 
 # Finish fold before printing result summary
-ci_fold end clang.tidy
+gitlab_fold end clang.tidy
 
 if [ -z "$TAINTED_PKGS" ] ; then
   echo -e $(colorize GREEN "Passed clang-tidy check")
