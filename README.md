@@ -153,7 +153,7 @@ image: moveit/moveit:master-ci
 before_script:
   - git clone --quiet --depth 1 https://github.com/ros-planning/moveit_ci.git .moveit_ci
   - sed -i -r "s/ssh:\/\/git@gitlab\.company\.com:9000/https:\/\/gitlab-ci-token:${CI_JOB_TOKEN}@gitlab\.company\.com/g" ${CI_PROJECT_DIR}/repo_name.rosinstall
-  - export TRAVIS_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  - export TRAVIS_BRANCH=$CI_COMMIT_BRANCH
   - export CXX=c++
   - export CC=cc
   - export ROS_DISTRO=melodic
