@@ -143,3 +143,28 @@ It's also possible to run the script without using docker. To this end, issue th
     export ROS_WS=/tmp/ros_ws        # define a new ROS workspace location
     mkdir $ROS_WS                    # and create it
     .moveit_ci/travis.sh
+
+## Run in Gitlab CI in docker runner
+
+When running in a Gitlab CI with the docker runner we instruct Gitlab CI which docker image we want and set the required enviroment variables.  Here is an example `gitlab-ci.yml` file.  A couple details to notice are the `sed` command that replaces ssh git remotes with one that uses the `gitlab-ci-token` over https and that you will need to define the enviroment variables for the compiler and how it uses `IN_DOCKER` to let the script know it is already in the docker image:
+
+```yaml
+image: moveit/moveit:master-ci
+before_script:
+  - git clone --quiet --depth 1 https://github.com/ros-planning/moveit_ci.git .moveit_ci
+  - sed -i -r "s/ssh:\/\/git@gitlab\.company\.com:9000/https:\/\/gitlab-ci-token:${CI_JOB_TOKEN}@gitlab\.company\.com/g" ${CI_PROJECT_DIR}/repo_name.rosinstall
+  - export TRAVIS_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  - export CXX=c++
+  - export CC=cc
+  - export ROS_DISTRO=melodic
+  - export UPSTREAM_WORKSPACE=repo_name.rosinstall
+  - export IN_DOCKER=1
+  - export CI_SOURCE_PATH=$PWD
+  - export ROS_WS=${HOME}/ros_ws
+  - mkdir $ROS_WS
+test:
+  tags:
+    - docker-runner
+  script:
+    - .moveit_ci/travis.sh
+```
