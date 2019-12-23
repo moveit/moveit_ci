@@ -16,6 +16,9 @@ export REPOSITORY_NAME=$(basename $PWD) # name of repository, travis originally 
 # If your project has a larger timeout, specify this variable in your .travis.yml file!
 MOVEIT_CI_TRAVIS_TIMEOUT=${MOVEIT_CI_TRAVIS_TIMEOUT:-47}  # 50min minus safety margin
 
+# Support variable for build timeout (default 60min)
+MOVEIT_CI_BUILD_TIMEOUT=${MOVEIT_CI_BUILD_TIMEOUT:-60}
+
 # Helper functions
 source ${MOVEIT_CI_DIR}/util.sh
 
@@ -294,7 +297,7 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize ${PKG_WHITELIST:-}
+   travis_run_wait $MOVEIT_CI_BUILD_TIMEOUT --title "catkin build" catkin build --no-status --summarize ${PKG_WHITELIST:-}
 }
 
 function test_workspace() {
