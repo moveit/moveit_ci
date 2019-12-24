@@ -241,7 +241,7 @@ travis_run() {
   travis_run_true --assert "$@"
 }
 
-# Run command(s) with a timeout (of 20min by default)
+# Run command(s) with a timeout (remaining time by default)
 travis_run_wait() {
   # parse first parameter as timeout and drop it if successful
   local timeout

@@ -294,7 +294,7 @@ function build_workspace() {
    export PYTHONIOENCODING=UTF-8
 
    # For a command that doesn’t produce output for more than 10 minutes, prefix it with travis_run_wait
-   travis_run_wait 60 --title "catkin build" catkin build --no-status --summarize ${PKG_WHITELIST:-}
+   travis_run_wait --title "catkin build" catkin build --no-status --summarize ${PKG_WHITELIST:-}
 }
 
 function test_workspace() {
