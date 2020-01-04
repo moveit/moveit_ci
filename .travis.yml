@@ -11,7 +11,7 @@ compiler: gcc
 notifications:
   email:
     recipients:
-       - dave@dav.ee
+       - tyler@picknik.ai
 env:
   global: # default values
     - ROS_DISTRO=melodic
