@@ -77,6 +77,7 @@ script:
   Setting this variable to a `http://` url, or a local file in your repository, will merge the corresponding `.rosinstall` file with [`wstool`](http://wiki.ros.org/wstool) into your workspace.
 Multiple sources can be given as a comma-, or semicolon-separated lists. Note: their order matters -- if the same resource is defined twice, only the first one is considered.
 - `TEST_BLACKLIST`: Allow certain tests to be skipped if necessary (not recommended).
+- `CATKIN_TEST_ARGS`: Allows to specify further Make arguments for test runs. This can be useful to enforce sequential ROS-tests (by [limiting the number of build jobs](https://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html#controlling-the-number-of-build-jobs) using `-j1`) or other custom build options.
 - `TEST`: list of additional tests to perform: clang-format, clang-tidy-check, clang-tidy-fix, catkin\_lint
 
 More configurations as seen in [industrial_ci](https://github.com/ros-industrial/industrial_ci) can be added in the future.

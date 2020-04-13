@@ -89,6 +89,7 @@ function run_docker() {
         -e TRAVIS_OS_NAME \
         -e TEST_PKG \
         -e TEST \
+        -e CATKIN_TEST_ARGS \
         -e PKG_WHITELIST \
         -e TEST_BLACKLIST \
         -e WARNINGS_OK \
@@ -320,7 +321,7 @@ function test_workspace() {
    # Build tests
    travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests -- ${PKG_WHITELIST:-}
    # Run tests
-   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize ${PKG_WHITELIST:-}"
+   travis_run_wait --title "catkin run_tests" catkin build --catkin-make-args run_tests -- --no-status --summarize ${CATKIN_TEST_ARGS:-} ${PKG_WHITELIST:-}
 
    # Show failed tests
    travis_fold start test.results "catkin_test_results"
