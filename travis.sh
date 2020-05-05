@@ -305,16 +305,17 @@ function test_workspace() {
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
    test -n "$old_ustatus" && set -u  # restore variable checking option
 
-   # Blacklist explicit and external packages
    local source_pkgs
    source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
-   source_pkgs=$(filter_out "$TEST_BLACKLIST" "$source_pkgs")
+   TEST_BLACKLIST=$(unify_list " ,;" ${TEST_BLACKLIST:-})
+   source_pkgs=$(filter_out "${TEST_BLACKLIST:-}" "$source_pkgs")
    echo -e $(colorize GREEN Source pkgs: $(colorize THIN $source_pkgs))
+   test -z "${PKG_WHITELIST:-}" && PKG_WHITELIST=$source_pkgs
 
    # Build tests
-   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests -- ${PKG_WHITELIST:source_pkgs}
+   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests -- ${PKG_WHITELIST}
    # Run tests
-   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize --no-deps ${PKG_WHITELIST:source_pkgs}"
+   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize --no-deps ${PKG_WHITELIST}"
 
    # Show failed tests
    travis_fold start test.results "catkin_test_results"
