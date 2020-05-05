@@ -305,22 +305,16 @@ function test_workspace() {
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
    test -n "$old_ustatus" && set -u  # restore variable checking option
 
-   # Consider TEST_BLACKLIST
-   TEST_BLACKLIST=$(unify_list " ,;" ${TEST_BLACKLIST:-})
-   echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
-   test -n "$TEST_BLACKLIST" && catkin config --blacklist $TEST_BLACKLIST &> /dev/null
-
-   # Also blacklist external packages
-   local all_pkgs source_pkgs blacklist_pkgs
-   all_pkgs=$(catkin_topological_order $ROS_WS/src --only-names)
+   # Blacklist explicit and external packages
+   local source_pkgs
    source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
-   blacklist_pkgs=$(filter_out "$source_pkgs" "$all_pkgs")
-   test -n "$blacklist_pkgs" && catkin config --append-args --blacklist $blacklist_pkgs &> /dev/null
+   source_pkgs=$(filter_out "$TEST_BLACKLIST" "$source_pkgs")
+   echo -e $(colorize GREEN Source pkgs: $(colorize THIN $source_pkgs))
 
    # Build tests
-   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests -- ${PKG_WHITELIST:-}
+   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests -- ${PKG_WHITELIST:source_pkgs}
    # Run tests
-   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize ${PKG_WHITELIST:-}"
+   travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize --no-deps ${PKG_WHITELIST:source_pkgs}"
 
    # Show failed tests
    travis_fold start test.results "catkin_test_results"
