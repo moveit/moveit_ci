@@ -305,9 +305,13 @@ function test_workspace() {
    travis_run_simple --title "Sourcing newly built install space" source install/setup.bash
    test -n "$old_ustatus" && set -u  # restore variable checking option
 
+   # format blacklist as a list
+   TEST_BLACKLIST=$(unify_list " ,;" ${TEST_BLACKLIST:-})
+   echo -e $(colorize YELLOW Test blacklist: $(colorize THIN $TEST_BLACKLIST))
+
+   # build whitelist of packages
    local source_pkgs
    source_pkgs=$(catkin_topological_order $CI_SOURCE_PATH --only-names)
-   TEST_BLACKLIST=$(unify_list " ,;" ${TEST_BLACKLIST:-})
    source_pkgs=$(filter_out "${TEST_BLACKLIST:-}" "$source_pkgs")
    echo -e $(colorize GREEN Source pkgs: $(colorize THIN $source_pkgs))
    test -z "${PKG_WHITELIST:-}" && PKG_WHITELIST=$source_pkgs
