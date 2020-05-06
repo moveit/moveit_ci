@@ -320,8 +320,6 @@ function test_workspace() {
    # Print the packages we will now test
    echo -e $(colorize GREEN Testing pkgs: $(colorize THIN $PKG_WHITELIST))
 
-   # Build tests (and dependencies)
-   travis_run_wait --title "catkin build tests" catkin build --no-status --summarize --make-args tests -- ${PKG_WHITELIST}
    # Run tests (without dependencies, this is so we only test the whitelist)
    travis_run_wait --title "catkin run_tests" "catkin build --catkin-make-args run_tests -- --no-status --summarize --no-deps ${PKG_WHITELIST}"
 
