@@ -5,9 +5,6 @@
 travis_fold start clang.format "Running clang-format check"
 travis_run_simple --display "cd to repository source: $CI_SOURCE_PATH" cd $CI_SOURCE_PATH
 
-# Install Dependencies
-travis_run apt-get -qq install -y clang-format-3.9
-
 # Ensure that a .clang-format config file is present, if not download from MoveIt
 if [ ! -f .clang-format ]; then
     travis_run --title "Fetching default clang-format config from MoveIt" \
@@ -18,7 +15,8 @@ fi
 git add -u .
 
 # Run clang-format
-cmd="find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs clang-format-3.9 -i -style=file"
+CLANG_FORMAT_EXECUTABLE=$(ls -1 /usr/bin/clang-format* | head -1)
+cmd="find . -name '*.h' -or -name '*.hpp' -or -name '*.cpp' | xargs $CLANG_FORMAT_EXECUTABLE -i -style=file"
 travis_run --display "Running clang-format${ANSI_RESET}\\n$cmd" "$cmd"
 
 # Check for changes in repo

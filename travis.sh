@@ -145,11 +145,16 @@ function update_system() {
    travis_run --retry apt-get -qq install -y wget sudo xvfb mesa-utils ccache ssh
 
    # Install clang-format if needed
-   [[ "${TEST:=}" == *clang-format* ]] && travis_run --retry apt-get -qq install -y clang-format-3.9
+   if [[ "${TEST:=}" == *clang-format* ]]; then
+      # Try to install clang-format-3.9
+      travis_run --no-assert apt-get -qq install -y clang-format-3.9
+      # On failure, install default clang-format
+      test "$?" != "0" && travis_run --retry apt-get -qq install -y clang-format
+   fi
    # Install clang-tidy stuff if needed
-   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy-6.0 clang-6.0
+   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy clang
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
-   [[ "$TEST" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools-6.0
+   [[ "$TEST" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools
    # Install catkin_lint if needed
    if [[ "$TEST" == *catkin_lint* ]]; then
        travis_run --retry pip$ROS_PYTHON_VERSION install catkin_lint
@@ -183,7 +188,8 @@ function run_early_tests() {
             EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
             ;;
          clang-tidy-check)  # run clang-tidy along with compiler and report warning
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy-6.0"
+            CLANG_TIDY_EXECUTABLE=$(ls -1 /usr/bin/clang-tidy* | head -1)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=$CLANG_TIDY_EXECUTABLE"
             ;;
          clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
