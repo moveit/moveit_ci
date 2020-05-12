@@ -31,7 +31,7 @@ _travis_run_clang_tidy_fix() {
             fi
         fi
 
-        travis_run_simple --timeout $(travis_timeout) "$RUN_CLANG_TIDY_EXECUTABLE" -fix -header-filter='$ROS_WS/src/$REPOSITORY_NAME/.*' -p "${PKGS[$pkg]}" ${modified_files[@]:-} 2> /dev/null
+        travis_run_simple --no-assert --timeout $(travis_timeout) "$RUN_CLANG_TIDY_EXECUTABLE" -fix -header-filter='$ROS_WS/src/$REPOSITORY_NAME/.*' -p "${PKGS[$pkg]}" ${modified_files[@]:-} 2> /dev/null
         # if there are workspace changes, print broken pkg to file descriptor 3
         travis_have_fixes && 1>&3 echo $pkg || true  # should always succeed ;-)
         travis_fold end clang.tidy
