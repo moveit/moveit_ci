@@ -134,7 +134,8 @@ function update_system() {
    travis_run --retry apt-get -qq update
 
    if [ "$ROS_PYTHON_VERSION" == "3" ]; then
-       travis_run --retry apt-get -qq install -y python3-catkin-tools python3-pip
+       travis_run --retry apt-get -qq install -y git python3-pip
+       travis_run pip3 install git+https://github.com/catkin/catkin_tools.git
    else
        travis_run --retry apt-get -qq install -y python-catkin-tools python-pip
    fi
