@@ -133,10 +133,16 @@ function update_system() {
    # Update the sources
    travis_run --retry apt-get -qq update
 
+   if [ "$ROS_PYTHON_VERSION" == "3" ]; then
+       travis_run --retry apt-get -qq install -y python3-catkin-tools python3-pip
+   else
+       travis_run --retry apt-get -qq install -y python-catkin-tools python-pip
+   fi
+
    # Make sure the packages are up-to-date
    travis_run --retry apt-get -qq dist-upgrade
    # Install required packages (if not yet provided by docker container)
-   travis_run --retry apt-get -qq install -y wget sudo python-catkin-tools xvfb mesa-utils ccache ssh
+   travis_run --retry apt-get -qq install -y wget sudo xvfb mesa-utils ccache ssh
 
    # Install clang-format if needed
    [[ "${TEST:=}" == *clang-format* ]] && travis_run --retry apt-get -qq install -y clang-format-3.9
@@ -146,8 +152,7 @@ function update_system() {
    [[ "$TEST" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools-6.0
    # Install catkin_lint if needed
    if [[ "$TEST" == *catkin_lint* ]]; then
-       travis_run --retry apt-get -qq install -y python-pip
-       travis_run --retry pip install catkin_lint
+       travis_run --retry pip$ROS_PYTHON_VERSION install catkin_lint
    fi
    # Install curl/lcov if needed
    [[ "${TEST:=}" == *code-coverage* ]] && travis_run --retry apt-get -qq install -y curl lcov
