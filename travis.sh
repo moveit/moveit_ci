@@ -316,8 +316,8 @@ function test_workspace() {
    source_pkgs=$(colcon list --topological-order --names-only --base-paths $CI_SOURCE_PATH 2> /dev/null)
    blacklist_pkgs=$(filter_out "$source_pkgs" "$all_pkgs")
 
-   # Run tests, suppressing the error output (confuses Travis display?)
-   travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist_pkgs $COLCON_EVENT_HANDLING 2>/dev/null"
+   # Run tests
+   travis_run_wait --title "colcon test" "colcon test --packages-skip $TEST_BLACKLIST $blacklist_pkgs $COLCON_EVENT_HANDLING"
 
    # Show failed tests
    travis_fold start test.results "colcon test-results"

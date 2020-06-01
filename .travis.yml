@@ -10,8 +10,7 @@ compiler: gcc
 
 notifications:
   email:
-    recipients:
-       - dave@dav.ee
+
 env:
   global: # default values
     - ROS_DISTRO=crystal
