@@ -32,7 +32,7 @@ notifications:
       # - user@email.com
 env:
   global: # default values that are common to all configurations (can be overriden below)
-    - ROS_DISTRO=crystal   # ROS distro to test for
+    - ROS_DISTRO=eloquent   # ROS distro to test for
     - ROS_REPO=ros         # ROS binary repository [ros | ros-shadow-fixed]
     - TEST_BLACKLIST=      # list packages, for which to skip the unittests
     - WARNINGS_OK=false    # Don't accept warnings [true | false]
@@ -44,14 +44,14 @@ env:
     - UPSTREAM_WORKSPACE=moveit.rosinstall
     # pull in packages from a remote .rosinstall file and run for a non-default ROS_DISTRO
     - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/master/moveit.rosinstall
-      ROS_DISTRO=crystal
+      ROS_DISTRO=eloquent
 
 matrix:
   include: # Add a separate config to the matrix, using clang as compiler
     - env: TEST=clang-tidy-check  # run static code analysis, but don't check for available auto-fixes
       compiler: clang
   allow_failures:
-    - env: ROS_DISTRO=crystal  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit2#master
+    - env: ROS_DISTRO=eloquent  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit2#master
 
 before_script:
   # Clone the moveit_ci repository into Travis' workspace
@@ -66,9 +66,9 @@ script:
 
 - There are essentially two options two specify the underlying ROS docker container to use:
   1. Using the two variables `ROS_DISTRO` and `ROS_REPO`, which automagically choose a suitable [MoveIt docker image](https://hub.docker.com/r/moveit/moveit/tags).
-     - `ROS_DISTRO`: (required) determines which version of ROS to use, i.e. crystal, dashing, ...
+     - `ROS_DISTRO`: (required) determines which version of ROS to use, i.e. eloquent, foxy, ...
      - `ROS_REPO`: (default: ros) determines which ROS package repository to use, either the regular release repo or, specifying `ros-shadow-fixed`, the [shadow prerelease repo](http://wiki.ros.org/ShadowRepository).
-  2. Directly specifying `DOCKER_IMAGE`, e.g. `DOCKER_IMAGE=moveit/moveit2:crystal-ci`. The docker image may define a `ROS_UNDERLAY` to build the catkin workspace against. By default, this is the root ROS folder in /opt/ros.
+  2. Directly specifying `DOCKER_IMAGE`, e.g. `DOCKER_IMAGE=moveit/moveit2:eloquent-ci`. The docker image may define a `ROS_UNDERLAY` to build the catkin workspace against. By default, this is the root ROS folder in /opt/ros.
 - `BEFORE_DOCKER_SCRIPT`: (default: none): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' ``before_script`` section, but the variable allows to dynamically switch scripts within the testing matrix.
 - `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the ROS workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
 - `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
@@ -122,7 +122,7 @@ Next clone the CI script:
 Manually define the variables, Travis would otherwise define for you. These are required:
 
     export TRAVIS_BRANCH=master
-    export ROS_DISTRO=crystal
+    export ROS_DISTRO=eloquent
     export ROS_REPO=ros
     export CC=gcc
     export CXX=g++
@@ -157,7 +157,7 @@ before_script:
   - export TRAVIS_BRANCH=$CI_COMMIT_REF_NAME
   - export CXX=c++
   - export CC=cc
-  - export ROS_DISTRO=melodic
+  - export ROS_DISTRO=eloquent
   - export UPSTREAM_WORKSPACE=repo_name.rosinstall
   - export IN_DOCKER=1
   - export CI_SOURCE_PATH=$PWD
