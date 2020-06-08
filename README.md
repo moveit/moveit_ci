@@ -121,20 +121,16 @@ Next clone the CI script:
 
 Manually define the variables, Travis would otherwise define for you. These are required:
 
-    export TRAVIS_BRANCH=melodic-devel   # The branch a github PR should be merged into, e.g. `origin/melodic-devel`. Only required for clang-tidy's check for modified files.
+    export TRAVIS_BRANCH=melodic-devel   # The base branch to compare changes with (e.g. for clang-tidy)
     export ROS_DISTRO=melodic
     export ROS_REPO=ros-shadow-fixed
 
-Export the following variables if you set "compiler: xxxx" in your .travis.yaml (see https://docs.travis-ci.com/user/languages/cpp/#choosing-compilers-to-test-against)
-
-    export CC=gcc
-    export CC_FOR_BUILD=gcc
+    export CC=gcc            # The [compiler you have chosen in your .travis.yaml](https://docs.travis-ci.com/user/languages/cpp/#choosing-compilers-to-test-against)
     export CXX=g++
-    export CXX_FOR_BUILD=g++
 
 The rest is optional:
 
-    # Export all the other environment variables you would usually set in your .travis.yaml
+    # Export all other environment variables you usually set in your .travis.yaml
     export UPSTREAM_WORKSPACE=moveit.rosinstall
     export TEST=clang-format
 
@@ -150,7 +146,7 @@ It's also possible to run the script without using docker. To this end, issue th
     mkdir $ROS_WS                    # and create it
     .moveit_ci/travis.sh
 
-If you run into premission errors in the previous script try creating a proxy script for `apt-get` in your `PATH` augmenting `sudo`:
+The `travis.sh` script will need to run apt-get as root. To allow this, create a proxy script for `apt-get` in your `PATH`:
 1. Create the file ~/.local/bin/apt-get
 2. Insert the following text
     ```
