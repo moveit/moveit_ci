@@ -121,7 +121,7 @@ Next clone the CI script:
 
 Manually define the variables, Travis would otherwise define for you. These are required:
 
-    export TRAVIS_BRANCH=melodic-devel   # Replace with the repository branch you intend to test against CI
+    export TRAVIS_BRANCH=melodic-devel   # The branch a github PR should be merged into, e.g. `origin/melodic-devel`. Only required for clang-tidy's check for modified files.
     export ROS_DISTRO=melodic
     export ROS_REPO=ros-shadow-fixed
     export CC=gcc                        # Replace with the compiler you want the CI to use
