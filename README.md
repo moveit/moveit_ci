@@ -134,7 +134,7 @@ Export the following variables if you set "compiler: xxxx" in your .travis.yaml 
 
 The rest is optional:
 
-    # Export all the other environment variables you would usually set in your .travis.yaml 
+    # Export all the other environment variables you would usually set in your .travis.yaml
     export UPSTREAM_WORKSPACE=moveit.rosinstall
     export TEST=clang-format
 
