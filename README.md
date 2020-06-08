@@ -150,6 +150,16 @@ It's also possible to run the script without using docker. To this end, issue th
     mkdir $ROS_WS                    # and create it
     .moveit_ci/travis.sh
 
+If you run into premission errors in the previous script try creating a proxy script for `apt-get` in your `PATH` augmenting `sudo`:
+1. Create the file ~/.local/bin/apt-get
+2. Insert the following text
+    ```
+    #!/bin/bash
+    echo "running apt-get proxy"
+    sudo /usr/bin/apt-get "$@"
+    ```
+3. Make it executable `chmod +x ~/.local/bin/apt-get`
+
 ## Run in Gitlab CI in docker runner
 
 When running in a Gitlab CI with the docker runner we instruct Gitlab CI which docker image we want and set the required enviroment variables.  Here is an example `gitlab-ci.yml` file.  A couple details to notice are the `sed` command that replaces ssh git remotes with one that uses the `gitlab-ci-token` over https and that you will need to define the enviroment variables for the compiler and how it uses `IN_DOCKER` to let the script know it is already in the docker image:
