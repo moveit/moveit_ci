@@ -124,10 +124,13 @@ Manually define the variables, Travis would otherwise define for you. These are 
     export TRAVIS_BRANCH=melodic-devel   # The branch a github PR should be merged into, e.g. `origin/melodic-devel`. Only required for clang-tidy's check for modified files.
     export ROS_DISTRO=melodic
     export ROS_REPO=ros-shadow-fixed
-    export CC=gcc                        # Replace with the compiler you want the CI to use
-    export CC_FOR_BUILD=gcc              # Replace with the compiler you want the CI to use
-    export CXX=g++                       # Replace with the compiler you want the CI to use
-    export CXX_FOR_BUILD=g++             # Replace with the compiler you want the CI to use
+
+Export the following variables if you set "compiler: xxxx" in your .travis.yaml (see https://docs.travis-ci.com/user/languages/cpp/#choosing-compilers-to-test-against)
+
+    export CC=gcc
+    export CC_FOR_BUILD=gcc
+    export CXX=g++
+    export CXX_FOR_BUILD=g++
 
 The rest is optional:
 
