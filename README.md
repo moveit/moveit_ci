@@ -125,7 +125,7 @@ Manually define the variables, Travis would otherwise define for you. These are 
     export ROS_DISTRO=melodic
     export ROS_REPO=ros-shadow-fixed
 
-    export CC=gcc            # The [compiler you have chosen in your .travis.yaml](https://docs.travis-ci.com/user/languages/cpp/#choosing-compilers-to-test-against)
+    export CC=gcc            # The compiler you have chosen in your .travis.yaml
     export CXX=g++
 
 The rest is optional:
