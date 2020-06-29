@@ -143,7 +143,7 @@ function update_system() {
    # Make sure the packages are up-to-date
    travis_run --retry apt-get -qq dist-upgrade
    # Install required packages (if not yet provided by docker container)
-   travis_run --retry apt-get -qq install -y wget sudo xvfb mesa-utils ccache ssh
+   travis_run --retry apt-get -qq install -y wget git sudo xvfb mesa-utils ccache ssh
 
    # Install clang-format if needed
    if [[ "${TEST:=}" == *clang-format* ]]; then
