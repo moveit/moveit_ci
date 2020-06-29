@@ -158,7 +158,8 @@ function update_system() {
    [[ "$TEST" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools
    # Install catkin_lint if needed
    if [[ "$TEST" == *catkin_lint* ]]; then
-       travis_run --retry pip$ROS_PYTHON_VERSION install catkin_lint
+       # TODO: latest configparser is broken on Xenial/Kinetic
+       travis_run --retry pip$ROS_PYTHON_VERSION install configparser==4.0.2 catkin_lint
    fi
    # Install curl/lcov if needed
    [[ "${TEST:=}" == *code-coverage* ]] && travis_run --retry apt-get -qq install -y curl lcov
