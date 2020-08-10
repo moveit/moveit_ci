@@ -145,19 +145,12 @@ function update_system() {
    # Install required packages (if not yet provided by docker container)
    travis_run --retry apt-get -qq install -y wget git sudo xvfb mesa-utils ccache ssh
 
-   # Install clang-format if needed
-   if [[ "${TEST:=}" == *clang-format* ]]; then
-      # Try to install clang-format-3.9
-      travis_run --no-assert apt-get -qq install -y clang-format-3.9
-      # On failure, install default clang-format
-      test "$?" != "0" && travis_run --retry apt-get -qq install -y clang-format
-   fi
    # Install clang-tidy stuff if needed
-   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy clang
+   [[ "${TEST:=}" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy clang
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
-   [[ "$TEST" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools
+   [[ "${TEST:=}" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools
    # Install catkin_lint if needed
-   if [[ "$TEST" == *catkin_lint* ]]; then
+   if [[ "${TEST:=}" == *catkin_lint* ]]; then
        # TODO: latest configparser is broken on Xenial/Kinetic
        travis_run --retry pip$ROS_PYTHON_VERSION install configparser==4.0.2 catkin_lint
    fi
