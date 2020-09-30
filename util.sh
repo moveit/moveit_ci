@@ -65,7 +65,7 @@ travis_timeout() {
     result=0  # $1 looks like integer that should be consumed as a parameter
   else
     result=1  # parameter shouldn't be consumed
-    timeout=45  # default timeout
+    timeout=20  # default timeout
   fi
 
   # remaining time in minutes (default timeout for open-source Travis jobs is 50min)
