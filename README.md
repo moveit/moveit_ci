@@ -32,7 +32,7 @@ notifications:
       # - user@email.com
 env:
   global: # default values that are common to all configurations (can be overriden below)
-    - ROS_DISTRO=eloquent   # ROS distro to test for
+    - ROS_DISTRO=foxy      # ROS distro to test for
     - ROS_REPO=ros         # ROS binary repository [ros | ros-shadow-fixed]
     - TEST_BLACKLIST=      # list packages, for which to skip the unittests
     - WARNINGS_OK=false    # Don't accept warnings [true | false]
@@ -44,14 +44,14 @@ env:
     - UPSTREAM_WORKSPACE=moveit2.repos
     # pull in packages from a remote .repos file and run for a non-default ROS_DISTRO
     - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/main/moveit2.repos
-      ROS_DISTRO=eloquent
+      ROS_DISTRO=foxy
 
 matrix:
   include: # Add a separate config to the matrix, using clang as compiler
     - env: TEST=clang-tidy-check  # run static code analysis, but don't check for available auto-fixes
       compiler: clang
   allow_failures:
-    - env: ROS_DISTRO=eloquent  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit2#main
+    - env: ROS_DISTRO=foxy  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit2#main
 
 before_script:
   # Clone the moveit_ci repository into Travis' workspace
@@ -68,7 +68,7 @@ script:
   1. Using the two variables `ROS_DISTRO` and `ROS_REPO`, which automagically choose a suitable [MoveIt docker image](https://hub.docker.com/r/moveit/moveit/tags).
      - `ROS_DISTRO`: (required) determines which version of ROS to use, i.e. eloquent, foxy, ...
      - `ROS_REPO`: (default: ros) determines which ROS package repository to use, either the regular release repo or, specifying `ros-shadow-fixed`, the [shadow prerelease repo](http://wiki.ros.org/ShadowRepository).
-  2. Directly specifying `DOCKER_IMAGE`, e.g. `DOCKER_IMAGE=moveit/moveit2:eloquent-ci`. The docker image may define a `ROS_UNDERLAY` to build the catkin workspace against. By default, this is the root ROS folder in /opt/ros.
+  2. Directly specifying `DOCKER_IMAGE`, e.g. `DOCKER_IMAGE=moveit/moveit2:foxy-ci`. The docker image may define a `ROS_UNDERLAY` to build the catkin workspace against. By default, this is the root ROS folder in /opt/ros.
 - `BEFORE_DOCKER_SCRIPT`: (default: none): Used to specify shell commands or scripts that run before starting the docker container. This is similar to Travis' ``before_script`` section, but the variable allows to dynamically switch scripts within the testing matrix.
 - `BEFORE_SCRIPT`: (default: none): Used to specify shell commands or scripts that run in docker, just after setting up the ROS workspace and before actually starting the build processes. In contrast to BEFORE_DOCKER_SCRIPT, this script runs in the context of the docker container.
 - `UPSTREAM_WORKSPACE` (default: debian): Configure additional packages for your ROS workspace.
@@ -122,8 +122,9 @@ Next clone the CI script:
 Manually define the variables, Travis would otherwise define for you. These are required:
 
     export TRAVIS_BRANCH=main   # The base branch to compare changes with (e.g. for clang-tidy)
-    export ROS_DISTRO=eloquent
+    export ROS_DISTRO=foxy
     export ROS_REPO=ros
+
     export CC=gcc            # The compiler you have chosen in your .travis.yaml
     export CXX=g++
 
@@ -161,14 +162,14 @@ The `travis.sh` script will need to run apt-get as root. To allow this, create a
 When running in a Gitlab CI with the docker runner we instruct Gitlab CI which docker image we want and set the required enviroment variables.  Here is an example `gitlab-ci.yml` file.  A couple details to notice are the `sed` command that replaces ssh git remotes with one that uses the `gitlab-ci-token` over https and that you will need to define the enviroment variables for the compiler and how it uses `IN_DOCKER` to let the script know it is already in the docker image:
 
 ```yaml
-image: moveit/moveit:eloquent-ci
+image: moveit/moveit2:foxy-ci
 before_script:
   - git clone -b ros2 --quiet --depth 1 https://github.com/ros-planning/moveit_ci.git .moveit_ci
   - sed -i -r "s/ssh:\/\/git@gitlab\.company\.com:9000/https:\/\/gitlab-ci-token:${CI_JOB_TOKEN}@gitlab\.company\.com/g" ${CI_PROJECT_DIR}/repo_name.repos
   - export TRAVIS_BRANCH=$CI_COMMIT_REF_NAME
   - export CXX=c++
   - export CC=cc
-  - export ROS_DISTRO=eloquent
+  - export ROS_DISTRO=foxy
   - export UPSTREAM_WORKSPACE=repo_name.repos
   - export IN_DOCKER=1
   - export CI_SOURCE_PATH=$PWD
