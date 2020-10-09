@@ -218,8 +218,8 @@ function prepare_ros_workspace() {
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
 
-   # Link in the repo we are testing
-   if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then
+   # Link in the repo we are testing if it's not a subdirectory of this workspace
+   if [ "${CI_SOURCE_PATH##$PWD}" == $CI_SOURCE_PATH ] ; then
       travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into ROS workspace" ln -s $CI_SOURCE_PATH .
    fi
 
