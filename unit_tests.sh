@@ -49,7 +49,7 @@ PASSED=0 # reset count after ASSERT_TRUE
 # set default environment
 export ROS_WS=/tmp/ros_ws
 export ROS_REPO=ros
-export ROS_DISTRO=${ROS_DISTRO:-crystal}
+export ROS_DISTRO=${ROS_DISTRO:-foxy}
 export WARNINGS_OK=true
 
 # dummy functions to skip updates with --no-updates functions

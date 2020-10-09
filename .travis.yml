@@ -13,7 +13,7 @@ notifications:
 
 env:
   global: # default values
-    - ROS_DISTRO=eloquent
+    - ROS_DISTRO=foxy
     - ROS_REPO=ros
     - SCRIPT=travis.sh
 
@@ -22,7 +22,7 @@ jobs:
   include:
     - env: SCRIPT=unit_tests.sh
     # Run docker with custom image
-    - env: SCRIPT=unit_tests.sh   ROS_REPO=   DOCKER_IMAGE=ros:eloquent-ros-base
+    - env: SCRIPT=unit_tests.sh   ROS_REPO=   DOCKER_IMAGE=ros:foxy-ros-base
 
     # Build MoveIt repository, moveit_ros_perception blacklisted due to lack of GPU-based docker env
     - env: UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/main/moveit2.repos
