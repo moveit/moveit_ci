@@ -136,17 +136,22 @@ function update_system() {
    # Update the sources
    travis_run --retry apt-get -qq update
 
+   if [ "${ROS_PYTHON_VERSION:=2}" == "3" ]; then
+       travis_run --retry apt-get -qq install -y git python3-pip
+       travis_run pip3 install git+https://github.com/catkin/catkin_tools.git
+   else
+       travis_run --retry apt-get -qq install -y python-catkin-tools python-pip
+   fi
+
    # Make sure the packages are up-to-date
    travis_run --retry apt-get -qq dist-upgrade
    # Install required packages (if not yet provided by docker container)
-   travis_run --retry apt-get -qq install -y curl sudo xvfb mesa-utils ccache ssh
+   travis_run --retry apt-get -qq install -y wget git sudo xvfb mesa-utils ccache ssh
 
-   # Install clang-format if needed
-   [[ "${TEST:=}" == *clang-format* ]] && travis_run --retry apt-get -qq install -y clang-format-3.9
    # Install clang-tidy stuff if needed
-   [[ "$TEST" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy-6.0 clang-6.0
+   [[ "${TEST:=}" == *clang-tidy* ]] && travis_run --retry apt-get -qq install -y clang-tidy clang
    # run-clang-tidy is part of clang-tools in Bionic, but not in Xenial -> ignore failure
-   [[ "$TEST" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools-6.0
+   [[ "${TEST:=}" == *clang-tidy-fix* ]] && travis_run_true apt-get -qq install -y clang-tools
    # Install curl/lcov if needed
    [[ "${TEST:=}" == *code-coverage* ]] && travis_run --retry apt-get -qq install -y curl lcov
 
@@ -177,7 +182,8 @@ function run_early_tests() {
             EARLY_RESULT=$(( ${EARLY_RESULT:-0} + $? ))
             ;;
          clang-tidy-check)  # run clang-tidy along with compiler and report warning
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=clang-tidy-6.0"
+            CLANG_TIDY_EXECUTABLE=$(ls -1 /usr/bin/clang-tidy* | head -1)
+            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_CLANG_TIDY=$CLANG_TIDY_EXECUTABLE"
             ;;
          clang-tidy-fix)  # run clang-tidy -fix and report code changes in the end
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_EXPORT_COMPILE_COMMANDS=ON"

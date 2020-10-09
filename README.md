@@ -121,14 +121,16 @@ Next clone the CI script:
 
 Manually define the variables, Travis would otherwise define for you. These are required:
 
-    export TRAVIS_BRANCH=master
-    export ROS_DISTRO=eloquent
-    export ROS_REPO=ros
-    export CC=gcc
+    export TRAVIS_BRANCH=melodic-devel   # The base branch to compare changes with (e.g. for clang-tidy)
+    export ROS_DISTRO=melodic
+    export ROS_REPO=ros-shadow-fixed
+
+    export CC=gcc            # The compiler you have chosen in your .travis.yaml
     export CXX=g++
 
 The rest is optional:
 
+    # Export all other environment variables you usually set in your .travis.yaml
     export UPSTREAM_WORKSPACE=moveit.rosinstall
     export TEST=clang-format
 
@@ -144,6 +146,16 @@ It's also possible to run the script without using docker. To this end, issue th
     mkdir $ROS_WS                    # and create it
 
     .moveit_ci/travis.sh
+
+The `travis.sh` script will need to run apt-get as root. To allow this, create a proxy script for `apt-get` in your `PATH`:
+1. Create the file ~/.local/bin/apt-get
+2. Insert the following text
+    ```
+    #!/bin/bash
+    echo "running apt-get proxy"
+    sudo /usr/bin/apt-get "$@"
+    ```
+3. Make it executable `chmod +x ~/.local/bin/apt-get`
 
 ## Run in Gitlab CI in docker runner
 
