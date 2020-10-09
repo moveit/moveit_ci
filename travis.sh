@@ -239,8 +239,10 @@ function prepare_ros_workspace() {
             item="${item}#"
             url=${item%%#*}
             branch=${item#*#}; branch=${branch%#}; branch=${branch:+--branch ${branch}}
+            cd $upstream_folder  # clone from inside upstream folder
             travis_run_true git clone -q --depth 1 $branch $url
             test $? -ne 0 && echo -e "$(colorize RED Failed to clone repository $url. Aborting.)" && exit 2
+            cd ..
             continue ;;
          http://* | https://* | file://*) ;; # use url as is
          *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
