@@ -212,8 +212,8 @@ function prepare_ros_workspace() {
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
 
-   # Link in the repo we are testing
-   if [ "$(dirname $CI_SOURCE_PATH)" != $PWD ] ; then
+   # Link in the repo we are testing if it's not a subdirectory of this workspace
+   if [ "${CI_SOURCE_PATH##$PWD}" == $CI_SOURCE_PATH ] ; then
       travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into ROS workspace" ln -s $CI_SOURCE_PATH .
    fi
 
@@ -233,8 +233,10 @@ function prepare_ros_workspace() {
             item="${item}#"
             url=${item%%#*}
             branch=${item#*#}; branch=${branch%#}; branch=${branch:+--branch ${branch}}
+            cd $upstream_folder  # clone from inside upstream folder
             travis_run_true git clone -q --depth 1 $branch $url
             test $? -ne 0 && echo -e "$(colorize RED Failed to clone repository $url. Aborting.)" && exit 2
+            cd ..
             continue ;;
          http://* | https://* | file://*) ;; # use url as is
          *) item="file://$CI_SOURCE_PATH/$item" ;; # turn into proper url
