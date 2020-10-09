@@ -105,7 +105,7 @@ for group in $test_groups ; do
 			run_test 0 $0:$LINENO "ament_lint on 'valid' package" TEST_PKG=valid TEST=ament_lint
 			run_test 0 $0:$LINENO "ament_lint + clang-format on 'valid' package" TEST_PKG=valid 'TEST="ament_lint clang-format"'
 			run_test 2 $0:$LINENO "ament_lint on 'ament_lint' package" TEST_PKG=ament_lint TEST=ament_lint
-			run_test 2 $0:$LINENO "ament_lint + clang-format on 'ament_lint' package" TEST_PKG=ament_lint 'TEST="ament_lint, clang-format"'
+			run_test 4 $0:$LINENO "ament_lint + clang-format on 'ament_lint' package" TEST_PKG=ament_lint 'TEST="ament_lint, clang-format"'
 			;;
 		clang-format)
 			run_test 0 $0:$LINENO "clang-format on 'valid' package" TEST_PKG=valid TEST=clang-format
