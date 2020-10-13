@@ -134,7 +134,7 @@ function run_test() {
 
 	if [ $result -ne $expected ] ; then
 		let "FAILED += 1"
-		test $expected -eq 0 && comment="Expected success, but failed ($result)." || comment="Expected failure ($expected), but succeeded"
+		test $expected -eq 0 && comment="Expected success, but failed ($result)." || comment="Expected failure ($expected), but got $result"
 		echo -e $(colorize RED "Test '$description' failed: $comment")
 	else
 		let "PASSED += 1"
