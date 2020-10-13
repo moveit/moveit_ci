@@ -10,7 +10,7 @@ Authors: Robert Haschke, Dave Coleman, Isaac I. Y. Saito
 - Runs tests on the current repository only, i.e. external packages are not tested
 - Builds into install space
 
-[![Build Status](https://travis-ci.org/ros-planning/moveit_ci.svg?branch=master)](https://travis-ci.org/ros-planning/moveit_ci)
+[![Build Status](https://travis-ci.org/ros-planning/moveit_ci.svg?branch=ros2)](https://travis-ci.org/ros-planning/moveit_ci)
 
 ## Usage
 
@@ -43,7 +43,7 @@ env:
     # pull in packages from a local .rosinstall file
     - UPSTREAM_WORKSPACE=moveit.rosinstall
     # pull in packages from a remote .rosinstall file and run for a non-default ROS_DISTRO
-    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/master/moveit.rosinstall
+    - UPSTREAM_WORKSPACE=https://raw.githubusercontent.com/ros-planning/moveit2/main/moveit.rosinstall
       ROS_DISTRO=eloquent
 
 matrix:
@@ -51,7 +51,7 @@ matrix:
     - env: TEST=clang-tidy-check  # run static code analysis, but don't check for available auto-fixes
       compiler: clang
   allow_failures:
-    - env: ROS_DISTRO=eloquent  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit2#master
+    - env: ROS_DISTRO=eloquent  ROS_REPO=ros  UPSTREAM_WORKSPACE=https://github.com/ros-planning/moveit2#main
 
 before_script:
   # Clone the moveit_ci repository into Travis' workspace
@@ -121,7 +121,7 @@ Next clone the CI script:
 
 Manually define the variables, Travis would otherwise define for you. These are required:
 
-    export TRAVIS_BRANCH=master
+    export TRAVIS_BRANCH=main
     export ROS_DISTRO=eloquent
     export ROS_REPO=ros
     export CC=gcc
@@ -150,7 +150,7 @@ It's also possible to run the script without using docker. To this end, issue th
 When running in a Gitlab CI with the docker runner we instruct Gitlab CI which docker image we want and set the required enviroment variables.  Here is an example `gitlab-ci.yml` file.  A couple details to notice are the `sed` command that replaces ssh git remotes with one that uses the `gitlab-ci-token` over https and that you will need to define the enviroment variables for the compiler and how it uses `IN_DOCKER` to let the script know it is already in the docker image:
 
 ```yaml
-image: moveit/moveit:master-ci
+image: moveit/moveit:eloquent-ci
 before_script:
   - git clone --quiet --depth 1 https://github.com/ros-planning/moveit_ci.git .moveit_ci
   - sed -i -r "s/ssh:\/\/git@gitlab\.company\.com:9000/https:\/\/gitlab-ci-token:${CI_JOB_TOKEN}@gitlab\.company\.com/g" ${CI_PROJECT_DIR}/repo_name.rosinstall
