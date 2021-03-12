@@ -208,6 +208,15 @@ function run_xvfb() {
 
 function prepare_ros_workspace() {
    travis_fold start ros.ws "Setting up ROS workspace"
+
+   # Make sure to source the underlay workspace before building the overlay
+   if [ -n "$ROS_UNDERLAY" ]; then
+    local old_ustatus=${-//[^u]/}
+    set +u  # disable checking for unbound variables for the next line
+    travis_run_simple --title "Sourcing the underlay workspace" source $ROS_UNDERLAY/setup.bash
+    test -n "$old_ustatus" && set -u  # restore variable checking option
+   fi
+
    travis_run_simple mkdir -p $ROS_WS/src
    travis_run_simple cd $ROS_WS/src
 
