@@ -285,6 +285,10 @@ function prepare_ros_workspace() {
 
    # Validate that we have some packages to build
    test -z "$(colcon list)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
+
+   # Source the UNDERLAY workspace
+   travis_run_simple --title "Sourcing the underlay workspace" source "${ROS_UNDERLAY:-/opt/ros/$ROS_DISTRO}"
+
    travis_fold end ros.ws
 }
 
