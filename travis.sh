@@ -278,7 +278,9 @@ function prepare_ros_workspace() {
    travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF . "$upstream_folder"
 
    # Source the underlay workspace
+   set +u  # disable unbound variable checking when sourcing setup.bash
    travis_run_simple --title "Sourcing the underlay workspace" source "${ROS_UNDERLAY:-/opt/ros/$ROS_DISTRO}/setup.bash"
+   set -u  # re-enable unbound variable checking
 
    # Install source-based package dependencies
    travis_run --retry rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
