@@ -277,6 +277,9 @@ function prepare_ros_workspace() {
    travis_run_simple cd $ROS_WS/src
    travis_run --title "List files in ROS workspace's source folder" ls --color=auto -alhF . "$upstream_folder"
 
+   # Source the underlay workspace
+   travis_run_simple --title "Sourcing the underlay workspace" source "${ROS_UNDERLAY:-/opt/ros/$ROS_DISTRO}/setup.bash"
+
    # Install source-based package dependencies
    travis_run --retry rosdep install -y -q -n --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 
@@ -285,9 +288,6 @@ function prepare_ros_workspace() {
 
    # Validate that we have some packages to build
    test -z "$(colcon list)" && echo -e "$(colorize RED Workspace $ROS_WS has no packages to build. Terminating.)" && exit 1
-
-   # Source the UNDERLAY workspace
-   travis_run_simple --title "Sourcing the underlay workspace" source "${ROS_UNDERLAY:-/opt/ros/$ROS_DISTRO}"
 
    travis_fold end ros.ws
 }
