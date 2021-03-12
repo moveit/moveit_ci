@@ -279,7 +279,7 @@ function prepare_ros_workspace() {
 
    # Source the underlay workspace
    set +u  # disable unbound variable checking when sourcing setup.bash
-   travis_run_simple --title "Sourcing the underlay workspace" source "${ROS_UNDERLAY:-/opt/ros/$ROS_DISTRO}/setup.bash"
+   travis_run_simple source "${ROS_UNDERLAY:-/opt/ros/$ROS_DISTRO}/setup.bash"
    set -u  # re-enable unbound variable checking
 
    # Install source-based package dependencies
