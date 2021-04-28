@@ -213,7 +213,7 @@ function prepare_ros_workspace() {
 
    # Link in the repo we are testing if it's not a subdirectory of this workspace
    if [ "${CI_SOURCE_PATH##$PWD}" == $CI_SOURCE_PATH ] ; then
-      travis_run_simple --title "Symlinking to-be-tested repo $CI_SOURCE_PATH into ROS workspace" ln -s $CI_SOURCE_PATH .
+      travis_run_simple --title "Copying to-be-tested repo $CI_SOURCE_PATH into ROS workspace" cp -r $CI_SOURCE_PATH .
    fi
 
    # Download all upstream packages into folder upstream to prevent name conflicts
