@@ -411,8 +411,12 @@ for t in $(unify_list " ,;" "$TEST") ; do
          travis_run "lcov --remove coverage.info '*/test/*' --output-file coverage.info | grep -ve '^Removing'"
          # Output coverage data for debugging
          travis_run "lcov --list coverage.info"
+         # Download and validate codecov bash uploader script
+         travis_run --title "Download codecov uploader" "curl -s 'https://codecov.io/bash' > codecov"
+         local codecov_version="$(grep -o 'VERSION=\"[0-9\.]*\"' codecov | cut -d'"' -f2);"
+         travis_run --title "Validate codecov uploader" shasum -a 512 -c <(curl -s "https://raw.githubusercontent.com/codecov/codecov-bash/${codecov_version}/SHA512SUM" | grep -w codecov)
          # Upload to codecov.io: -f specifies file(s) to upload and disables manual coverage gathering
-         travis_run --title "Upload report" bash <(curl -s https://codecov.io/bash) -f coverage.info -R $ROS_WS/src/$REPOSITORY_NAME
+         travis_run --title "Upload report" bash codecov -f coverage.info -R $ROS_WS/src/$REPOSITORY_NAME
          travis_fold end codecov.io
          ;;
    esac
